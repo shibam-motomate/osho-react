@@ -1,0 +1,132 @@
+import { useMemo, useState } from 'react';
+import { OSHO_DATA } from '../data/oshoData.js';
+import { GENRE_COLORS, GENRE_LIST } from '../config.js';
+import { IcoPlay, IcoSearch, IcoX } from './Icons.jsx';
+import { MobileLangBtn } from './LanguageControls.jsx';
+import { SeriesImg } from './SeriesImg.jsx';
+
+/* ── Home Screen ── */
+export function HomeScreen({seriesList, onSeries, activePill, setActivePill, lang, setLang, discLang, setDiscLang, nowPlaying, audioPct, onResume, onDismissCL, t, isDesktop}) {
+  const [search, setSearch] = useState('');
+
+  const filtered = useMemo(() => {
+    let list = activePill === 'all' ? seriesList : seriesList.filter(s => s.g === activePill);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(s => s.n.toLowerCase().includes(q));
+    }
+    return list;
+  }, [seriesList, activePill, search]);
+
+  const genres = useMemo(() => {
+    const seen = new Set();
+    seriesList.forEach(s => seen.add(s.g));
+    return GENRE_LIST.filter(g => g !== 'all' && seen.has(g));
+  }, [seriesList]);
+
+  return (
+    <div>
+      {/* Mobile topbar */}
+      <div className="topbar">
+        <div className="topbar-wm">Osho<em style={{fontStyle:'normal',color:'var(--accent)'}}>·</em></div>
+        <div className="topbar-right">
+          <div className="mob-disc">
+            <button className={`mob-disc-btn ${discLang==='en'?'active':''}`} onClick={() => setDiscLang('en')}>
+              {t.discEn}<span style={{fontSize:9,opacity:0.7,marginLeft:3}}>· {OSHO_DATA.en.reduce((a,s)=>a+s.e.length,0)}</span>
+            </button>
+            <button className={`mob-disc-btn ${discLang==='hi'?'active':''}`} onClick={() => setDiscLang('hi')}>
+              {t.discHi}<span style={{fontSize:9,opacity:0.7,marginLeft:3}}>· {OSHO_DATA.hi.reduce((a,s)=>a+s.e.length,0)}</span>
+            </button>
+          </div>
+          <MobileLangBtn lang={lang} setLang={setLang}/>
+        </div>
+      </div>
+
+      {/* Desktop header */}
+      <div className="desk-header">
+        <h1>{t.allSeries}</h1>
+        <div className="desk-header-right">
+          <span style={{fontSize:12,color:'var(--muted)',fontWeight:500}}>{filtered.length} series</span>
+        </div>
+      </div>
+
+      <div className="search-wrap">
+        <div className="sbar">
+          <span style={{color:'var(--muted)'}}><IcoSearch/></span>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t.search}/>
+          {search && <button style={{background:'none',border:'none',cursor:'pointer',color:'var(--muted)',padding:0,display:'flex'}} onClick={() => setSearch('')}><IcoX/></button>}
+        </div>
+      </div>
+
+      {/* Continue Listening */}
+      {nowPlaying && (
+        <div style={{marginBottom:4}}>
+          <div className="sec-lbl">{t.continueListening}</div>
+          <div className="cl-card" onClick={onResume}>
+            <SeriesImg series={nowPlaying.series} className="cl-art" style={{width:54,height:54,borderRadius:10,border:'1px solid var(--border)',overflow:'hidden',flexShrink:0}}/>
+            <div className="cl-info">
+              <div style={{fontSize:14,fontWeight:700,color:'var(--text)',marginBottom:2,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{nowPlaying.series.n}</div>
+              <div style={{fontSize:12,color:'var(--text2)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{nowPlaying.episode.t}</div>
+              <div className="cl-prog"><div className="cl-prog-fill" style={{width:`${audioPct}%`}}/></div>
+            </div>
+            <button className="cl-play" onClick={e => { e.stopPropagation(); onResume(); }}><IcoPlay s={15}/></button>
+            <button className="cl-close" onClick={e => { e.stopPropagation(); onDismissCL(); }}><IcoX/></button>
+          </div>
+        </div>
+      )}
+
+      {/* Genre tiles — mobile only */}
+      {!search && (
+        <div className="genre-section" style={{marginBottom:24}}>
+          <div className="sec-lbl">{t.exploreTopic}</div>
+          <div className="genre-scroll">
+            {genres.map(g => (
+              <div key={g} className="genre-tile" onClick={() => setActivePill(g)}>
+                <div className={`genre-sq ${activePill===g?'active-genre':''}`} style={{background: GENRE_COLORS[g] || '#C0B8B0'}}>
+                  <svg width="72" height="72" viewBox="0 0 80 80" style={{display:'block'}}>
+                    <circle cx="40" cy="32" r="14" fill="rgba(255,255,255,0.3)"/>
+                    <circle cx="40" cy="32" r="7" fill="rgba(255,255,255,0.45)"/>
+                    <rect x="18" y="54" width="44" height="3" rx="1.5" fill="rgba(255,255,255,0.3)"/>
+                  </svg>
+                </div>
+                <div className="genre-lbl">{t.genres[g] || g}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Filter pills — mobile only */}
+      <div className="filter-scroll">
+        <button className={`filter-pill ${activePill==='all'?'active':''}`} onClick={() => setActivePill('all')}>{t.all}</button>
+        {genres.map(g => (
+          <button key={g} className={`filter-pill ${activePill===g?'active':''}`} onClick={() => setActivePill(g)}>
+            {t.genres[g] || g}
+          </button>
+        ))}
+      </div>
+
+      {/* Series grid */}
+      {!isDesktop && <div className="sec-lbl">{t.allSeries}</div>}
+      <div className="series-grid">
+        {filtered.length === 0 ? (
+          <div className="empty-state">No series found.</div>
+        ) : filtered.map(s => (
+          <div key={s.i} className="series-card" onClick={() => onSeries(s)}>
+            <div style={{position:'relative'}}>
+              <SeriesImg series={s} className="series-card-img"/>
+              <span className="lang-badge">{discLang === 'hi' ? 'Hindi' : 'English'}</span>
+            </div>
+            <div className="series-card-info">
+              <div className="series-title">{s.n}</div>
+              <div className="series-meta">{t.genres[s.g] || s.g}</div>
+              <div className="series-stats">
+                <span className="stat-pill">{t.episodes(s.e.length)}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

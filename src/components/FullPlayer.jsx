@@ -1,0 +1,97 @@
+import { useEffect, useState } from 'react';
+import { IcoDown, IcoNext, IcoPause, IcoPlay, IcoPrev, IcoVolHi, IcoVolLo } from './Icons.jsx';
+import { SeriesImg } from './SeriesImg.jsx';
+
+/* ── Full Player ── */
+export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, audioRef, onPrev, onNext, onSeekSeconds, t}) {
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [vol, setVol] = useState(80);
+  const [buffering, setBuffering] = useState(false);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const onTime    = () => setCurrentTime(audio.currentTime);
+    const onDur     = () => setDuration(audio.duration || 0);
+    const onWait    = () => setBuffering(true);
+    const onReady   = () => setBuffering(false);
+    audio.addEventListener('timeupdate', onTime);
+    audio.addEventListener('durationchange', onDur);
+    audio.addEventListener('loadedmetadata', onDur);
+    audio.addEventListener('waiting', onWait);
+    audio.addEventListener('canplay', onReady);
+    audio.addEventListener('playing', onReady);
+    return () => {
+      audio.removeEventListener('timeupdate', onTime);
+      audio.removeEventListener('durationchange', onDur);
+      audio.removeEventListener('loadedmetadata', onDur);
+      audio.removeEventListener('waiting', onWait);
+      audio.removeEventListener('canplay', onReady);
+      audio.removeEventListener('playing', onReady);
+    };
+  }, [audioRef]);
+
+  useEffect(() => { if (audioRef.current) audioRef.current.volume = vol / 100; }, [vol, audioRef]);
+
+  if (!nowPlaying) return null;
+  const {series, episode} = nowPlaying;
+  const pct = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const fmt = s => { s = Math.floor(s || 0); const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60; return h > 0 ? `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}` : `${m}:${String(sec).padStart(2,'0')}`; };
+
+  const handleSeek = e => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const newTime = ((e.clientX - r.left) / r.width) * duration;
+    if (audioRef.current) audioRef.current.currentTime = newTime;
+    setCurrentTime(newTime);
+  };
+
+  return (
+    <div className={`player${open?' open':''}`}>
+      <div className="player-handle"/>
+      <div className="player-top">
+        <button className="player-down" onClick={onClose}><IcoDown/></button>
+        <div className="player-lbl">{t.nowPlaying}</div>
+        <div style={{width:34}}/>
+      </div>
+      <div className="player-body">
+        <div className={`art-wrap${isPlaying?' playing':''}`}>
+          <SeriesImg series={series} style={{width:'100%',height:'100%',borderRadius:26,overflow:'hidden'}} className=""/>
+          {buffering && (
+            <div className="buf-overlay">
+              <div className="buf-ring"/>
+            </div>
+          )}
+        </div>
+        <div className="player-ep">{episode.t}</div>
+        <div className="player-ser">{series.n}</div>
+        <div className="prog-wrap">
+          <div className="prog-track" onClick={handleSeek}>
+            <div className="prog-fill" style={{width:`${pct}%`}}/>
+          </div>
+          <div className="prog-times"><span>{fmt(currentTime)}</span><span>{fmt(duration) || episode.d}</span></div>
+        </div>
+        <div className="ctrl-main">
+          <button className="ctrl-side" onClick={onPrev}><IcoPrev/></button>
+          <button className="ctrl-big" onClick={onTogglePlay}>{isPlaying ? <IcoPause s={26}/> : <IcoPlay s={26}/>}</button>
+          <button className="ctrl-side" onClick={onNext}><IcoNext/></button>
+        </div>
+        <div className="ctrl-sec">
+          <button className="ctrl-skip" onClick={() => onSeekSeconds(-30)}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 17a6 6 0 1 1 0-10"/><path d="M11 7V3L7 7l4 4"/></svg>
+            <span>30s</span>
+          </button>
+          <button className="ctrl-skip" onClick={() => onSeekSeconds(30)}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M13 17a6 6 0 1 0 0-10"/><path d="M13 7V3l4 4-4 4"/></svg>
+            <span>30s</span>
+          </button>
+        </div>
+        <div className="vol-row">
+          <span className="vol-ic"><IcoVolLo/></span>
+          <input type="range" className="vol-range" min="0" max="100" value={vol} onChange={e => setVol(Number(e.target.value))}/>
+          <span className="vol-ic"><IcoVolHi/></span>
+        </div>
+      </div>
+    </div>
+  );
+}
