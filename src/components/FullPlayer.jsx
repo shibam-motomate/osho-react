@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { IcoDown, IcoNext, IcoPause, IcoPlay, IcoPrev, IcoVolHi, IcoVolLo } from './Icons.jsx';
+import { IcoChevronRight, IcoDown, IcoNext, IcoPause, IcoPlay, IcoPrev, IcoVolHi, IcoVolLo } from './Icons.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
 
 /* ── Full Player ── */
-export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, audioRef, onPrev, onNext, onSeekSeconds, t}) {
+export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, audioRef, onPrev, onNext, onSeekSeconds, t, isDesktop}) {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [vol, setVol] = useState(80);
@@ -47,10 +47,12 @@ export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, 
   };
 
   return (
-    <div className={`player${open?' open':''}`}>
+    <>
+      <div className={`player-scrim${open?' open':''}`} onClick={onClose}/>
+      <div className={`player${open?' open':''}`}>
       <div className="player-handle"/>
       <div className="player-top">
-        <button className="player-down" onClick={onClose}><IcoDown/></button>
+        <button className="player-down" onClick={onClose}>{isDesktop ? <IcoChevronRight/> : <IcoDown/>}</button>
         <div className="player-lbl">{t.nowPlaying}</div>
         <div style={{width:34}}/>
       </div>
@@ -92,6 +94,7 @@ export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, 
           <span className="vol-ic"><IcoVolHi/></span>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

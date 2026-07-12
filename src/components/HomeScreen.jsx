@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import { OSHO_DATA } from '../data/oshoData.js';
 import { GENRE_COLORS, GENRE_LIST } from '../config.js';
-import { IcoPlay, IcoSearch, IcoX } from './Icons.jsx';
-import { MobileLangBtn } from './LanguageControls.jsx';
+import { IcoPlay, IcoSearch, IcoShare, IcoX } from './Icons.jsx';
+import { IconLangButton } from './LanguageControls.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
 
 /* ── Home Screen ── */
-export function HomeScreen({seriesList, onSeries, activePill, setActivePill, lang, setLang, discLang, setDiscLang, nowPlaying, audioPct, onResume, onDismissCL, t, isDesktop}) {
+export function HomeScreen({seriesList, onSeries, activePill, setActivePill, lang, setLang, discLang, setDiscLang, nowPlaying, audioPct, onResume, onDismissCL, onShareApp, t, isDesktop}) {
   const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
@@ -25,20 +25,20 @@ export function HomeScreen({seriesList, onSeries, activePill, setActivePill, lan
   }, [seriesList]);
 
   return (
-    <div>
+    <>
       {/* Mobile topbar */}
       <div className="topbar">
-        <div className="topbar-wm">Osho<em style={{fontStyle:'normal',color:'var(--accent)'}}>·</em></div>
+        <div className="topbar-wm">Osho<em>·</em></div>
         <div className="topbar-right">
-          <div className="mob-disc">
-            <button className={`mob-disc-btn ${discLang==='en'?'active':''}`} onClick={() => setDiscLang('en')}>
-              {t.discEn}<span style={{fontSize:9,opacity:0.7,marginLeft:3}}>· {OSHO_DATA.en.reduce((a,s)=>a+s.e.length,0)}</span>
-            </button>
-            <button className={`mob-disc-btn ${discLang==='hi'?'active':''}`} onClick={() => setDiscLang('hi')}>
-              {t.discHi}<span style={{fontSize:9,opacity:0.7,marginLeft:3}}>· {OSHO_DATA.hi.reduce((a,s)=>a+s.e.length,0)}</span>
-            </button>
-          </div>
-          <MobileLangBtn lang={lang} setLang={setLang}/>
+          <button className="icon-btn" aria-label="Share" onClick={onShareApp}><IcoShare/></button>
+          <IconLangButton lang={lang} setLang={setLang} size={32}/>
+        </div>
+      </div>
+      <div className="mob-disc-row">
+        <span className="mob-disc-lbl">{t.discourseLang}</span>
+        <div className="mob-disc">
+          <button className={`mob-disc-btn ${discLang==='en'?'active':''}`} onClick={() => setDiscLang('en')}>{t.discEn}</button>
+          <button className={`mob-disc-btn ${discLang==='hi'?'active':''}`} onClick={() => setDiscLang('hi')}>{t.discHi}</button>
         </div>
       </div>
 
@@ -46,10 +46,13 @@ export function HomeScreen({seriesList, onSeries, activePill, setActivePill, lan
       <div className="desk-header">
         <h1>{t.allSeries}</h1>
         <div className="desk-header-right">
+          <button className="icon-btn lg" aria-label="Share" onClick={onShareApp}><IcoShare s={16}/></button>
           <span style={{fontSize:12,color:'var(--muted)',fontWeight:500}}>{filtered.length} series</span>
+          <IconLangButton lang={lang} setLang={setLang} size={36}/>
         </div>
       </div>
 
+      <div className="screen-body">
       <div className="search-wrap">
         <div className="sbar">
           <span style={{color:'var(--muted)'}}><IcoSearch/></span>
@@ -65,7 +68,7 @@ export function HomeScreen({seriesList, onSeries, activePill, setActivePill, lan
           <div className="cl-card" onClick={onResume}>
             <SeriesImg series={nowPlaying.series} className="cl-art" style={{width:54,height:54,borderRadius:10,border:'1px solid var(--border)',overflow:'hidden',flexShrink:0}}/>
             <div className="cl-info">
-              <div style={{fontSize:14,fontWeight:700,color:'var(--text)',marginBottom:2,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{nowPlaying.series.n}</div>
+              <div style={{fontSize:14,fontWeight:700,color:'var(--ink)',marginBottom:2,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{nowPlaying.series.n}</div>
               <div style={{fontSize:12,color:'var(--text2)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{nowPlaying.episode.t}</div>
               <div className="cl-prog"><div className="cl-prog-fill" style={{width:`${audioPct}%`}}/></div>
             </div>
@@ -110,7 +113,7 @@ export function HomeScreen({seriesList, onSeries, activePill, setActivePill, lan
       {!isDesktop && <div className="sec-lbl">{t.allSeries}</div>}
       <div className="series-grid">
         {filtered.length === 0 ? (
-          <div className="empty-state">No series found.</div>
+          <div className="empty-state">{t.noSeries}</div>
         ) : filtered.map(s => (
           <div key={s.i} className="series-card" onClick={() => onSeries(s)}>
             <div style={{position:'relative'}}>
@@ -127,6 +130,13 @@ export function HomeScreen({seriesList, onSeries, activePill, setActivePill, lan
           </div>
         ))}
       </div>
-    </div>
+      </div>
+
+      <div className="footer-band">
+        <div className="footer-wm">Osho<em>·</em></div>
+        <div className="footer-attr">{t.footerAttribution}</div>
+        <div className="footer-note">{t.footerNote}</div>
+      </div>
+    </>
   );
 }
