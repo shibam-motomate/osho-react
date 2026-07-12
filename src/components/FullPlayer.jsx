@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { IcoBack30, IcoChevronRight, IcoDown, IcoFwd30, IcoNext, IcoPause, IcoPlay, IcoPrev, IcoVolHi, IcoVolLo } from './Icons.jsx';
+import { IcoBack30, IcoChevronRight, IcoDown, IcoFwd30, IcoNext, IcoPause, IcoPlay, IcoPrev, IcoSliders, IcoVolHi, IcoVolLo } from './Icons.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
 
 const SPEED_OPTIONS = [0.75, 1, 1.25, 1.5];
@@ -20,6 +20,7 @@ export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, 
   const [duration, setDuration] = useState(0);
   const [vol, setVol] = useState(80);
   const [buffering, setBuffering] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -97,23 +98,6 @@ export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, 
           <button className="ctrl-skip" onClick={() => onSeekSeconds(30)} aria-label="Forward 30 seconds"><IcoFwd30/></button>
           <button className="ctrl-side" onClick={onNext} aria-label="Next episode"><IcoNext/></button>
         </div>
-        <div className="player-sec-lbl">Playback speed</div>
-        <div className="player-seg">
-          {SPEED_OPTIONS.map(sp => (
-            <button key={sp} className={`player-seg-btn${playbackSpeed===sp?' active':''}`} onClick={() => setPlaybackSpeed(sp)}>{sp}×</button>
-          ))}
-        </div>
-
-        <div className="player-status-row">
-          <span className="player-sec-lbl" style={{marginBottom:0}}>Sleep timer</span>
-          <span className="val">{sleepStatus}</span>
-        </div>
-        <div className="player-seg">
-          {SLEEP_OPTIONS.map(opt => (
-            <button key={opt.value} className={`player-seg-btn${sleepOption===opt.value?' active':''}`} onClick={() => setSleepOption(opt.value)}>{opt.label}</button>
-          ))}
-        </div>
-
         {nextEpisode && (
           <div className="player-upnext" onClick={onNext}>
             <span className="lbl">Up Next</span>
@@ -121,10 +105,35 @@ export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, 
           </div>
         )}
 
-        <div className="vol-row">
-          <span className="vol-ic"><IcoVolLo/></span>
-          <input type="range" className="vol-range" min="0" max="100" value={vol} onChange={e => setVol(Number(e.target.value))}/>
-          <span className="vol-ic"><IcoVolHi/></span>
+        <button className="player-more-toggle" onClick={() => setMoreOpen(o => !o)} aria-expanded={moreOpen}>
+          <span className="lbl"><IcoSliders s={13}/> {playbackSpeed}&times; &middot; Sleep {sleepOption==='off' ? 'off' : sleepOption==='end' ? 'end of talk' : sleepStatus}</span>
+          <span className={`chev${moreOpen?' open':''}`}><IcoDown/></span>
+        </button>
+        <div className={`player-more-wrap${moreOpen?' open':''}`}>
+          <div className="player-more-inner">
+            <div className="player-sec-lbl">Playback speed</div>
+            <div className="player-seg">
+              {SPEED_OPTIONS.map(sp => (
+                <button key={sp} className={`player-seg-btn${playbackSpeed===sp?' active':''}`} onClick={() => setPlaybackSpeed(sp)}>{sp}×</button>
+              ))}
+            </div>
+
+            <div className="player-status-row">
+              <span className="player-sec-lbl" style={{marginBottom:0}}>Sleep timer</span>
+              <span className="val">{sleepStatus}</span>
+            </div>
+            <div className="player-seg">
+              {SLEEP_OPTIONS.map(opt => (
+                <button key={opt.value} className={`player-seg-btn${sleepOption===opt.value?' active':''}`} onClick={() => setSleepOption(opt.value)}>{opt.label}</button>
+              ))}
+            </div>
+
+            <div className="vol-row">
+              <span className="vol-ic"><IcoVolLo/></span>
+              <input type="range" className="vol-range" min="0" max="100" value={vol} onChange={e => setVol(Number(e.target.value))}/>
+              <span className="vol-ic"><IcoVolHi/></span>
+            </div>
+          </div>
         </div>
       </div>
       </div>
