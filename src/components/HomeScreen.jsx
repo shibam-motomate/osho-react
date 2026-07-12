@@ -30,7 +30,7 @@ export function HomeScreen({seriesList, onSeries, activePill, setActivePill, lan
       <div className="topbar">
         <div className="topbar-wm">Osho<em>·</em></div>
         <div className="topbar-right">
-          <button className="icon-btn" aria-label="Share" onClick={onShareApp}><IcoShare/></button>
+          <button className="icon-btn-label" aria-label="Share" onClick={onShareApp}><IcoShare/><span>Share</span></button>
           <IconLangButton lang={lang} setLang={setLang} size={32}/>
         </div>
       </div>
@@ -46,7 +46,7 @@ export function HomeScreen({seriesList, onSeries, activePill, setActivePill, lan
       <div className="desk-header">
         <h1>{t.allSeries}</h1>
         <div className="desk-header-right">
-          <button className="icon-btn lg" aria-label="Share" onClick={onShareApp}><IcoShare s={16}/></button>
+          <button className="icon-btn-label lg" aria-label="Share" onClick={onShareApp}><IcoShare s={16}/><span>Share</span></button>
           <span style={{fontSize:12,color:'var(--muted)',fontWeight:500}}>{filtered.length} series</span>
           <IconLangButton lang={lang} setLang={setLang} size={36}/>
         </div>
@@ -87,9 +87,9 @@ export function HomeScreen({seriesList, onSeries, activePill, setActivePill, lan
               <div key={g} className="genre-tile" onClick={() => setActivePill(g)}>
                 <div className={`genre-sq ${activePill===g?'active-genre':''}`} style={{background: GENRE_COLORS[g] || '#C0B8B0'}}>
                   <svg width="72" height="72" viewBox="0 0 80 80" style={{display:'block'}}>
-                    <circle cx="40" cy="32" r="14" fill="rgba(255,255,255,0.3)"/>
-                    <circle cx="40" cy="32" r="7" fill="rgba(255,255,255,0.45)"/>
-                    <rect x="18" y="54" width="44" height="3" rx="1.5" fill="rgba(255,255,255,0.3)"/>
+                    <circle cx="40" cy="32" r="14" fill="rgba(30,42,32,0.16)"/>
+                    <circle cx="40" cy="32" r="7" fill="rgba(30,42,32,0.30)"/>
+                    <rect x="18" y="54" width="44" height="3" rx="1.5" fill="rgba(30,42,32,0.20)"/>
                   </svg>
                 </div>
                 <div className="genre-lbl">{t.genres[g] || g}</div>

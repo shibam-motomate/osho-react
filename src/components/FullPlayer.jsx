@@ -90,20 +90,18 @@ export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, 
           </div>
           <div className="prog-times"><span>{fmt(currentTime)}</span><span>{fmt(duration) || episode.d}</span></div>
         </div>
-        <div className="ctrl-main">
-          <button className="ctrl-side" onClick={onPrev}><IcoPrev/></button>
+        <div className="ctrl-row">
+          <button className="ctrl-side" onClick={onPrev} aria-label="Previous episode"><IcoPrev/></button>
+          <button className="ctrl-skip" onClick={() => onSeekSeconds(-30)} aria-label="Back 30 seconds">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 17a6 6 0 1 1 0-10"/><path d="M11 7V3L7 7l4 4"/></svg>
+            <span>30s</span>
+          </button>
           <button className="ctrl-big" onClick={onTogglePlay}>{isPlaying ? <IcoPause s={26}/> : <IcoPlay s={26}/>}</button>
-          <button className="ctrl-side" onClick={onNext}><IcoNext/></button>
-        </div>
-        <div className="ctrl-sec">
-          <button className="ctrl-skip" onClick={() => onSeekSeconds(-30)}>
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 17a6 6 0 1 1 0-10"/><path d="M11 7V3L7 7l4 4"/></svg>
+          <button className="ctrl-skip" onClick={() => onSeekSeconds(30)} aria-label="Forward 30 seconds">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M13 17a6 6 0 1 0 0-10"/><path d="M13 7V3l4 4-4 4"/></svg>
             <span>30s</span>
           </button>
-          <button className="ctrl-skip" onClick={() => onSeekSeconds(30)}>
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M13 17a6 6 0 1 0 0-10"/><path d="M13 7V3l4 4-4 4"/></svg>
-            <span>30s</span>
-          </button>
+          <button className="ctrl-side" onClick={onNext} aria-label="Next episode"><IcoNext/></button>
         </div>
         <div className="player-sec-lbl">Playback speed</div>
         <div className="player-seg">
