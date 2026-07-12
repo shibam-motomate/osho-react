@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { OSHO_DATA } from '../data/oshoData.js';
-import { GENRE_COLORS, GENRE_LIST } from '../config.js';
+import { GENRE_COLORS, GENRE_LIST, seriesTotalDuration } from '../config.js';
 import { IcoPlay, IcoSearch, IcoShare, IcoX } from './Icons.jsx';
 import { IconLangButton } from './LanguageControls.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
@@ -72,8 +72,10 @@ export function HomeScreen({seriesList, onSeries, activePill, setActivePill, lan
               <div style={{fontSize:12,color:'var(--text2)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{nowPlaying.episode.t}</div>
               <div className="cl-prog"><div className="cl-prog-fill" style={{width:`${audioPct}%`}}/></div>
             </div>
-            <button className="cl-play" onClick={e => { e.stopPropagation(); onResume(); }}><IcoPlay s={15}/></button>
-            <button className="cl-close" onClick={e => { e.stopPropagation(); onDismissCL(); }}><IcoX/></button>
+            <div className="cl-actions">
+              <button className="cl-play" onClick={e => { e.stopPropagation(); onResume(); }}><IcoPlay s={15}/></button>
+              <button className="cl-close" onClick={e => { e.stopPropagation(); onDismissCL(); }}><IcoX/></button>
+            </div>
           </div>
         </div>
       )}
@@ -116,15 +118,15 @@ export function HomeScreen({seriesList, onSeries, activePill, setActivePill, lan
           <div className="empty-state">{t.noSeries}</div>
         ) : filtered.map(s => (
           <div key={s.i} className="series-card" onClick={() => onSeries(s)}>
-            <div style={{position:'relative'}}>
-              <SeriesImg series={s} className="series-card-img"/>
-              <span className="lang-badge">{discLang === 'hi' ? 'Hindi' : 'English'}</span>
-            </div>
+            <SeriesImg series={s} className="series-card-img"/>
             <div className="series-card-info">
               <div className="series-title">{s.n}</div>
               <div className="series-meta">{t.genres[s.g] || s.g}</div>
+              {s.x && <div className="series-desc">{s.x}</div>}
               <div className="series-stats">
+                <span className="stat-pill lang">{discLang === 'hi' ? 'Hindi' : 'English'}</span>
                 <span className="stat-pill">{t.episodes(s.e.length)}</span>
+                <span className="stat-pill">{seriesTotalDuration(s)}</span>
               </div>
             </div>
           </div>

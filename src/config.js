@@ -55,3 +55,11 @@ export const OSHO_PHOTOS = [
 ];
 /* Pick a consistent photo per series using the identifier as a stable hash */
 export const photoFor = s => OSHO_PHOTOS[s.i.split('').reduce((a,c)=>a+c.charCodeAt(0),0) % OSHO_PHOTOS.length];
+
+/* ── Duration helpers ── */
+const parseDur = d => { const p = d.split(':').map(Number); return p.length === 3 ? p[0]*3600 + p[1]*60 + p[2] : p[0]*60 + p[1]; };
+export const seriesTotalDuration = series => {
+  const secs = series.e.reduce((a, e) => a + parseDur(e.d), 0);
+  const h = Math.floor(secs / 3600), m = Math.round((secs % 3600) / 60);
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+};
