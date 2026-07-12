@@ -1,12 +1,11 @@
 import { useMemo, useState } from 'react';
-import { OSHO_DATA } from '../data/oshoData.js';
 import { GENRE_COLORS, GENRE_LIST, seriesTotalDuration } from '../config.js';
 import { IcoHeart, IcoPlay, IcoSearch, IcoShare, IcoX } from './Icons.jsx';
 import { IconLangButton } from './LanguageControls.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
 
 /* ── Home Screen ── */
-export function HomeScreen({seriesList, onSeries, activePill, setActivePill, lang, setLang, discLang, setDiscLang, nowPlaying, audioPct, onResume, onDismissCL, onShareApp, savedSeries, onToggleSave, t, isDesktop}) {
+export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setActivePill, lang, setLang, discLang, setDiscLang, nowPlaying, audioPct, onResume, onDismissCL, onShareApp, savedSeries, onToggleSave, t, isDesktop}) {
   const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
@@ -116,7 +115,9 @@ export function HomeScreen({seriesList, onSeries, activePill, setActivePill, lan
       {/* Series grid */}
       {!isDesktop && <div className="sec-lbl">{t.allSeries}</div>}
       <div className="series-grid">
-        {filtered.length === 0 ? (
+        {dataLoading ? (
+          <div className="empty-state"><div className="loader-ring" style={{margin:'0 auto'}}/></div>
+        ) : filtered.length === 0 ? (
           <div className="empty-state">{t.noSeries}</div>
         ) : filtered.map(s => (
           <div key={s.i} className="series-card" onClick={() => onSeries(s)}>

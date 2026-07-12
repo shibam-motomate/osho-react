@@ -17,7 +17,7 @@ export function SeriesImg({series, style, className}) {
   );
   return (
     <div className={className} style={{...style, position:'relative', overflow:'hidden'}}>
-      <img src={photo} alt={series.n} onError={() => setErr(true)}
+      <img src={photo} alt={series.n} onError={() => setErr(true)} loading="lazy" decoding="async"
         style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'center top',display:'block'}}/>
       <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,transparent 50%,rgba(32,19,23,0.35))',pointerEvents:'none'}}/>
     </div>

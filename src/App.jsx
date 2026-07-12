@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { OSHO_DATA } from './data/oshoData.js';
 import { T } from './config.js';
 import { FullPlayer } from './components/FullPlayer.jsx';
 import { HomeScreen } from './components/HomeScreen.jsx';
@@ -31,12 +30,28 @@ function App() {
   const [savedSeries, setSavedSeries] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem('osho_saved_series') || '[]')); } catch(e) { return new Set(); }
   });
+  const [dataLoading, setDataLoading] = useState(true);
+  const [seriesVersion, setSeriesVersion] = useState(0);
   const audioRef = useRef(null);
   const toastTimer = useRef(null);
   const sleepOptionRef = useRef('off');
+  const seriesCacheRef = useRef({});
 
   const t = T[lang];
-  const seriesList = useMemo(() => OSHO_DATA[discLang] || OSHO_DATA.en, [discLang]);
+
+  // Lazy-load each discourse language's dataset only when first needed, then cache it
+  useEffect(() => {
+    if (seriesCacheRef.current[discLang]) { setDataLoading(false); return; }
+    setDataLoading(true);
+    const loader = discLang === 'hi' ? import('./data/oshoData.hi.js') : import('./data/oshoData.en.js');
+    loader.then(mod => {
+      seriesCacheRef.current[discLang] = discLang === 'hi' ? mod.OSHO_DATA_HI : mod.OSHO_DATA_EN;
+      setSeriesVersion(v => v + 1);
+      setDataLoading(false);
+    });
+  }, [discLang]);
+
+  const seriesList = useMemo(() => seriesCacheRef.current[discLang] || [], [discLang, seriesVersion]);
 
   // Hide splash loader once app has mounted
   useEffect(() => {
@@ -243,7 +258,7 @@ function App() {
       <Sidebar discLang={discLang} setDiscLang={setDiscLang} activePill={activePill} setActivePill={setPill} t={t} seriesList={seriesList}/>
       <div className="main">
         <div className={homeClass}>
-          <HomeScreen seriesList={seriesList} onSeries={s => { setSelSeries(s); setScreen('series'); }} activePill={activePill} setActivePill={setPill} lang={lang} setLang={setLang} discLang={discLang} setDiscLang={setDiscLang} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} onShareApp={shareApp} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} t={t} isDesktop={isDesktop}/>
+          <HomeScreen seriesList={seriesList} dataLoading={dataLoading} onSeries={s => { setSelSeries(s); setScreen('series'); }} activePill={activePill} setActivePill={setPill} lang={lang} setLang={setLang} discLang={discLang} setDiscLang={setDiscLang} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} onShareApp={shareApp} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} t={t} isDesktop={isDesktop}/>
         </div>
         <div className={serClass}>
           {selSeries && <SeriesScreen series={selSeries} onBack={() => setScreen('home')} onEpisode={ep => { playEp(selSeries, ep); setPO(true); }} currentEp={nowPlaying?.series?.i === selSeries?.i ? nowPlaying?.episode : null} t={t}/>}

@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
-import { OSHO_DATA } from '../data/oshoData.js';
-import { GENRE_COLORS, GENRE_LIST } from '../config.js';
+import { EPISODE_COUNTS, GENRE_COLORS, GENRE_LIST } from '../config.js';
 
 /* ── Sidebar ── */
 export function Sidebar({discLang, setDiscLang, activePill, setActivePill, t, seriesList}) {
@@ -20,10 +19,10 @@ export function Sidebar({discLang, setDiscLang, activePill, setActivePill, t, se
         <div className="sb-lbl">{t.discourseLang}</div>
         <div className="sb-disc">
           <button className={`sb-disc-btn ${discLang==='en'?'active':''}`} onClick={() => setDiscLang('en')}>
-            {t.discEn}<span style={{fontSize:10,opacity:0.7,marginLeft:4}}>· {OSHO_DATA.en.reduce((a,s)=>a+s.e.length,0)}</span>
+            {t.discEn}<span style={{fontSize:10,opacity:0.7,marginLeft:4}}>· {EPISODE_COUNTS.en}</span>
           </button>
           <button className={`sb-disc-btn ${discLang==='hi'?'active':''}`} onClick={() => setDiscLang('hi')}>
-            {t.discHi}<span style={{fontSize:10,opacity:0.7,marginLeft:4}}>· {OSHO_DATA.hi.reduce((a,s)=>a+s.e.length,0)}</span>
+            {t.discHi}<span style={{fontSize:10,opacity:0.7,marginLeft:4}}>· {EPISODE_COUNTS.hi}</span>
           </button>
         </div>
       </div>

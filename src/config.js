@@ -56,6 +56,10 @@ export const OSHO_PHOTOS = [
 /* Pick a consistent photo per series using the identifier as a stable hash */
 export const photoFor = s => OSHO_PHOTOS[s.i.split('').reduce((a,c)=>a+c.charCodeAt(0),0) % OSHO_PHOTOS.length];
 
+/* Total episode counts per discourse language, precomputed so the sidebar/topbar
+   toggle labels don't force-load a dataset the user hasn't switched to yet */
+export const EPISODE_COUNTS = {en: 2894, hi: 2283};
+
 /* ── Duration helpers ── */
 const parseDur = d => { const p = d.split(':').map(Number); return p.length === 3 ? p[0]*3600 + p[1]*60 + p[2] : p[0]*60 + p[1]; };
 export const seriesTotalDuration = series => {
