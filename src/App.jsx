@@ -6,6 +6,7 @@ import { HomeScreen } from './components/HomeScreen.jsx';
 import { MiniPlayer } from './components/MiniPlayer.jsx';
 import { SeriesScreen } from './components/SeriesScreen.jsx';
 import { Sidebar } from './components/Sidebar.jsx';
+import { Splash } from './components/Splash.jsx';
 
 function App() {
   const [screen,      setScreen]    = useState('home');
@@ -24,6 +25,9 @@ function App() {
   const [sleepOption, setSleepOptionState] = useState('off'); // 'off' | 15 | 30 | 60 | 'end'
   const [sleepEndAt,  setSleepEndAt] = useState(null);
   const [sleepRemaining, setSleepRemaining] = useState(0);
+  const [showSplash, setShowSplash] = useState(() => {
+    try { return !localStorage.getItem('osho_seen_intro'); } catch(e) { return false; }
+  });
   const audioRef = useRef(null);
   const toastTimer = useRef(null);
   const sleepOptionRef = useRef('off');
@@ -212,6 +216,11 @@ function App() {
     }
   }, [t, showToast]);
 
+  const dismissSplash = useCallback(() => {
+    try { localStorage.setItem('osho_seen_intro', '1'); } catch(e) {}
+    setShowSplash(false);
+  }, []);
+
   const appFont = lang === 'hi' ? 'var(--font-hi)' : lang === 'bn' ? 'var(--font-bn)' : 'var(--font)';
   const homeClass  = `screen${!isDesktop ? (screen !== 'home'   ? ' behind' : '') : ''} ${isDesktop && screen === 'home'   ? 'desk-show' : ''}`;
   const serClass   = `screen${!isDesktop ? (screen !== 'series' ? ' hidden' : '') : ''} ${isDesktop && screen === 'series' ? 'desk-show' : ''}`;
@@ -234,6 +243,7 @@ function App() {
         sleepOption={sleepOption} setSleepOption={setSleepOption} sleepRemaining={sleepRemaining}
         episodeIndex={episodeIndex} totalEpisodes={nowPlaying?.series?.e?.length || 0} nextEpisode={nextEpisode}/>
       <div className={`toast${toast?' show':''}`}>{toast}</div>
+      {showSplash && <Splash onDone={dismissSplash}/>}
     </div>
   );
 }

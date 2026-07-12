@@ -44,10 +44,9 @@ export function HomeScreen({seriesList, onSeries, activePill, setActivePill, lan
 
       {/* Desktop header */}
       <div className="desk-header">
-        <h1>{t.allSeries}</h1>
+        <h1>{t.allSeries}<span className="desk-header-count">{filtered.length} series</span></h1>
         <div className="desk-header-right">
           <button className="icon-btn-label lg" aria-label="Share" onClick={onShareApp}><IcoShare s={16}/><span>Share</span></button>
-          <span style={{fontSize:12,color:'var(--muted)',fontWeight:500}}>{filtered.length} series</span>
           <IconLangButton lang={lang} setLang={setLang} size={36}/>
         </div>
       </div>
@@ -66,14 +65,15 @@ export function HomeScreen({seriesList, onSeries, activePill, setActivePill, lan
         <div style={{marginBottom:4}}>
           <div className="sec-lbl">{t.continueListening}</div>
           <div className="cl-card" onClick={onResume}>
-            <SeriesImg series={nowPlaying.series} className="cl-art" style={{width:54,height:54,borderRadius:10,border:'1px solid var(--border)',overflow:'hidden',flexShrink:0}}/>
+            <SeriesImg series={nowPlaying.series} className="cl-art" style={{width:60,height:60,borderRadius:12,border:'1px solid var(--border)',overflow:'hidden',flexShrink:0}}/>
             <div className="cl-info">
-              <div style={{fontSize:14,fontWeight:700,color:'var(--ink)',marginBottom:2,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{nowPlaying.series.n}</div>
-              <div style={{fontSize:12,color:'var(--text2)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{nowPlaying.episode.t}</div>
+              <div className="cl-title">{nowPlaying.series.n}</div>
+              <div className="cl-ep">{nowPlaying.episode.t}</div>
               <div className="cl-prog"><div className="cl-prog-fill" style={{width:`${audioPct}%`}}/></div>
+              <div className="cl-pct">{Math.round(audioPct)}% listened</div>
             </div>
             <div className="cl-actions">
-              <button className="cl-play" onClick={e => { e.stopPropagation(); onResume(); }}><IcoPlay s={15}/></button>
+              <button className="cl-play" onClick={e => { e.stopPropagation(); onResume(); }}><IcoPlay s={16}/></button>
               <button className="cl-close" onClick={e => { e.stopPropagation(); onDismissCL(); }}><IcoX/></button>
             </div>
           </div>
