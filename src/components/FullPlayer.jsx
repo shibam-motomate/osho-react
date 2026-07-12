@@ -2,8 +2,20 @@ import { useEffect, useState } from 'react';
 import { IcoChevronRight, IcoDown, IcoNext, IcoPause, IcoPlay, IcoPrev, IcoVolHi, IcoVolLo } from './Icons.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
 
+const SPEED_OPTIONS = [0.75, 1, 1.25, 1.5];
+const SLEEP_OPTIONS = [
+  {value: 'off', label: 'Off'},
+  {value: 15, label: '15m'},
+  {value: 30, label: '30m'},
+  {value: 60, label: '60m'},
+  {value: 'end', label: 'End of talk'},
+];
+
+const fmtRemaining = s => { s = Math.max(0, Math.floor(s)); const m = Math.floor(s / 60), sec = s % 60; return `${m}:${String(sec).padStart(2, '0')}`; };
+
 /* ── Full Player ── */
-export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, audioRef, onPrev, onNext, onSeekSeconds, t, isDesktop}) {
+export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, audioRef, onPrev, onNext, onSeekSeconds, t, isDesktop,
+  playbackSpeed, setPlaybackSpeed, sleepOption, setSleepOption, sleepRemaining, episodeIndex, totalEpisodes, nextEpisode}) {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [vol, setVol] = useState(80);
@@ -46,6 +58,8 @@ export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, 
     setCurrentTime(newTime);
   };
 
+  const sleepStatus = sleepOption === 'off' ? '' : sleepOption === 'end' ? 'After this talk' : fmtRemaining(sleepRemaining);
+
   return (
     <>
       <div className={`player-scrim${open?' open':''}`} onClick={onClose}/>
@@ -67,6 +81,9 @@ export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, 
         </div>
         <div className="player-ep">{episode.t}</div>
         <div className="player-ser">{series.n}</div>
+        {episodeIndex >= 0 && totalEpisodes > 0 && (
+          <div className="player-position">Episode {episodeIndex + 1} of {totalEpisodes}</div>
+        )}
         <div className="prog-wrap">
           <div className="prog-track" onClick={handleSeek}>
             <div className="prog-fill" style={{width:`${pct}%`}}/>
@@ -88,6 +105,30 @@ export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, 
             <span>30s</span>
           </button>
         </div>
+        <div className="player-sec-lbl">Playback speed</div>
+        <div className="player-seg">
+          {SPEED_OPTIONS.map(sp => (
+            <button key={sp} className={`player-seg-btn${playbackSpeed===sp?' active':''}`} onClick={() => setPlaybackSpeed(sp)}>{sp}×</button>
+          ))}
+        </div>
+
+        <div className="player-status-row">
+          <span className="player-sec-lbl" style={{marginBottom:0}}>Sleep timer</span>
+          <span className="val">{sleepStatus}</span>
+        </div>
+        <div className="player-seg">
+          {SLEEP_OPTIONS.map(opt => (
+            <button key={opt.value} className={`player-seg-btn${sleepOption===opt.value?' active':''}`} onClick={() => setSleepOption(opt.value)}>{opt.label}</button>
+          ))}
+        </div>
+
+        {nextEpisode && (
+          <div className="player-upnext" onClick={onNext}>
+            <span className="lbl">Up Next</span>
+            <span className="ttl">{nextEpisode.t}</span>
+          </div>
+        )}
+
         <div className="vol-row">
           <span className="vol-ic"><IcoVolLo/></span>
           <input type="range" className="vol-range" min="0" max="100" value={vol} onChange={e => setVol(Number(e.target.value))}/>

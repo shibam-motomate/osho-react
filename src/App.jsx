@@ -20,8 +20,13 @@ function App() {
   const [audioPct,    setAudioPct]  = useState(0);
   const [isDesktop,   setIsDesktop] = useState(() => window.innerWidth >= 900);
   const [toast,       setToast]     = useState(null);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [sleepOption, setSleepOptionState] = useState('off'); // 'off' | 15 | 30 | 60 | 'end'
+  const [sleepEndAt,  setSleepEndAt] = useState(null);
+  const [sleepRemaining, setSleepRemaining] = useState(0);
   const audioRef = useRef(null);
   const toastTimer = useRef(null);
+  const sleepOptionRef = useRef('off');
 
   const t = T[lang];
   const seriesList = useMemo(() => OSHO_DATA[discLang] || OSHO_DATA.en, [discLang]);
@@ -37,6 +42,26 @@ function App() {
 
   // Reset genre filter when discourse language changes
   useEffect(() => { setPill('all'); }, [discLang]);
+
+  useEffect(() => { sleepOptionRef.current = sleepOption; }, [sleepOption]);
+
+  // Playback speed
+  useEffect(() => { if (audioRef.current) audioRef.current.playbackRate = playbackSpeed; }, [playbackSpeed]);
+
+  // Sleep timer countdown
+  useEffect(() => {
+    if (!sleepEndAt) { setSleepRemaining(0); return; }
+    const iv = setInterval(() => {
+      const remaining = Math.max(0, Math.round((sleepEndAt - Date.now()) / 1000));
+      setSleepRemaining(remaining);
+      if (remaining <= 0) {
+        if (audioRef.current) audioRef.current.pause();
+        setSleepOptionState('off');
+        setSleepEndAt(null);
+      }
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [sleepEndAt]);
 
   // Resize listener
   useEffect(() => {
@@ -93,7 +118,14 @@ function App() {
     if (!audio) return;
     const onPlay  = () => setPlay(true);
     const onPause = () => setPlay(false);
-    const onEnded = () => onNext();
+    const onEnded = () => {
+      if (sleepOptionRef.current === 'end') {
+        setSleepOptionState('off');
+        setSleepEndAt(null);
+        return;
+      }
+      onNext();
+    };
     audio.addEventListener('play', onPlay);
     audio.addEventListener('pause', onPause);
     audio.addEventListener('ended', onEnded);
@@ -133,6 +165,28 @@ function App() {
   const onSeekSeconds = useCallback(delta => {
     if (audioRef.current) audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime + delta);
   }, []);
+
+  const setSleepOption = useCallback(opt => {
+    setSleepOptionState(opt);
+    setSleepEndAt(opt === 'off' || opt === 'end' ? null : Date.now() + opt * 60000);
+  }, []);
+
+  // Keyboard shortcuts: Space play/pause, Left/Right seek 30s
+  useEffect(() => {
+    const handler = e => {
+      const tag = (e.target.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || !nowPlaying) return;
+      if (e.code === 'Space') { e.preventDefault(); onTogglePlay(); }
+      else if (e.code === 'ArrowRight') { e.preventDefault(); onSeekSeconds(30); }
+      else if (e.code === 'ArrowLeft') { e.preventDefault(); onSeekSeconds(-30); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [nowPlaying, onTogglePlay, onSeekSeconds]);
+
+  const episodeIndex = nowPlaying ? nowPlaying.series.e.findIndex(e => e.u === nowPlaying.episode.u) : -1;
+  const nextEpisode = nowPlaying && episodeIndex >= 0 && episodeIndex < nowPlaying.series.e.length - 1
+    ? nowPlaying.series.e[episodeIndex + 1] : null;
 
   const onResume = () => {
     const saved = parseFloat(localStorage.getItem('osho_time') || '0');
@@ -175,7 +229,10 @@ function App() {
         </div>
       </div>
       <MiniPlayer nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} onPrev={onPrev} onNext={onNext} onOpen={() => setPO(true)} audioRef={audioRef}/>
-      <FullPlayer open={playerOpen} onClose={() => setPO(false)} nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} audioRef={audioRef} onPrev={onPrev} onNext={onNext} onSeekSeconds={onSeekSeconds} t={t} isDesktop={isDesktop}/>
+      <FullPlayer open={playerOpen} onClose={() => setPO(false)} nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} audioRef={audioRef} onPrev={onPrev} onNext={onNext} onSeekSeconds={onSeekSeconds} t={t} isDesktop={isDesktop}
+        playbackSpeed={playbackSpeed} setPlaybackSpeed={setPlaybackSpeed}
+        sleepOption={sleepOption} setSleepOption={setSleepOption} sleepRemaining={sleepRemaining}
+        episodeIndex={episodeIndex} totalEpisodes={nowPlaying?.series?.e?.length || 0} nextEpisode={nextEpisode}/>
       <div className={`toast${toast?' show':''}`}>{toast}</div>
     </div>
   );
