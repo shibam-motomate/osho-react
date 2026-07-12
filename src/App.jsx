@@ -28,6 +28,9 @@ function App() {
   const [showSplash, setShowSplash] = useState(() => {
     try { return !localStorage.getItem('osho_seen_intro'); } catch(e) { return false; }
   });
+  const [savedSeries, setSavedSeries] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('osho_saved_series') || '[]')); } catch(e) { return new Set(); }
+  });
   const audioRef = useRef(null);
   const toastTimer = useRef(null);
   const sleepOptionRef = useRef('off');
@@ -221,6 +224,15 @@ function App() {
     setShowSplash(false);
   }, []);
 
+  const toggleSaveSeries = useCallback(id => {
+    setSavedSeries(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      try { localStorage.setItem('osho_saved_series', JSON.stringify(Array.from(next))); } catch(e) {}
+      return next;
+    });
+  }, []);
+
   const appFont = lang === 'hi' ? 'var(--font-hi)' : lang === 'bn' ? 'var(--font-bn)' : 'var(--font)';
   const homeClass  = `screen${!isDesktop ? (screen !== 'home'   ? ' behind' : '') : ''} ${isDesktop && screen === 'home'   ? 'desk-show' : ''}`;
   const serClass   = `screen${!isDesktop ? (screen !== 'series' ? ' hidden' : '') : ''} ${isDesktop && screen === 'series' ? 'desk-show' : ''}`;
@@ -231,7 +243,7 @@ function App() {
       <Sidebar discLang={discLang} setDiscLang={setDiscLang} activePill={activePill} setActivePill={setPill} t={t} seriesList={seriesList}/>
       <div className="main">
         <div className={homeClass}>
-          <HomeScreen seriesList={seriesList} onSeries={s => { setSelSeries(s); setScreen('series'); }} activePill={activePill} setActivePill={setPill} lang={lang} setLang={setLang} discLang={discLang} setDiscLang={setDiscLang} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} onShareApp={shareApp} t={t} isDesktop={isDesktop}/>
+          <HomeScreen seriesList={seriesList} onSeries={s => { setSelSeries(s); setScreen('series'); }} activePill={activePill} setActivePill={setPill} lang={lang} setLang={setLang} discLang={discLang} setDiscLang={setDiscLang} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} onShareApp={shareApp} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} t={t} isDesktop={isDesktop}/>
         </div>
         <div className={serClass}>
           {selSeries && <SeriesScreen series={selSeries} onBack={() => setScreen('home')} onEpisode={ep => { playEp(selSeries, ep); setPO(true); }} currentEp={nowPlaying?.series?.i === selSeries?.i ? nowPlaying?.episode : null} t={t}/>}

@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import { OSHO_DATA } from '../data/oshoData.js';
 import { GENRE_COLORS, GENRE_LIST, seriesTotalDuration } from '../config.js';
-import { IcoPlay, IcoSearch, IcoShare, IcoX } from './Icons.jsx';
+import { IcoHeart, IcoPlay, IcoSearch, IcoShare, IcoX } from './Icons.jsx';
 import { IconLangButton } from './LanguageControls.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
 
 /* ── Home Screen ── */
-export function HomeScreen({seriesList, onSeries, activePill, setActivePill, lang, setLang, discLang, setDiscLang, nowPlaying, audioPct, onResume, onDismissCL, onShareApp, t, isDesktop}) {
+export function HomeScreen({seriesList, onSeries, activePill, setActivePill, lang, setLang, discLang, setDiscLang, nowPlaying, audioPct, onResume, onDismissCL, onShareApp, savedSeries, onToggleSave, t, isDesktop}) {
   const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
@@ -67,10 +67,12 @@ export function HomeScreen({seriesList, onSeries, activePill, setActivePill, lan
           <div className="cl-card" onClick={onResume}>
             <SeriesImg series={nowPlaying.series} className="cl-art" style={{width:60,height:60,borderRadius:12,border:'1px solid var(--border)',overflow:'hidden',flexShrink:0}}/>
             <div className="cl-info">
-              <div className="cl-title">{nowPlaying.series.n}</div>
+              <div className="cl-title-row">
+                <span className="cl-title">{nowPlaying.series.n}</span>
+                <span className="cl-pct-pill">{Math.round(audioPct)}% listened</span>
+              </div>
               <div className="cl-ep">{nowPlaying.episode.t}</div>
               <div className="cl-prog"><div className="cl-prog-fill" style={{width:`${audioPct}%`}}/></div>
-              <div className="cl-pct">{Math.round(audioPct)}% listened</div>
             </div>
             <div className="cl-actions">
               <button className="cl-play" onClick={e => { e.stopPropagation(); onResume(); }}><IcoPlay s={16}/></button>
@@ -118,7 +120,13 @@ export function HomeScreen({seriesList, onSeries, activePill, setActivePill, lan
           <div className="empty-state">{t.noSeries}</div>
         ) : filtered.map(s => (
           <div key={s.i} className="series-card" onClick={() => onSeries(s)}>
-            <SeriesImg series={s} className="series-card-img"/>
+            <div className="series-card-img-wrap">
+              <SeriesImg series={s} className="series-card-img"/>
+              <button className={`save-btn${savedSeries.has(s.i)?' saved':''}`} aria-label="Save series"
+                onClick={e => { e.stopPropagation(); onToggleSave(s.i); }}>
+                <IcoHeart s={15} filled={savedSeries.has(s.i)}/>
+              </button>
+            </div>
             <div className="series-card-info">
               <div className="series-title">{s.n}</div>
               <div className="series-meta">{t.genres[s.g] || s.g}</div>
