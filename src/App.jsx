@@ -37,6 +37,17 @@ function App() {
   const sleepOptionRef = useRef('off');
   const seriesCacheRef = useRef({});
 
+  // Seeking before the browser has loaded metadata (readyState 0, common with
+  // preload="none") is silently ignored, so defer the seek until it's ready.
+  const seekWhenReady = useCallback((audio, time) => {
+    if (!audio || !(time > 0)) return;
+    if (audio.readyState >= 1) {
+      audio.currentTime = time;
+    } else {
+      audio.addEventListener('loadedmetadata', () => { audio.currentTime = time; }, { once: true });
+    }
+  }, []);
+
   const t = T[lang];
 
   // Lazy-load each discourse language's dataset only when first needed, then cache it
@@ -102,11 +113,11 @@ function App() {
         if (audioRef.current) {
           audioRef.current.src = np.episode.u;
           const t = parseFloat(localStorage.getItem('osho_time') || '0');
-          audioRef.current.currentTime = t;
+          seekWhenReady(audioRef.current, t);
         }
       }
     } catch(e) {}
-  }, []);
+  }, [seekWhenReady]);
 
   // Persist position every 5s
   useEffect(() => {
@@ -212,7 +223,7 @@ function App() {
 
   const onResume = () => {
     const saved = parseFloat(localStorage.getItem('osho_time') || '0');
-    if (audioRef.current && saved > 0) audioRef.current.currentTime = saved;
+    seekWhenReady(audioRef.current, saved);
     setPO(true);
     if (audioRef.current) audioRef.current.play().catch(() => {});
   };
