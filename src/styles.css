@@ -10,7 +10,7 @@
 @font-face{font-family:'Hind Siliguri';src:url('/fonts/HindSiliguri-Bold.ttf') format('truetype');font-weight:700;font-style:normal;font-display:swap;}
 
 :root{
-  --bg:#F1EBDA;--surface:#FFFDF7;--icon-surface:#DCE6D9;
+  --bg:#F4F4F1;--surface:#FFFFFF;--icon-surface:#DCE6D9;
   --ink:#1E2A20;--text:#1E2A20;--text2:#4C5A45;--muted:#7C8A70;
   --accent:#26402E;--accent2:#6E9268;--accent-dim:rgba(38,64,46,0.10);
   --gold:#B8935A;--toast-bg:#1E2A20;
@@ -219,7 +219,7 @@ body{font-family:var(--font);}
 @keyframes wv{from{height:3px;}to{height:13px;}}
 
 /* Mini player */
-.np{background:rgba(255,253,247,0.94);border-top:1px solid var(--border);z-index:50;cursor:pointer;transition:opacity 0.3s,transform 0.3s;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);position:fixed;bottom:0;left:0;right:0;}
+.np{background:rgba(255,255,255,0.94);border-top:1px solid var(--border);z-index:50;cursor:pointer;transition:opacity 0.3s,transform 0.3s;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);position:fixed;bottom:0;left:0;right:0;}
 .np.gone{opacity:0;transform:translateY(100%);pointer-events:none;}
 @media(min-width:900px){
   .np{position:static;grid-area:player;transform:none!important;opacity:1!important;pointer-events:auto!important;}
@@ -302,7 +302,7 @@ body{font-family:var(--font);}
 .toast.show{opacity:1;}
 
 /* ── Loading screen ── */
-#loader{position:fixed;inset:0;background:#F1EBDA;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity 0.6s ease;}
+#loader{position:fixed;inset:0;background:#F4F4F1;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity 0.6s ease;}
 #loader.fade{opacity:0;pointer-events:none;}
 .loader-wm{font-family:'Instrument Sans',system-ui,sans-serif;font-size:36px;font-weight:700;color:#1E2A20;margin-bottom:10px;letter-spacing:-0.5px;}
 .loader-wm em{font-style:normal;color:#26402E;}
@@ -311,6 +311,6 @@ body{font-family:var(--font);}
 @keyframes spin{to{transform:rotate(360deg);}}
 
 /* ── Audio buffering overlay ── */
-.buf-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(241,235,218,0.65);backdrop-filter:blur(3px);border-radius:inherit;z-index:2;}
+.buf-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(244,244,241,0.65);backdrop-filter:blur(3px);border-radius:inherit;z-index:2;}
 .buf-ring{width:30px;height:30px;border:2.5px solid rgba(38,64,46,0.18);border-top-color:#26402E;border-radius:50%;animation:spin 0.85s linear infinite;}
 .np-buf{width:18px;height:18px;border:2px solid rgba(38,64,46,0.18);border-top-color:#26402E;border-radius:50%;animation:spin 0.85s linear infinite;flex-shrink:0;}
