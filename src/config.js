@@ -6,12 +6,12 @@ export const T = {
   bn:{search:'সিরিজ খুঁজুন…',continueListening:'শোনা চালিয়ে যান',exploreTopic:'বিষয় অনুযায়ী',allSeries:'সব সিরিজ',all:'সব',episodes:n=>`${n} টি`,searchEp:'প্রবচন খুঁজুন…',nowPlaying:'এখন বাজছে',back:'সিরিজ',left:'বাকি',discEn:'ইংরেজি',discHi:'হিন্দি',discourseLang:'প্রবচন ভাষা',noSeries:'আপনার ফিল্টারের সাথে কোনো সিরিজ মেলেনি।',noEpisodes:'আপনার খোঁজার সাথে কোনো আলোচনা মেলেনি।',linkCopied:'লিঙ্ক কপি হয়েছে',footerNote:'সমগ্র সম্প্রদায়ের জন্য নিঃখরচায় উপলব্ধ — সবসময় বিনামূল্যে।',footerAttribution:'অডিও এবং ছবি ওশোর সর্বজনীন আর্কাইভ থেকে নেওয়া।',genres:{zen:'জেন',meditation:'ধ্যান',tantra:'তন্ত্র',sufism:'সুফিবাদ',yoga:'যোগ',buddha:'বুদ্ধ',kabir:'কবির',tao:'তাও',upanishads:'উপনিষদ',western:'পশ্চিমা রহস্যবাদ',baul:'বাউল সাধক',jewish:'ইহুদি রহস্যবাদ',jesus:'যিশু',responses:'প্রশ্নোত্তর',talks:'আলোচনা',misc:'অন্যান্য'}},
 };
 
-/* ── Genre colours (flat muted tones for light theme) ── */
+/* ── Genre colours (warm neutral/rose tones, no green) ── */
 export const GENRE_COLORS = {
-  zen:'#B8C8B8',meditation:'#B0C4B0',tantra:'#C8B0B0',sufism:'#B8B0C8',
-  yoga:'#A8C0C0',buddha:'#C8C0A0',kabir:'#C0B0C0',tao:'#A8C4BC',
-  upanishads:'#C8B888',western:'#B8B8B8',baul:'#C4A8B4',jewish:'#B0C8B8',
-  jesus:'#C8BEB0',responses:'#B4C8C4',talks:'#BEB8C8',misc:'#C0BEB8',
+  zen:'#C9BDBA',meditation:'#D3C0BD',tantra:'#C8AFAF',sufism:'#BFAEB8',
+  yoga:'#B9AEA6',buddha:'#CBBFA0',kabir:'#C2AFBA',tao:'#B6A9A3',
+  upanishads:'#CBB98A',western:'#BDB6B2',baul:'#C7A6AE',jewish:'#BDB0AC',
+  jesus:'#CBBEB2',responses:'#BBADA9',talks:'#BFB4BC',misc:'#C2BAB4',
 };
 
 export const GENRE_LIST = ['all','zen','meditation','tantra','sufism','yoga','buddha','kabir','tao','upanishads','western','baul','jewish','jesus','talks','responses'];
