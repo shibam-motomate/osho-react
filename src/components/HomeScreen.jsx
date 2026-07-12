@@ -87,9 +87,9 @@ export function HomeScreen({seriesList, onSeries, activePill, setActivePill, lan
               <div key={g} className="genre-tile" onClick={() => setActivePill(g)}>
                 <div className={`genre-sq ${activePill===g?'active-genre':''}`} style={{background: GENRE_COLORS[g] || '#C0B8B0'}}>
                   <svg width="72" height="72" viewBox="0 0 80 80" style={{display:'block'}}>
-                    <circle cx="40" cy="32" r="14" fill="rgba(30,42,32,0.16)"/>
-                    <circle cx="40" cy="32" r="7" fill="rgba(30,42,32,0.30)"/>
-                    <rect x="18" y="54" width="44" height="3" rx="1.5" fill="rgba(30,42,32,0.20)"/>
+                    <circle cx="40" cy="32" r="14" fill="rgba(32,19,23,0.16)"/>
+                    <circle cx="40" cy="32" r="7" fill="rgba(32,19,23,0.30)"/>
+                    <rect x="18" y="54" width="44" height="3" rx="1.5" fill="rgba(32,19,23,0.20)"/>
                   </svg>
                 </div>
                 <div className="genre-lbl">{t.genres[g] || g}</div>
