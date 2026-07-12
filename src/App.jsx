@@ -19,7 +19,9 @@ function App() {
   const [clDismissed, setCLD]       = useState(false);
   const [audioPct,    setAudioPct]  = useState(0);
   const [isDesktop,   setIsDesktop] = useState(() => window.innerWidth >= 900);
+  const [toast,       setToast]     = useState(null);
   const audioRef = useRef(null);
+  const toastTimer = useRef(null);
 
   const t = T[lang];
   const seriesList = useMemo(() => OSHO_DATA[discLang] || OSHO_DATA.en, [discLang]);
@@ -139,24 +141,42 @@ function App() {
     if (audioRef.current) audioRef.current.play().catch(() => {});
   };
 
+  const showToast = useCallback(msg => {
+    setToast(msg);
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 2200);
+  }, []);
+
+  const shareApp = useCallback(() => {
+    const url = window.location.href;
+    if (navigator.share) {
+      navigator.share({title: 'Osho Discourses', url}).catch(() => {});
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(() => showToast(t.linkCopied)).catch(() => showToast(t.linkCopied));
+    } else {
+      showToast(t.linkCopied);
+    }
+  }, [t, showToast]);
+
   const appFont = lang === 'hi' ? 'var(--font-hi)' : lang === 'bn' ? 'var(--font-bn)' : 'var(--font)';
   const homeClass  = `screen${!isDesktop ? (screen !== 'home'   ? ' behind' : '') : ''} ${isDesktop && screen === 'home'   ? 'desk-show' : ''}`;
   const serClass   = `screen${!isDesktop ? (screen !== 'series' ? ' hidden' : '') : ''} ${isDesktop && screen === 'series' ? 'desk-show' : ''}`;
 
   return (
-    <div id="app" style={{fontFamily:appFont,height:'100vh'}}>
+    <div id="app" className={playerOpen ? 'player-open' : ''} style={{fontFamily:appFont,height:'100vh'}}>
       <audio ref={audioRef} preload="none" style={{display:'none'}}/>
-      <Sidebar lang={lang} setLang={setLang} discLang={discLang} setDiscLang={setDiscLang} activePill={activePill} setActivePill={setPill} t={t} seriesList={seriesList}/>
+      <Sidebar discLang={discLang} setDiscLang={setDiscLang} activePill={activePill} setActivePill={setPill} t={t} seriesList={seriesList}/>
       <div className="main">
         <div className={homeClass}>
-          <HomeScreen seriesList={seriesList} onSeries={s => { setSelSeries(s); setScreen('series'); }} activePill={activePill} setActivePill={setPill} lang={lang} setLang={setLang} discLang={discLang} setDiscLang={setDiscLang} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} t={t} isDesktop={isDesktop}/>
+          <HomeScreen seriesList={seriesList} onSeries={s => { setSelSeries(s); setScreen('series'); }} activePill={activePill} setActivePill={setPill} lang={lang} setLang={setLang} discLang={discLang} setDiscLang={setDiscLang} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} onShareApp={shareApp} t={t} isDesktop={isDesktop}/>
         </div>
         <div className={serClass}>
           {selSeries && <SeriesScreen series={selSeries} onBack={() => setScreen('home')} onEpisode={ep => { playEp(selSeries, ep); setPO(true); }} currentEp={nowPlaying?.series?.i === selSeries?.i ? nowPlaying?.episode : null} t={t}/>}
         </div>
       </div>
-      <MiniPlayer nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} onOpen={() => setPO(true)} audioRef={audioRef}/>
-      <FullPlayer open={playerOpen} onClose={() => setPO(false)} nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} audioRef={audioRef} onPrev={onPrev} onNext={onNext} onSeekSeconds={onSeekSeconds} t={t}/>
+      <MiniPlayer nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} onPrev={onPrev} onNext={onNext} onOpen={() => setPO(true)} audioRef={audioRef}/>
+      <FullPlayer open={playerOpen} onClose={() => setPO(false)} nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} audioRef={audioRef} onPrev={onPrev} onNext={onNext} onSeekSeconds={onSeekSeconds} t={t} isDesktop={isDesktop}/>
+      <div className={`toast${toast?' show':''}`}>{toast}</div>
     </div>
   );
 }

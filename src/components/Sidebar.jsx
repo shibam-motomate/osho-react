@@ -1,10 +1,9 @@
 import { useMemo } from 'react';
 import { OSHO_DATA } from '../data/oshoData.js';
 import { GENRE_COLORS, GENRE_LIST } from '../config.js';
-import { LangDropdown } from './LanguageControls.jsx';
 
 /* ── Sidebar ── */
-export function Sidebar({lang, setLang, discLang, setDiscLang, activePill, setActivePill, t, seriesList}) {
+export function Sidebar({discLang, setDiscLang, activePill, setActivePill, t, seriesList}) {
   const genres = useMemo(() => {
     const seen = new Set();
     seriesList.forEach(s => seen.add(s.g));
@@ -18,7 +17,7 @@ export function Sidebar({lang, setLang, discLang, setDiscLang, activePill, setAc
         <div className="wordmark-sub">Discourses</div>
       </div>
       <div className="sb-sec">
-        <div className="sb-lbl">Discourse Language</div>
+        <div className="sb-lbl">{t.discourseLang}</div>
         <div className="sb-disc">
           <button className={`sb-disc-btn ${discLang==='en'?'active':''}`} onClick={() => setDiscLang('en')}>
             {t.discEn}<span style={{fontSize:10,opacity:0.7,marginLeft:4}}>· {OSHO_DATA.en.reduce((a,s)=>a+s.e.length,0)}</span>
@@ -27,10 +26,6 @@ export function Sidebar({lang, setLang, discLang, setDiscLang, activePill, setAc
             {t.discHi}<span style={{fontSize:10,opacity:0.7,marginLeft:4}}>· {OSHO_DATA.hi.reduce((a,s)=>a+s.e.length,0)}</span>
           </button>
         </div>
-      </div>
-      <div className="sb-sec">
-        <div className="sb-lbl">Interface Language</div>
-        <LangDropdown lang={lang} setLang={setLang}/>
       </div>
       <div className="sb-sec" style={{flex:1}}>
         <div className="sb-lbl">{t.exploreTopic}</div>
