@@ -1,7 +1,8 @@
 // Usage: node export-episodes.mjs <series-id|--all> [en|hi]
 // Writes manifest.json: a flat list of {seriesId, seriesName, episodeIndex, title, url, duration, lang}
 import { writeFileSync } from 'fs';
-import { OSHO_DATA } from '../../src/data/oshoData.js';
+import { OSHO_DATA_EN } from '../../src/data/oshoData.en.js';
+import { OSHO_DATA_HI } from '../../src/data/oshoData.hi.js';
 
 const seriesId = process.argv[2];
 const lang = process.argv[3] || 'en';
@@ -11,7 +12,7 @@ if (!seriesId) {
   process.exit(1);
 }
 
-const pool = OSHO_DATA[lang] || OSHO_DATA.en;
+const pool = lang === 'hi' ? OSHO_DATA_HI : OSHO_DATA_EN;
 const series = seriesId === '--all' ? pool : pool.filter(s => s.i === seriesId);
 
 if (!series.length) {
