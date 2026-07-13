@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { T } from './config.js';
+import { AccountScreen } from './components/AccountScreen.jsx';
 import { AuthScreen } from './components/AuthScreen.jsx';
 import { FullPlayer } from './components/FullPlayer.jsx';
 import { HistoryScreen } from './components/HistoryScreen.jsx';
@@ -402,13 +403,14 @@ function App() {
   const serClass   = `screen${!isDesktop ? (screen !== 'series'  ? ' hidden' : '') : ''} ${isDesktop && screen === 'series'  ? 'desk-show' : ''}`;
   const savedClass = `screen${!isDesktop ? (screen !== 'saved'   ? ' hidden' : '') : ''} ${isDesktop && screen === 'saved'   ? 'desk-show' : ''}`;
   const histClass  = `screen${!isDesktop ? (screen !== 'history' ? ' hidden' : '') : ''} ${isDesktop && screen === 'history' ? 'desk-show' : ''}`;
+  const acctClass  = `screen${!isDesktop ? (screen !== 'account' ? ' hidden' : '') : ''} ${isDesktop && screen === 'account' ? 'desk-show' : ''}`;
 
   return (
     <div id="app" className={playerOpen ? 'player-open' : ''} style={{fontFamily:appFont,height:'100vh'}}>
       <audio ref={audioRef} preload="none" style={{display:'none'}}/>
       <Sidebar mode={sidebarMode} onLogoClick={goHome} discLang={discLang} setDiscLang={setDiscLang} activePill={activePill} setActivePill={setPill} t={t} seriesList={seriesList}
-        user={user} lang={lang} setLang={setLang} onSignOut={signOut}
-        onOpenSaved={() => setScreen('saved')} onOpenHistory={() => setScreen('history')}/>
+        user={user} onSignOut={signOut}
+        onOpenAccount={() => setScreen('account')} onOpenSaved={() => setScreen('saved')} onOpenHistory={() => setScreen('history')}/>
       <div className="main">
         <div className={homeClass}>
           <HomeScreen seriesList={seriesList} dataLoading={dataLoading} onSeries={s => { setSelSeries(s); setScreen('series'); }} activePill={activePill} setActivePill={setPill} discLang={discLang} setDiscLang={setDiscLang} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} onShareApp={shareApp} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} t={t} isDesktop={isDesktop} user={user}
@@ -426,6 +428,9 @@ function App() {
         </div>
         <div className={histClass}>
           <HistoryScreen onBack={() => { setSidebarMode('profile'); setScreen('home'); }} history={history} onPlayEntry={playEntry}/>
+        </div>
+        <div className={acctClass}>
+          <AccountScreen onBack={() => { setSidebarMode('profile'); setScreen('home'); }} lang={lang} setLang={setLang}/>
         </div>
       </div>
       <MiniPlayer nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} onPrev={onPrev} onNext={onNext} onOpen={() => setPO(true)} audioRef={audioRef}/>

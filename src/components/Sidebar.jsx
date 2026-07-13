@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
-import { EPISODE_COUNTS, GENRE_COLORS, GENRE_LIST, LANGS } from '../config.js';
-import { IcoClock, IcoHeart, IcoLogOut } from './Icons.jsx';
+import { EPISODE_COUNTS, GENRE_COLORS, GENRE_LIST } from '../config.js';
+import { IcoClock, IcoHeart, IcoLogOut, IcoUser } from './Icons.jsx';
 
-/* ── Sidebar: Browse (genre/language) or Profile (account) panel ── */
-export function Sidebar({mode, onLogoClick, discLang, setDiscLang, activePill, setActivePill, t, seriesList, user, lang, setLang, onSignOut, onOpenSaved, onOpenHistory}) {
+/* ── Sidebar: Browse (genre/language) or Profile (menu) panel ── */
+export function Sidebar({mode, onLogoClick, discLang, setDiscLang, activePill, setActivePill, t, seriesList, user, onSignOut, onOpenAccount, onOpenSaved, onOpenHistory}) {
   const genres = useMemo(() => {
     const seen = new Set();
     seriesList.forEach(s => seen.add(s.g));
@@ -19,25 +19,8 @@ export function Sidebar({mode, onLogoClick, discLang, setDiscLang, activePill, s
 
       {mode === 'profile' ? (
         <>
-          <div className="sb-sec">
-            {user ? (
-              <div className="sb-profile-id">
-                <div className="acc-avatar" style={{width:38,height:38,fontSize:15}}>{user.email[0].toUpperCase()}</div>
-                <div className="sb-profile-email">{user.email}</div>
-              </div>
-            ) : (
-              <div className="sb-lbl">Not logged in</div>
-            )}
-          </div>
-          <div className="sb-sec">
-            <div className="sb-lbl">UI Language</div>
-            <div className="sb-disc">
-              {Object.entries(LANGS).map(([k, v]) => (
-                <button key={k} className={`sb-disc-btn ${lang===k?'active':''}`} onClick={() => setLang(k)}>{v}</button>
-              ))}
-            </div>
-          </div>
           <div className="sb-nav">
+            <button className="sb-nav-item" onClick={onOpenAccount}><IcoUser s={17}/><span>Account</span></button>
             <button className="sb-nav-item" onClick={onOpenSaved}><IcoHeart s={17}/><span>Saved</span></button>
             <button className="sb-nav-item" onClick={onOpenHistory}><IcoClock s={17}/><span>History</span></button>
           </div>

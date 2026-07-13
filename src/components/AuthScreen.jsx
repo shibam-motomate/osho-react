@@ -6,6 +6,7 @@ import { IcoX } from './Icons.jsx';
 export function AuthScreen({onClose}) {
   const {signIn, signUp} = useAuth();
   const [mode, setMode] = useState('login'); // 'login' | 'signup'
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -19,7 +20,7 @@ export function AuthScreen({onClose}) {
     setBusy(true);
     const {error: err} = mode === 'login'
       ? await signIn(email, password)
-      : await signUp(email, password);
+      : await signUp(email, password, name.trim());
     setBusy(false);
     if (err) {
       setError(err.message);
@@ -41,6 +42,10 @@ export function AuthScreen({onClose}) {
         <div className="auth-sub">{mode === 'login' ? 'Sync your saved series across devices.' : 'Save your favorite series to your account.'}</div>
 
         <form className="auth-form" onSubmit={submit}>
+          {mode === 'signup' && (
+            <input type="text" placeholder="Name" value={name} autoComplete="name"
+                   onChange={e => setName(e.target.value)}/>
+          )}
           <input type="email" placeholder="Email" value={email} autoComplete="email"
                  onChange={e => setEmail(e.target.value)} required/>
           <input type="password" placeholder="Password" value={password} autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
