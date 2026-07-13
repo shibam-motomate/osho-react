@@ -66,17 +66,21 @@ function App() {
   const seriesCacheRef = useRef({});
 
   const sidebarMode = PROFILE_SCREENS.includes(screen) ? 'profile' : 'browse';
+  // Which tab screen Series was pushed from, so only that one dims/parallax-shifts
+  // behind it (iOS push-navigation feel) — the other tabs stay put, untouched.
+  const [pushedFrom, setPushedFrom] = useState('home');
 
   // Real URL navigation — pushes browser history so back/forward and
   // shareable links work, instead of just swapping in-memory screen state.
   const navigate = useCallback((nextScreen, series = null) => {
+    if (nextScreen === 'series' && screen !== 'series') setPushedFrom(screen);
     setScreen(nextScreen);
     if (nextScreen === 'series' && series) setSelSeries(series);
     else if (nextScreen === 'home') setSelSeries(null);
     const path = nextScreen === 'series' ? `/series/${encodeURIComponent(series.i)}`
       : nextScreen === 'home' ? '/' : `/${nextScreen}`;
     if (window.location.pathname !== path) window.history.pushState({}, '', path);
-  }, []);
+  }, [screen]);
 
   const resolveSeriesById = useCallback(async id => {
     for (const l of ['en', 'hi']) {
@@ -511,11 +515,21 @@ function App() {
   const savedEpisodeUrls = useMemo(() => new Set(savedEpisodes.map(e => e.episodeUrl)), [savedEpisodes]);
 
   const appFont = lang === 'hi' ? 'var(--font-hi)' : lang === 'bn' ? 'var(--font-bn)' : 'var(--font)';
-  const homeClass  = `screen${!isDesktop ? (screen !== 'home'    ? ' behind' : '') : ''} ${isDesktop && screen === 'home'    ? 'desk-show' : ''}`;
-  const serClass   = `screen${!isDesktop ? (screen !== 'series'  ? ' hidden' : '') : ''} ${isDesktop && screen === 'series'  ? 'desk-show' : ''}`;
-  const savedClass = `screen${!isDesktop ? (screen !== 'saved'   ? ' hidden' : '') : ''} ${isDesktop && screen === 'saved'   ? 'desk-show' : ''}`;
-  const histClass  = `screen${!isDesktop ? (screen !== 'history' ? ' hidden' : '') : ''} ${isDesktop && screen === 'history' ? 'desk-show' : ''}`;
-  const acctClass  = `screen${!isDesktop ? (screen !== 'account' ? ' hidden' : '') : ''} ${isDesktop && screen === 'account' ? 'desk-show' : ''}`;
+  // Tab screens (Home/Saved/History/Account) switch with a quick cross-fade — no
+  // horizontal slide — matching how a native iOS tab bar swaps content. Series is the
+  // one "pushed" detail view, which keeps the slide-in-from-right + dim-the-origin-tab feel.
+  const tabClass = name => {
+    const base = 'screen tab-screen';
+    if (isDesktop) return `${base} ${screen === name ? 'desk-show' : ''}`;
+    if (screen === name) return base;
+    if (screen === 'series' && pushedFrom === name) return `${base} behind`;
+    return `${base} tab-hidden`;
+  };
+  const homeClass  = tabClass('home');
+  const savedClass = tabClass('saved');
+  const histClass  = tabClass('history');
+  const acctClass  = tabClass('account');
+  const serClass   = `screen${!isDesktop ? (screen !== 'series' ? ' hidden' : '') : ''} ${isDesktop && screen === 'series' ? 'desk-show' : ''}`;
 
   return (
     <div id="app" className={playerOpen ? 'player-open' : ''} style={{fontFamily:appFont,height:'100vh'}}>

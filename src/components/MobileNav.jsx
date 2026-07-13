@@ -5,7 +5,7 @@ export function MobileNav({active, onBrowse, onSaved, onHistory, onAccount}) {
   return (
     <nav className="mnav">
       <button className={`mnav-item${active==='home'?' active':''}`} onClick={onBrowse}>
-        <IcoHome s={21}/><span>Browse</span>
+        <IcoHome s={21}/><span>Discourses</span>
       </button>
       <button className={`mnav-item${active==='saved'?' active':''}`} onClick={onSaved}>
         <IcoHeart s={20}/><span>Saved</span>

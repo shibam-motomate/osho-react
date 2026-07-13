@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { GENRE_COLORS, GENRE_LIST } from '../config.js';
-import { IcoPlay, IcoSearch, IcoShare, IcoX } from './Icons.jsx';
+import { IcoSearch, IcoShare, IcoX } from './Icons.jsx';
 import { ProfileMenu } from './ProfileMenu.jsx';
 import { SeriesCard } from './SeriesCard.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
@@ -30,14 +30,11 @@ export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setAc
       <div className="topbar">
         <div className="topbar-wm">Osho<em>·</em></div>
         <div className="topbar-right">
+          <div className="mob-disc">
+            <button className={`mob-disc-btn ${discLang==='en'?'active':''}`} onClick={() => setDiscLang('en')}>{t.discEn}</button>
+            <button className={`mob-disc-btn ${discLang==='hi'?'active':''}`} onClick={() => setDiscLang('hi')}>{t.discHi}</button>
+          </div>
           <button className="icon-btn" aria-label="Share" onClick={onShareApp}><IcoShare/></button>
-        </div>
-      </div>
-      <div className="mob-disc-row">
-        <span className="mob-disc-lbl">{t.discourseLang}</span>
-        <div className="mob-disc">
-          <button className={`mob-disc-btn ${discLang==='en'?'active':''}`} onClick={() => setDiscLang('en')}>{t.discEn}</button>
-          <button className={`mob-disc-btn ${discLang==='hi'?'active':''}`} onClick={() => setDiscLang('hi')}>{t.discHi}</button>
         </div>
       </div>
 
@@ -74,7 +71,6 @@ export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setAc
               <div className="cl-prog"><div className="cl-prog-fill" style={{width:`${audioPct}%`}}/></div>
             </div>
             <div className="cl-actions">
-              <button className="cl-play" onClick={e => { e.stopPropagation(); onResume(); }}><IcoPlay s={16}/></button>
               <button className="cl-close" onClick={e => { e.stopPropagation(); onDismissCL(); }}><IcoX/></button>
             </div>
           </div>
