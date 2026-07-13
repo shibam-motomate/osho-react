@@ -18,6 +18,15 @@ const HISTORY_LIMIT = 60;
 
 const PROFILE_SCREENS = ['saved', 'history', 'account'];
 
+// Supabase writes below are fire-and-forget (state is already updated locally/optimistically),
+// but silently swallowing errors makes sync failures invisible — surface them in the console.
+// Two-arg .then() form so both a resolved {error} and an outright rejected promise (e.g. a
+// network failure) get logged instead of one of them vanishing silently.
+const logSupaError = label => [
+  result => { if (result?.error) console.error(`[supabase] ${label}:`, result.error); },
+  err => console.error(`[supabase] ${label} (request failed):`, err),
+];
+
 function App() {
   const {user, authLoading, signOut} = useAuth();
   const [showAuth, setShowAuth] = useState(false);
@@ -256,9 +265,15 @@ function App() {
       const entry = {seriesId: series.i, seriesName: series.n, episodeUrl: episode.u, episodeTitle: episode.t, discLang, playedAt: Date.now()};
       const next = [entry, ...prev.filter(h => h.episodeUrl !== episode.u)].slice(0, HISTORY_LIMIT);
       try { localStorage.setItem('osho_history', JSON.stringify(next)); } catch(e) {}
+      if (supabaseEnabled && user) {
+        supabase.from('listening_history').upsert({
+          user_id: user.id, series_id: series.i, series_name: series.n,
+          episode_url: episode.u, episode_title: episode.t, disc_lang: discLang, played_at: new Date(entry.playedAt).toISOString(),
+        }, {onConflict: 'user_id,episode_url'}).then(...logSupaError('save history entry'));
+      }
       return next;
     });
-  }, [discLang]);
+  }, [discLang, user]);
 
   // Shared resolver for anything stored as {seriesId, episodeUrl, discLang} —
   // history entries and saved episodes both use this shape.
@@ -355,9 +370,9 @@ function App() {
       try { localStorage.setItem('osho_saved_series', JSON.stringify(Array.from(next))); } catch(e) {}
       if (supabaseEnabled && user) {
         if (willSave) {
-          supabase.from('saved_series').upsert({user_id: user.id, series_id: id}, {onConflict: 'user_id,series_id'});
+          supabase.from('saved_series').upsert({user_id: user.id, series_id: id}, {onConflict: 'user_id,series_id'}).then(...logSupaError('save series'));
         } else {
-          supabase.from('saved_series').delete().eq('user_id', user.id).eq('series_id', id);
+          supabase.from('saved_series').delete().eq('user_id', user.id).eq('series_id', id).then(...logSupaError('unsave series'));
         }
       }
       return next;
@@ -371,13 +386,14 @@ function App() {
     let cancelled = false;
     (async () => {
       const {data, error} = await supabase.from('saved_series').select('series_id').eq('user_id', user.id);
+      if (error) console.error('[supabase] fetch saved series:', error);
       if (cancelled || error) return;
       const remoteIds = new Set((data || []).map(r => r.series_id));
       setSavedSeries(prev => {
         const toPush = Array.from(prev).filter(id => !remoteIds.has(id));
         if (toPush.length) {
           supabase.from('saved_series')
-            .upsert(toPush.map(series_id => ({user_id: user.id, series_id})), {onConflict: 'user_id,series_id'});
+            .upsert(toPush.map(series_id => ({user_id: user.id, series_id})), {onConflict: 'user_id,series_id'}).then(...logSupaError('push local saved series'));
         }
         const merged = new Set([...prev, ...remoteIds]);
         try { localStorage.setItem('osho_saved_series', JSON.stringify(Array.from(merged))); } catch(e) {}
@@ -399,9 +415,9 @@ function App() {
           supabase.from('saved_episodes').upsert({
             user_id: user.id, series_id: series.i, series_name: series.n,
             episode_url: episode.u, episode_title: episode.t, duration: episode.d, disc_lang: discLang,
-          }, {onConflict: 'user_id,episode_url'});
+          }, {onConflict: 'user_id,episode_url'}).then(...logSupaError('save episode'));
         } else {
-          supabase.from('saved_episodes').delete().eq('user_id', user.id).eq('episode_url', episode.u);
+          supabase.from('saved_episodes').delete().eq('user_id', user.id).eq('episode_url', episode.u).then(...logSupaError('unsave episode'));
         }
       }
       return next;
@@ -414,6 +430,7 @@ function App() {
     let cancelled = false;
     (async () => {
       const {data, error} = await supabase.from('saved_episodes').select('*').eq('user_id', user.id);
+      if (error) console.error('[supabase] fetch saved episodes:', error);
       if (cancelled || error) return;
       const remote = (data || []).map(r => ({seriesId: r.series_id, seriesName: r.series_name, episodeUrl: r.episode_url, episodeTitle: r.episode_title, duration: r.duration, discLang: r.disc_lang}));
       const remoteUrls = new Set(remote.map(r => r.episodeUrl));
@@ -423,10 +440,42 @@ function App() {
           supabase.from('saved_episodes').upsert(toPush.map(e => ({
             user_id: user.id, series_id: e.seriesId, series_name: e.seriesName,
             episode_url: e.episodeUrl, episode_title: e.episodeTitle, duration: e.duration, disc_lang: e.discLang,
-          })), {onConflict: 'user_id,episode_url'});
+          })), {onConflict: 'user_id,episode_url'}).then(...logSupaError('push local saved episodes'));
         }
         const merged = [...toPush, ...remote];
         try { localStorage.setItem('osho_saved_episodes', JSON.stringify(merged)); } catch(e) {}
+        return merged;
+      });
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
+  // On login, merge the account's listening history with whatever is local, keeping
+  // the most recent playedAt per episode, then push any local-only entries up.
+  useEffect(() => {
+    if (!supabaseEnabled || !user) return;
+    let cancelled = false;
+    (async () => {
+      const {data, error} = await supabase.from('listening_history').select('*').eq('user_id', user.id);
+      if (error) console.error('[supabase] fetch history:', error);
+      if (cancelled || error) return;
+      const remote = (data || []).map(r => ({seriesId: r.series_id, seriesName: r.series_name, episodeUrl: r.episode_url, episodeTitle: r.episode_title, discLang: r.disc_lang, playedAt: new Date(r.played_at).getTime()}));
+      setHistory(prev => {
+        const byUrl = new Map();
+        for (const h of [...prev, ...remote]) {
+          const existing = byUrl.get(h.episodeUrl);
+          if (!existing || h.playedAt > existing.playedAt) byUrl.set(h.episodeUrl, h);
+        }
+        const merged = Array.from(byUrl.values()).sort((a, b) => b.playedAt - a.playedAt).slice(0, HISTORY_LIMIT);
+        const remoteUrls = new Set(remote.map(r => r.episodeUrl));
+        const toPush = merged.filter(h => !remoteUrls.has(h.episodeUrl));
+        if (toPush.length) {
+          supabase.from('listening_history').upsert(toPush.map(h => ({
+            user_id: user.id, series_id: h.seriesId, series_name: h.seriesName,
+            episode_url: h.episodeUrl, episode_title: h.episodeTitle, disc_lang: h.discLang, played_at: new Date(h.playedAt).toISOString(),
+          })), {onConflict: 'user_id,episode_url'}).then(...logSupaError('push local history'));
+        }
+        try { localStorage.setItem('osho_history', JSON.stringify(merged)); } catch(e) {}
         return merged;
       });
     })();
@@ -446,12 +495,18 @@ function App() {
       try { localStorage.setItem('osho_history', JSON.stringify(next)); } catch(e) {}
       return next;
     });
-  }, []);
+    if (supabaseEnabled && user) {
+      supabase.from('listening_history').delete().eq('user_id', user.id).eq('episode_url', episodeUrl).then(...logSupaError('remove history entry'));
+    }
+  }, [user]);
 
   const clearHistory = useCallback(() => {
     setHistory([]);
     try { localStorage.setItem('osho_history', '[]'); } catch(e) {}
-  }, []);
+    if (supabaseEnabled && user) {
+      supabase.from('listening_history').delete().eq('user_id', user.id).then(...logSupaError('clear history'));
+    }
+  }, [user]);
 
   const savedEpisodeUrls = useMemo(() => new Set(savedEpisodes.map(e => e.episodeUrl)), [savedEpisodes]);
 
