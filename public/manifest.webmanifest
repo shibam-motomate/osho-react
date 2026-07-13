@@ -1,0 +1,14 @@
+{
+  "name": "Osho Discourses",
+  "short_name": "Osho",
+  "description": "Free Osho audio discourses",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F4F4F1",
+  "theme_color": "#7A1F2E",
+  "icons": [
+    {"src": "/icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "/icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
