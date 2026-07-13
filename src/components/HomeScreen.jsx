@@ -26,12 +26,11 @@ export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setAc
 
   return (
     <>
-      {/* Mobile topbar */}
+      {/* Mobile topbar — navigation lives in the bottom tab bar on mobile */}
       <div className="topbar">
         <div className="topbar-wm">Osho<em>·</em></div>
         <div className="topbar-right">
-          <button className="icon-btn-label" aria-label="Share" onClick={onShareApp}><IcoShare/><span>Share</span></button>
-          <ProfileMenu size={32} user={user} onSelectBrowse={onSelectBrowse} onSelectProfile={onSelectProfile} onSelectLogout={onSelectLogout}/>
+          <button className="icon-btn" aria-label="Share" onClick={onShareApp}><IcoShare/></button>
         </div>
       </div>
       <div className="mob-disc-row">

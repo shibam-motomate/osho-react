@@ -6,6 +6,7 @@ import { FullPlayer } from './components/FullPlayer.jsx';
 import { HistoryScreen } from './components/HistoryScreen.jsx';
 import { HomeScreen } from './components/HomeScreen.jsx';
 import { MiniPlayer } from './components/MiniPlayer.jsx';
+import { MobileNav } from './components/MobileNav.jsx';
 import { SavedScreen } from './components/SavedScreen.jsx';
 import { SeriesScreen } from './components/SeriesScreen.jsx';
 import { Sidebar } from './components/Sidebar.jsx';
@@ -434,6 +435,11 @@ function App() {
         </div>
       </div>
       <MiniPlayer nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} onPrev={onPrev} onNext={onNext} onOpen={() => setPO(true)} audioRef={audioRef}/>
+      <MobileNav active={screen === 'series' ? 'home' : screen}
+        onBrowse={goHome}
+        onSaved={() => { setSidebarMode('profile'); setScreen('saved'); }}
+        onHistory={() => { setSidebarMode('profile'); setScreen('history'); }}
+        onAccount={() => { if (user) { setSidebarMode('profile'); setScreen('account'); } else { setShowAuth(true); } }}/>
       <FullPlayer open={playerOpen} onClose={() => setPO(false)} nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} audioRef={audioRef} onPrev={onPrev} onNext={onNext} onSeekSeconds={onSeekSeconds} t={t} isDesktop={isDesktop}
         playbackSpeed={playbackSpeed} setPlaybackSpeed={setPlaybackSpeed}
         sleepOption={sleepOption} setSleepOption={setSleepOption} sleepRemaining={sleepRemaining}
