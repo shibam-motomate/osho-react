@@ -1,14 +1,9 @@
-import { useMemo } from 'react';
-import { EPISODE_COUNTS, GENRE_COLORS, GENRE_LIST } from '../config.js';
-import { IcoLogOut, IcoUser } from './Icons.jsx';
+import { IcoHeart, IcoHome, IcoLogOut, IcoUser } from './Icons.jsx';
 
-/* ── Sidebar ── */
-export function Sidebar({discLang, setDiscLang, activePill, setActivePill, t, seriesList, user, onOpenAccount, onSignOut}) {
-  const genres = useMemo(() => {
-    const seen = new Set();
-    seriesList.forEach(s => seen.add(s.g));
-    return GENRE_LIST.filter(g => g === 'all' || seen.has(g));
-  }, [seriesList]);
+/* ── Sidebar: app navigation ── */
+export function Sidebar({screen, setScreen, user, onOpenAuth, onSignOut}) {
+  const isActive = key => key === 'home' ? (screen === 'home' || screen === 'series') : screen === key;
+  const go = target => () => target === 'profile' && !user ? onOpenAuth() : setScreen(target);
 
   return (
     <aside className="sb">
@@ -16,35 +11,21 @@ export function Sidebar({discLang, setDiscLang, activePill, setActivePill, t, se
         <div className="wordmark">Osho<em>·</em></div>
         <div className="wordmark-sub">Discourses</div>
       </div>
-      <div className="sb-sec">
-        <div className="sb-lbl">{t.discourseLang}</div>
-        <div className="sb-disc">
-          <button className={`sb-disc-btn ${discLang==='en'?'active':''}`} onClick={() => setDiscLang('en')}>
-            {t.discEn}<span style={{fontSize:10,opacity:0.7,marginLeft:4}}>· {EPISODE_COUNTS.en}</span>
-          </button>
-          <button className={`sb-disc-btn ${discLang==='hi'?'active':''}`} onClick={() => setDiscLang('hi')}>
-            {t.discHi}<span style={{fontSize:10,opacity:0.7,marginLeft:4}}>· {EPISODE_COUNTS.hi}</span>
-          </button>
-        </div>
-      </div>
-      <div className="sb-sec" style={{flex:1}}>
-        <div className="sb-lbl">{t.exploreTopic}</div>
-        <div className="sb-genres">
-          {genres.map(g => {
-            const c = GENRE_COLORS[g] || '#C0B8B0';
-            return (
-              <div key={g} className={`sb-genre-item ${activePill===g?'active':''}`} onClick={() => setActivePill(g)}>
-                <div className="sb-genre-dot" style={{background: g==='all' ? 'var(--muted)' : c}}/>
-                <span className="sb-genre-name">{g==='all' ? t.all : (t.genres[g] || g)}</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      <nav className="sb-nav">
+        <button className={`sb-nav-item${isActive('home')?' active':''}`} onClick={go('home')}>
+          <IcoHome s={17}/><span>Browse</span>
+        </button>
+        <button className={`sb-nav-item${isActive('saved')?' active':''}`} onClick={go('saved')}>
+          <IcoHeart s={17}/><span>Saved</span>
+        </button>
+        <button className={`sb-nav-item${isActive('profile')?' active':''}`} onClick={go('profile')}>
+          <IcoUser s={17}/><span>{user ? 'Profile' : 'Log In'}</span>
+        </button>
+      </nav>
+      <div style={{flex:1}}/>
       {user && (
-        <div className="sb-account">
-          <button className="sb-account-btn" onClick={onOpenAccount}><IcoUser s={14}/><span className="sb-account-email">{user.email}</span></button>
-          <button className="sb-logout-btn" aria-label="Log Out" onClick={onSignOut}><IcoLogOut s={14}/></button>
+        <div className="sb-foot">
+          <button className="sb-logout-full" onClick={onSignOut}><IcoLogOut s={14}/><span>Log Out</span></button>
         </div>
       )}
     </aside>

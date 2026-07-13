@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import { GENRE_COLORS, GENRE_LIST } from '../config.js';
-import { IcoPlay, IcoSearch, IcoShare, IcoUser, IcoX } from './Icons.jsx';
+import { IcoHeart, IcoPlay, IcoSearch, IcoShare, IcoUser, IcoX } from './Icons.jsx';
 import { IconLangButton } from './LanguageControls.jsx';
 import { SeriesCard } from './SeriesCard.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
 
 /* ── Home Screen ── */
-export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setActivePill, lang, setLang, discLang, setDiscLang, nowPlaying, audioPct, onResume, onDismissCL, onShareApp, savedSeries, onToggleSave, t, isDesktop, user, onOpenAuth, onOpenAccount}) {
+export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setActivePill, lang, setLang, discLang, setDiscLang, nowPlaying, audioPct, onResume, onDismissCL, onShareApp, savedSeries, onToggleSave, t, isDesktop, user, onOpenAuth, onOpenAccount, onOpenSaved}) {
   const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
@@ -30,8 +30,9 @@ export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setAc
       <div className="topbar">
         <div className="topbar-wm">Osho<em>·</em></div>
         <div className="topbar-right">
-          <button className="icon-btn-label" aria-label="Share" onClick={onShareApp}><IcoShare/><span>Share</span></button>
-          <button className="icon-btn-label" aria-label="Account" onClick={user ? onOpenAccount : onOpenAuth}><IcoUser/><span>{user ? 'My Account' : 'Log In'}</span></button>
+          <button className="icon-btn" aria-label="Share" onClick={onShareApp}><IcoShare/></button>
+          <button className="icon-btn" aria-label="Saved" onClick={onOpenSaved}><IcoHeart/></button>
+          <button className="icon-btn" aria-label="Account" onClick={user ? onOpenAccount : onOpenAuth}><IcoUser/></button>
           <IconLangButton lang={lang} setLang={setLang} size={32}/>
         </div>
       </div>
@@ -48,7 +49,6 @@ export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setAc
         <h1>{t.allSeries}<span className="desk-header-count">{filtered.length} series</span></h1>
         <div className="desk-header-right">
           <button className="icon-btn-label lg" aria-label="Share" onClick={onShareApp}><IcoShare s={16}/><span>Share</span></button>
-          <button className="icon-btn-label lg" aria-label="Account" onClick={user ? onOpenAccount : onOpenAuth}><IcoUser s={16}/><span>{user ? 'My Account' : 'Log In'}</span></button>
           <IconLangButton lang={lang} setLang={setLang} size={36}/>
         </div>
       </div>
