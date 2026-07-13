@@ -26,9 +26,15 @@ export function AuthProvider({children}) {
   const signIn = (email, password) => supabaseEnabled ? supabase.auth.signInWithPassword({email, password}) : notConfigured();
   const signOut = () => supabaseEnabled ? supabase.auth.signOut() : Promise.resolve();
   const updateName = fullName => supabaseEnabled ? supabase.auth.updateUser({data: {full_name: fullName}}) : notConfigured();
+  const deleteAccount = async () => {
+    if (!supabaseEnabled) return notConfigured();
+    const {error} = await supabase.rpc('delete_own_account');
+    if (!error) await supabase.auth.signOut();
+    return {error};
+  };
 
   return (
-    <AuthContext.Provider value={{user, authLoading, signUp, signIn, signOut, updateName}}>
+    <AuthContext.Provider value={{user, authLoading, signUp, signIn, signOut, updateName, deleteAccount}}>
       {children}
     </AuthContext.Provider>
   );
