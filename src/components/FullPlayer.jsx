@@ -20,6 +20,7 @@ export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, 
   const [duration, setDuration] = useState(0);
   const [vol, setVol] = useState(80);
   const [buffering, setBuffering] = useState(false);
+  const [loadPct, setLoadPct] = useState(0);
   const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
@@ -29,12 +30,21 @@ export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, 
     const onDur     = () => setDuration(audio.duration || 0);
     const onWait    = () => setBuffering(true);
     const onReady   = () => setBuffering(false);
+    const onLoadStart = () => setLoadPct(0);
+    const onProgress = () => {
+      if (audio.duration > 0 && audio.buffered.length > 0) {
+        const end = audio.buffered.end(audio.buffered.length - 1);
+        setLoadPct(Math.min(100, Math.round((end / audio.duration) * 100)));
+      }
+    };
     audio.addEventListener('timeupdate', onTime);
     audio.addEventListener('durationchange', onDur);
     audio.addEventListener('loadedmetadata', onDur);
     audio.addEventListener('waiting', onWait);
     audio.addEventListener('canplay', onReady);
     audio.addEventListener('playing', onReady);
+    audio.addEventListener('loadstart', onLoadStart);
+    audio.addEventListener('progress', onProgress);
     return () => {
       audio.removeEventListener('timeupdate', onTime);
       audio.removeEventListener('durationchange', onDur);
@@ -42,6 +52,8 @@ export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, 
       audio.removeEventListener('waiting', onWait);
       audio.removeEventListener('canplay', onReady);
       audio.removeEventListener('playing', onReady);
+      audio.removeEventListener('loadstart', onLoadStart);
+      audio.removeEventListener('progress', onProgress);
     };
   }, [audioRef]);
 
@@ -77,6 +89,7 @@ export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, 
           {buffering && (
             <div className="buf-overlay">
               <div className="buf-ring"/>
+              {loadPct > 0 && loadPct < 100 && <div className="buf-pct">{loadPct}%</div>}
             </div>
           )}
         </div>

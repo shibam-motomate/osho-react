@@ -1,7 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { T } from './config.js';
-import { AccountScreen } from './components/AccountScreen.jsx';
-import { AuthScreen } from './components/AuthScreen.jsx';
 import { FullPlayer } from './components/FullPlayer.jsx';
 import { HistoryScreen } from './components/HistoryScreen.jsx';
 import { HomeScreen } from './components/HomeScreen.jsx';
@@ -13,6 +11,9 @@ import { Sidebar } from './components/Sidebar.jsx';
 import { Splash } from './components/Splash.jsx';
 import { useAuth } from './contexts/AuthContext.jsx';
 import { supabase, supabaseEnabled } from './lib/supabaseClient.js';
+
+const AccountScreen = lazy(() => import('./components/AccountScreen.jsx').then(m => ({default: m.AccountScreen})));
+const AuthScreen = lazy(() => import('./components/AuthScreen.jsx').then(m => ({default: m.AuthScreen})));
 
 const HISTORY_LIMIT = 60;
 
@@ -30,6 +31,7 @@ const logSupaError = label => [
 function App() {
   const {user, authLoading, signOut} = useAuth();
   const [showAuth, setShowAuth] = useState(false);
+  const visitedAccount = useRef(false);
   const [screen,      setScreen]    = useState('home');
   const [selSeries,   setSelSeries] = useState(null);
   const [lang,        setLang]      = useState('en');
@@ -66,17 +68,21 @@ function App() {
   const seriesCacheRef = useRef({});
 
   const sidebarMode = PROFILE_SCREENS.includes(screen) ? 'profile' : 'browse';
+  // Which tab screen Series was pushed from, so only that one dims/parallax-shifts
+  // behind it (iOS push-navigation feel) — the other tabs stay put, untouched.
+  const [pushedFrom, setPushedFrom] = useState('home');
 
   // Real URL navigation — pushes browser history so back/forward and
   // shareable links work, instead of just swapping in-memory screen state.
   const navigate = useCallback((nextScreen, series = null) => {
+    if (nextScreen === 'series' && screen !== 'series') setPushedFrom(screen);
     setScreen(nextScreen);
     if (nextScreen === 'series' && series) setSelSeries(series);
     else if (nextScreen === 'home') setSelSeries(null);
     const path = nextScreen === 'series' ? `/series/${encodeURIComponent(series.i)}`
       : nextScreen === 'home' ? '/' : `/${nextScreen}`;
     if (window.location.pathname !== path) window.history.pushState({}, '', path);
-  }, []);
+  }, [screen]);
 
   const resolveSeriesById = useCallback(async id => {
     for (const l of ['en', 'hi']) {
@@ -511,11 +517,21 @@ function App() {
   const savedEpisodeUrls = useMemo(() => new Set(savedEpisodes.map(e => e.episodeUrl)), [savedEpisodes]);
 
   const appFont = lang === 'hi' ? 'var(--font-hi)' : lang === 'bn' ? 'var(--font-bn)' : 'var(--font)';
-  const homeClass  = `screen${!isDesktop ? (screen !== 'home'    ? ' behind' : '') : ''} ${isDesktop && screen === 'home'    ? 'desk-show' : ''}`;
-  const serClass   = `screen${!isDesktop ? (screen !== 'series'  ? ' hidden' : '') : ''} ${isDesktop && screen === 'series'  ? 'desk-show' : ''}`;
-  const savedClass = `screen${!isDesktop ? (screen !== 'saved'   ? ' hidden' : '') : ''} ${isDesktop && screen === 'saved'   ? 'desk-show' : ''}`;
-  const histClass  = `screen${!isDesktop ? (screen !== 'history' ? ' hidden' : '') : ''} ${isDesktop && screen === 'history' ? 'desk-show' : ''}`;
-  const acctClass  = `screen${!isDesktop ? (screen !== 'account' ? ' hidden' : '') : ''} ${isDesktop && screen === 'account' ? 'desk-show' : ''}`;
+  // Tab screens (Home/Saved/History/Account) switch with a quick cross-fade — no
+  // horizontal slide — matching how a native iOS tab bar swaps content. Series is the
+  // one "pushed" detail view, which keeps the slide-in-from-right + dim-the-origin-tab feel.
+  const tabClass = name => {
+    const base = 'screen tab-screen';
+    if (isDesktop) return `${base} ${screen === name ? 'desk-show' : ''}`;
+    if (screen === name) return base;
+    if (screen === 'series' && pushedFrom === name) return `${base} behind`;
+    return `${base} tab-hidden`;
+  };
+  const homeClass  = tabClass('home');
+  const savedClass = tabClass('saved');
+  const histClass  = tabClass('history');
+  const acctClass  = tabClass('account');
+  const serClass   = `screen${!isDesktop ? (screen !== 'series' ? ' hidden' : '') : ''} ${isDesktop && screen === 'series' ? 'desk-show' : ''}`;
 
   return (
     <div id="app" className={playerOpen ? 'player-open' : ''} style={{fontFamily:appFont,height:'100vh'}}>
@@ -542,7 +558,11 @@ function App() {
           <HistoryScreen onBack={() => navigate('home')} history={history} onPlayEntry={playEntry} onRemove={removeHistoryEntry} onClearAll={clearHistory}/>
         </div>
         <div className={acctClass}>
-          <AccountScreen onBack={() => navigate('home')} lang={lang} setLang={setLang} onAccountDeleted={() => { navigate('home'); showToast('Account deleted'); }}/>
+          {(screen === 'account' || visitedAccount.current) && (visitedAccount.current = true) && (
+            <Suspense fallback={null}>
+              <AccountScreen onBack={() => navigate('home')} lang={lang} setLang={setLang} onAccountDeleted={() => { navigate('home'); showToast('Account deleted'); }}/>
+            </Suspense>
+          )}
         </div>
       </div>
       <MiniPlayer nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} onPrev={onPrev} onNext={onNext} onOpen={() => setPO(true)} audioRef={audioRef}/>
@@ -557,7 +577,7 @@ function App() {
         episodeIndex={episodeIndex} totalEpisodes={nowPlaying?.series?.e?.length || 0} nextEpisode={nextEpisode}/>
       <div className={`toast${toast?' show':''}`}>{toast}</div>
       {showSplash && <Splash onDone={dismissSplash}/>}
-      {showAuth && <AuthScreen onClose={() => setShowAuth(false)}/>}
+      {showAuth && <Suspense fallback={null}><AuthScreen onClose={() => setShowAuth(false)}/></Suspense>}
     </div>
   );
 }
