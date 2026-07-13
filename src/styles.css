@@ -346,3 +346,22 @@ body{font-family:var(--font);}
 .splash-eyebrow{font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:30px;}
 .splash-quote{font-style:italic;font-weight:500;font-size:25px;line-height:1.55;color:#F5F1E6;}
 .splash-hint{margin-top:28px;font-size:10.5px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:rgba(245,241,230,0.5);}
+
+/* ── Auth (login/signup) overlay ── */
+.auth-scrim{position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;background:rgba(32,19,23,0.45);backdrop-filter:blur(4px);padding:20px;}
+.auth-card{position:relative;width:100%;max-width:380px;background:var(--surface);border-radius:20px;box-shadow:var(--shadow-lg);padding:32px 28px 28px;}
+.auth-close{position:absolute;top:16px;right:16px;background:none;border:none;cursor:pointer;color:var(--muted);padding:6px;display:flex;border-radius:8px;}
+.auth-close:hover{color:var(--ink);}
+.auth-title{font-size:20px;font-weight:700;color:var(--ink);margin-bottom:6px;}
+.auth-sub{font-size:13px;color:var(--text2);margin-bottom:22px;line-height:1.4;}
+.auth-form{display:flex;flex-direction:column;gap:12px;}
+.auth-form input{width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);color:var(--ink);font-family:inherit;font-size:14px;outline:none;transition:border-color 0.15s;}
+.auth-form input:focus{border-color:var(--accent);}
+.auth-error{font-size:12.5px;color:#B3261E;background:rgba(179,38,30,0.08);border-radius:8px;padding:8px 10px;line-height:1.4;}
+.auth-info{font-size:12.5px;color:var(--accent);background:var(--accent-dim);border-radius:8px;padding:8px 10px;line-height:1.4;}
+.auth-submit{margin-top:4px;padding:12px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.15s;}
+.auth-submit:disabled{opacity:0.6;cursor:default;}
+.auth-submit:not(:disabled):hover{opacity:0.92;}
+.auth-switch{margin-top:18px;text-align:center;font-size:12.5px;color:var(--text2);}
+.auth-switch button{background:none;border:none;color:var(--accent);font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;padding:0 0 0 4px;}
+.auth-switch button:hover{text-decoration:underline;}
