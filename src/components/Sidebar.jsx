@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
 import { EPISODE_COUNTS, GENRE_COLORS, GENRE_LIST } from '../config.js';
+import { IcoLogOut, IcoUser } from './Icons.jsx';
 
 /* ── Sidebar ── */
-export function Sidebar({discLang, setDiscLang, activePill, setActivePill, t, seriesList}) {
+export function Sidebar({discLang, setDiscLang, activePill, setActivePill, t, seriesList, user, onOpenAccount, onSignOut}) {
   const genres = useMemo(() => {
     const seen = new Set();
     seriesList.forEach(s => seen.add(s.g));
@@ -40,6 +41,12 @@ export function Sidebar({discLang, setDiscLang, activePill, setActivePill, t, se
           })}
         </div>
       </div>
+      {user && (
+        <div className="sb-account">
+          <button className="sb-account-btn" onClick={onOpenAccount}><IcoUser s={14}/><span className="sb-account-email">{user.email}</span></button>
+          <button className="sb-logout-btn" aria-label="Log Out" onClick={onSignOut}><IcoLogOut s={14}/></button>
+        </div>
+      )}
     </aside>
   );
 }
