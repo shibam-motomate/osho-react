@@ -1,0 +1,36 @@
+import { createContext, useContext, useEffect, useState } from 'react';
+import { supabase, supabaseEnabled } from '../lib/supabaseClient.js';
+
+const AuthContext = createContext(null);
+
+export function AuthProvider({children}) {
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(supabaseEnabled);
+
+  useEffect(() => {
+    if (!supabaseEnabled) return;
+    supabase.auth.getSession().then(({data}) => {
+      setUser(data.session?.user ?? null);
+      setAuthLoading(false);
+    });
+    const {data: sub} = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  const notConfigured = () => Promise.resolve({error: {message: 'Login is not configured for this deployment.'}});
+  const signUp = (email, password) => supabaseEnabled ? supabase.auth.signUp({email, password}) : notConfigured();
+  const signIn = (email, password) => supabaseEnabled ? supabase.auth.signInWithPassword({email, password}) : notConfigured();
+  const signOut = () => supabaseEnabled ? supabase.auth.signOut() : Promise.resolve();
+
+  return (
+    <AuthContext.Provider value={{user, authLoading, signUp, signIn, signOut}}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  return useContext(AuthContext);
+}
