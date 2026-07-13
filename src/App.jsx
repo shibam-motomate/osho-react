@@ -1,18 +1,25 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { T } from './config.js';
+import { AccountScreen } from './components/AccountScreen.jsx';
 import { AuthScreen } from './components/AuthScreen.jsx';
 import { FullPlayer } from './components/FullPlayer.jsx';
+import { HistoryScreen } from './components/HistoryScreen.jsx';
 import { HomeScreen } from './components/HomeScreen.jsx';
 import { MiniPlayer } from './components/MiniPlayer.jsx';
+import { MobileNav } from './components/MobileNav.jsx';
+import { SavedScreen } from './components/SavedScreen.jsx';
 import { SeriesScreen } from './components/SeriesScreen.jsx';
 import { Sidebar } from './components/Sidebar.jsx';
 import { Splash } from './components/Splash.jsx';
 import { useAuth } from './contexts/AuthContext.jsx';
 import { supabase, supabaseEnabled } from './lib/supabaseClient.js';
 
+const HISTORY_LIMIT = 60;
+
 function App() {
   const {user, signOut} = useAuth();
   const [showAuth, setShowAuth] = useState(false);
+  const [sidebarMode, setSidebarMode] = useState('browse'); // 'browse' | 'profile'
   const [screen,      setScreen]    = useState('home');
   const [selSeries,   setSelSeries] = useState(null);
   const [lang,        setLang]      = useState('en');
@@ -34,6 +41,12 @@ function App() {
   });
   const [savedSeries, setSavedSeries] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem('osho_saved_series') || '[]')); } catch(e) { return new Set(); }
+  });
+  const [history, setHistory] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('osho_history') || '[]'); } catch(e) { return []; }
+  });
+  const [savedEpisodes, setSavedEpisodes] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('osho_saved_episodes') || '[]'); } catch(e) { return []; }
   });
   const [dataLoading, setDataLoading] = useState(true);
   const [seriesVersion, setSeriesVersion] = useState(0);
@@ -185,7 +198,33 @@ function App() {
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(() => {});
     }
-  }, []);
+    setHistory(prev => {
+      const entry = {seriesId: series.i, seriesName: series.n, episodeUrl: episode.u, episodeTitle: episode.t, discLang, playedAt: Date.now()};
+      const next = [entry, ...prev.filter(h => h.episodeUrl !== episode.u)].slice(0, HISTORY_LIMIT);
+      try { localStorage.setItem('osho_history', JSON.stringify(next)); } catch(e) {}
+      return next;
+    });
+  }, [discLang]);
+
+  // Shared resolver for anything stored as {seriesId, episodeUrl, discLang} —
+  // history entries and saved episodes both use this shape.
+  const playEntry = useCallback(async entry => {
+    let list = seriesCacheRef.current[entry.discLang];
+    if (!list) {
+      const mod = await (entry.discLang === 'hi' ? import('./data/oshoData.hi.js') : import('./data/oshoData.en.js'));
+      list = entry.discLang === 'hi' ? mod.OSHO_DATA_HI : mod.OSHO_DATA_EN;
+      seriesCacheRef.current[entry.discLang] = list;
+      setSeriesVersion(v => v + 1);
+    }
+    const series = list.find(s => s.i === entry.seriesId);
+    const episode = series?.e.find(e => e.u === entry.episodeUrl);
+    if (!series || !episode) return;
+    setDiscLang(entry.discLang);
+    playEp(series, episode);
+    setPO(true);
+    setScreen('home');
+    setSidebarMode('browse');
+  }, [playEp]);
 
   const onTogglePlay = useCallback(() => {
     const audio = audioRef.current;
@@ -295,23 +334,112 @@ function App() {
     return () => { cancelled = true; };
   }, [user]);
 
+  const toggleSaveEpisode = useCallback((series, episode) => {
+    setSavedEpisodes(prev => {
+      const exists = prev.some(e => e.episodeUrl === episode.u);
+      const next = exists
+        ? prev.filter(e => e.episodeUrl !== episode.u)
+        : [{seriesId: series.i, seriesName: series.n, episodeUrl: episode.u, episodeTitle: episode.t, duration: episode.d, discLang}, ...prev];
+      try { localStorage.setItem('osho_saved_episodes', JSON.stringify(next)); } catch(e) {}
+      if (supabaseEnabled && user) {
+        if (!exists) {
+          supabase.from('saved_episodes').upsert({
+            user_id: user.id, series_id: series.i, series_name: series.n,
+            episode_url: episode.u, episode_title: episode.t, duration: episode.d, disc_lang: discLang,
+          }, {onConflict: 'user_id,episode_url'});
+        } else {
+          supabase.from('saved_episodes').delete().eq('user_id', user.id).eq('episode_url', episode.u);
+        }
+      }
+      return next;
+    });
+  }, [user, discLang]);
+
+  // On login, merge the account's saved episodes with whatever is saved locally.
+  useEffect(() => {
+    if (!supabaseEnabled || !user) return;
+    let cancelled = false;
+    (async () => {
+      const {data, error} = await supabase.from('saved_episodes').select('*').eq('user_id', user.id);
+      if (cancelled || error) return;
+      const remote = (data || []).map(r => ({seriesId: r.series_id, seriesName: r.series_name, episodeUrl: r.episode_url, episodeTitle: r.episode_title, duration: r.duration, discLang: r.disc_lang}));
+      const remoteUrls = new Set(remote.map(r => r.episodeUrl));
+      setSavedEpisodes(prev => {
+        const toPush = prev.filter(e => !remoteUrls.has(e.episodeUrl));
+        if (toPush.length) {
+          supabase.from('saved_episodes').upsert(toPush.map(e => ({
+            user_id: user.id, series_id: e.seriesId, series_name: e.seriesName,
+            episode_url: e.episodeUrl, episode_title: e.episodeTitle, duration: e.duration, disc_lang: e.discLang,
+          })), {onConflict: 'user_id,episode_url'});
+        }
+        const merged = [...toPush, ...remote];
+        try { localStorage.setItem('osho_saved_episodes', JSON.stringify(merged)); } catch(e) {}
+        return merged;
+      });
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
+  // Revert the sidebar to Browse if signed out while showing the Profile panel
+  useEffect(() => {
+    if (sidebarMode === 'profile' && !user) setSidebarMode('browse');
+  }, [sidebarMode, user]);
+
+  const goHome = useCallback(() => {
+    setScreen('home');
+    setSelSeries(null);
+    setSidebarMode('browse');
+  }, []);
+
+  const openSeriesFromSidebar = useCallback(s => {
+    setSelSeries(s);
+    setScreen('series');
+    setSidebarMode('browse');
+  }, []);
+
+  const savedEpisodeUrls = useMemo(() => new Set(savedEpisodes.map(e => e.episodeUrl)), [savedEpisodes]);
+
   const appFont = lang === 'hi' ? 'var(--font-hi)' : lang === 'bn' ? 'var(--font-bn)' : 'var(--font)';
-  const homeClass  = `screen${!isDesktop ? (screen !== 'home'   ? ' behind' : '') : ''} ${isDesktop && screen === 'home'   ? 'desk-show' : ''}`;
-  const serClass   = `screen${!isDesktop ? (screen !== 'series' ? ' hidden' : '') : ''} ${isDesktop && screen === 'series' ? 'desk-show' : ''}`;
+  const homeClass  = `screen${!isDesktop ? (screen !== 'home'    ? ' behind' : '') : ''} ${isDesktop && screen === 'home'    ? 'desk-show' : ''}`;
+  const serClass   = `screen${!isDesktop ? (screen !== 'series'  ? ' hidden' : '') : ''} ${isDesktop && screen === 'series'  ? 'desk-show' : ''}`;
+  const savedClass = `screen${!isDesktop ? (screen !== 'saved'   ? ' hidden' : '') : ''} ${isDesktop && screen === 'saved'   ? 'desk-show' : ''}`;
+  const histClass  = `screen${!isDesktop ? (screen !== 'history' ? ' hidden' : '') : ''} ${isDesktop && screen === 'history' ? 'desk-show' : ''}`;
+  const acctClass  = `screen${!isDesktop ? (screen !== 'account' ? ' hidden' : '') : ''} ${isDesktop && screen === 'account' ? 'desk-show' : ''}`;
 
   return (
     <div id="app" className={playerOpen ? 'player-open' : ''} style={{fontFamily:appFont,height:'100vh'}}>
       <audio ref={audioRef} preload="none" style={{display:'none'}}/>
-      <Sidebar discLang={discLang} setDiscLang={setDiscLang} activePill={activePill} setActivePill={setPill} t={t} seriesList={seriesList}/>
+      <Sidebar mode={sidebarMode} onLogoClick={goHome} discLang={discLang} setDiscLang={setDiscLang} activePill={activePill} setActivePill={setPill} t={t} seriesList={seriesList}
+        user={user} onSignOut={signOut}
+        onOpenAccount={() => setScreen('account')} onOpenSaved={() => setScreen('saved')} onOpenHistory={() => setScreen('history')}/>
       <div className="main">
         <div className={homeClass}>
-          <HomeScreen seriesList={seriesList} dataLoading={dataLoading} onSeries={s => { setSelSeries(s); setScreen('series'); }} activePill={activePill} setActivePill={setPill} lang={lang} setLang={setLang} discLang={discLang} setDiscLang={setDiscLang} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} onShareApp={shareApp} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} t={t} isDesktop={isDesktop} user={user} onOpenAuth={() => setShowAuth(true)} onSignOut={signOut}/>
+          <HomeScreen seriesList={seriesList} dataLoading={dataLoading} onSeries={s => { setSelSeries(s); setScreen('series'); }} activePill={activePill} setActivePill={setPill} discLang={discLang} setDiscLang={setDiscLang} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} onShareApp={shareApp} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} t={t} isDesktop={isDesktop} user={user}
+            onSelectBrowse={() => setSidebarMode('browse')}
+            onSelectProfile={() => user ? setSidebarMode('profile') : setShowAuth(true)}
+            onSelectLogout={signOut}/>
         </div>
         <div className={serClass}>
-          {selSeries && <SeriesScreen series={selSeries} onBack={() => setScreen('home')} onEpisode={ep => { playEp(selSeries, ep); setPO(true); }} currentEp={nowPlaying?.series?.i === selSeries?.i ? nowPlaying?.episode : null} t={t}/>}
+          {selSeries && <SeriesScreen series={selSeries} onBack={() => setScreen('home')} onEpisode={ep => { playEp(selSeries, ep); setPO(true); }} currentEp={nowPlaying?.series?.i === selSeries?.i ? nowPlaying?.episode : null} savedEpisodeUrls={savedEpisodeUrls} onToggleSaveEpisode={toggleSaveEpisode} t={t}/>}
+        </div>
+        <div className={savedClass}>
+          <SavedScreen onBack={() => { setSidebarMode('profile'); setScreen('home'); }} seriesList={seriesList} savedSeries={savedSeries} onToggleSave={toggleSaveSeries}
+            savedEpisodes={savedEpisodes} onToggleSaveEpisode={toggleSaveEpisode} onPlayEpisode={playEntry}
+            onSeries={openSeriesFromSidebar} discLang={discLang} t={t}/>
+        </div>
+        <div className={histClass}>
+          <HistoryScreen onBack={() => { setSidebarMode('profile'); setScreen('home'); }} history={history} onPlayEntry={playEntry}/>
+        </div>
+        <div className={acctClass}>
+          <AccountScreen onBack={() => { setSidebarMode('profile'); setScreen('home'); }} lang={lang} setLang={setLang}/>
         </div>
       </div>
       <MiniPlayer nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} onPrev={onPrev} onNext={onNext} onOpen={() => setPO(true)} audioRef={audioRef}/>
+      <MobileNav active={screen === 'series' ? 'home' : screen}
+        onBrowse={goHome}
+        onSaved={() => { setSidebarMode('profile'); setScreen('saved'); }}
+        onHistory={() => { setSidebarMode('profile'); setScreen('history'); }}
+        onAccount={() => { if (user) { setSidebarMode('profile'); setScreen('account'); } else { setShowAuth(true); } }}/>
       <FullPlayer open={playerOpen} onClose={() => setPO(false)} nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} audioRef={audioRef} onPrev={onPrev} onNext={onNext} onSeekSeconds={onSeekSeconds} t={t} isDesktop={isDesktop}
         playbackSpeed={playbackSpeed} setPlaybackSpeed={setPlaybackSpeed}
         sleepOption={sleepOption} setSleepOption={setSleepOption} sleepRemaining={sleepRemaining}

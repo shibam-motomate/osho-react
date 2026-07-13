@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { LANGS } from '../config.js';
-import { IcoCheck, IcoGlobe } from './Icons.jsx';
+import { IcoUser } from './Icons.jsx';
 
-/* ── Icon-only UI-language button + dropdown (portal-based) ── */
-export function IconLangButton({lang, setLang, size = 32}) {
+/* ── Top-right profile icon + dropdown: All Discourses / My Profile / Log Out ── */
+export function ProfileMenu({size = 32, user, onSelectBrowse, onSelectProfile, onSelectLogout}) {
   const [open, setOpen] = useState(false);
   const [rect, setRect] = useState(null);
   const btnRef = useRef();
@@ -28,21 +27,21 @@ export function IconLangButton({lang, setLang, size = 32}) {
     setOpen(o => !o);
   };
 
+  const pick = fn => () => { setOpen(false); fn(); };
+
   const dd = rect && createPortal(
     <div ref={ddRef} className={`lang-dd${open?' open':''}`} style={{top:rect.top, right:rect.right, left:'auto'}}>
-      {Object.entries(LANGS).map(([k,v]) => (
-        <div key={k} className={`lang-opt ${lang===k?'active':''}`} onClick={() => { setLang(k); setOpen(false); }}>
-          <span className="ck"><IcoCheck/></span><span>{v}</span>
-        </div>
-      ))}
+      <div className="lang-opt" onClick={pick(onSelectBrowse)}>All Discourses</div>
+      <div className="lang-opt" onClick={pick(onSelectProfile)}>My Profile</div>
+      {user && <div className="lang-opt" onClick={pick(onSelectLogout)}>Log Out</div>}
     </div>,
     document.body
   );
 
   return (
     <div className="icon-btn-wrap">
-      <button ref={btnRef} className={`icon-btn${size>=36?' lg':''}`} onClick={toggle} aria-label="App language">
-        <IcoGlobe/>
+      <button ref={btnRef} className={`icon-btn${size>=36?' lg':''}`} onClick={toggle} aria-label="Profile menu">
+        {user ? <span className="profile-badge">{user.email[0].toUpperCase()}</span> : <IcoUser/>}
       </button>
       {dd}
     </div>
