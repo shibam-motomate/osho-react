@@ -238,6 +238,15 @@ body{font-family:var(--font);}
 .ep-name{font-size:14px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ep-name.now{color:var(--accent);}
 .ep-dur{font-size:11px;color:var(--muted);flex-shrink:0;font-variant-numeric:tabular-nums;}
+.ep-save-btn{flex-shrink:0;background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex;border-radius:6px;transition:all 0.15s;}
+.ep-save-btn:hover{background:var(--accent-dim);color:var(--accent);}
+.ep-save-btn.saved{color:var(--accent);}
+
+/* Saved screen tabs */
+.saved-tabs{display:flex;gap:2px;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:3px;margin:20px 20px 4px;max-width:420px;}
+@media(min-width:900px){.saved-tabs{margin:20px 32px 4px;}}
+.saved-tab-btn{flex:1;font-size:12.5px;font-weight:600;padding:8px 0;border-radius:17px;border:none;background:transparent;color:var(--muted);cursor:pointer;transition:all 0.2s;font-family:inherit;text-align:center;white-space:nowrap;}
+.saved-tab-btn.active{background:var(--accent);color:#fff;}
 
 /* Sound wave */
 .wave{display:flex;align-items:center;gap:2px;height:14px;}

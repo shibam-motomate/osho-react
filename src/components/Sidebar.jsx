@@ -29,10 +29,6 @@ export function Sidebar({mode, onLogoClick, discLang, setDiscLang, activePill, s
               <div className="sb-lbl">Not logged in</div>
             )}
           </div>
-          <div className="sb-nav">
-            <button className="sb-nav-item" onClick={onOpenSaved}><IcoHeart s={17}/><span>Saved</span></button>
-            <button className="sb-nav-item" onClick={onOpenHistory}><IcoClock s={17}/><span>History</span></button>
-          </div>
           <div className="sb-sec">
             <div className="sb-lbl">UI Language</div>
             <div className="sb-disc">
@@ -40,6 +36,10 @@ export function Sidebar({mode, onLogoClick, discLang, setDiscLang, activePill, s
                 <button key={k} className={`sb-disc-btn ${lang===k?'active':''}`} onClick={() => setLang(k)}>{v}</button>
               ))}
             </div>
+          </div>
+          <div className="sb-nav">
+            <button className="sb-nav-item" onClick={onOpenSaved}><IcoHeart s={17}/><span>Saved</span></button>
+            <button className="sb-nav-item" onClick={onOpenHistory}><IcoClock s={17}/><span>History</span></button>
           </div>
           <div style={{flex:1}}/>
           {user && (
