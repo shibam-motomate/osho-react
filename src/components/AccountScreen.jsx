@@ -3,13 +3,16 @@ import { LANGS } from '../config.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { IcoBack, IcoCheck } from './Icons.jsx';
 
-/* ── My Account: name, email, UI language ── */
-export function AccountScreen({onBack, lang, setLang}) {
-  const {user, updateName} = useAuth();
+/* ── My Account: name, email, UI language, delete account ── */
+export function AccountScreen({onBack, lang, setLang, onAccountDeleted}) {
+  const {user, updateName, deleteAccount} = useAuth();
   const currentName = user?.user_metadata?.full_name || '';
   const [name, setName] = useState(currentName);
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => { setName(currentName); }, [currentName]);
 
@@ -24,35 +27,69 @@ export function AccountScreen({onBack, lang, setLang}) {
     }
   };
 
+  const confirmDelete = async () => {
+    setDeleting(true);
+    setDeleteError('');
+    const {error} = await deleteAccount();
+    setDeleting(false);
+    if (error) {
+      setDeleteError(error.message);
+      return;
+    }
+    onAccountDeleted();
+  };
+
   const initial = (currentName || user?.email || '?')[0].toUpperCase();
 
   return (
     <div>
       <div className="back-bar">
-        <button className="back-btn" onClick={onBack}><IcoBack/>Profile</button>
+        <button className="back-btn" onClick={onBack}><IcoBack/>Home</button>
       </div>
+      <h1 className="page-h1">Account</h1>
 
-      <div className="acc-profile">
-        <div className="acc-avatar">{initial}</div>
-        <div className="acc-email">{user?.email}</div>
-      </div>
-
-      <div className="acc-sec">
-        <div className="acc-lbl">Name</div>
-        <div className="acc-name-row">
-          <input type="text" value={name} placeholder="Add your name" onChange={e => setName(e.target.value)}/>
-          <button className="acc-save-btn" onClick={saveName} disabled={busy || name.trim() === currentName}>
-            {saved ? <IcoCheck/> : (busy ? 'Saving…' : 'Save')}
-          </button>
+      <div className="acct-wrap">
+        <div className="acct-card">
+          <div className="acc-profile">
+            <div className="acc-avatar">{initial}</div>
+            <div className="acc-email">{user?.email}</div>
+          </div>
         </div>
-      </div>
 
-      <div className="acc-sec">
-        <div className="acc-lbl">UI Language</div>
-        <div className="sb-disc" style={{maxWidth:320}}>
-          {Object.entries(LANGS).map(([k, v]) => (
-            <button key={k} className={`sb-disc-btn ${lang===k?'active':''}`} onClick={() => setLang(k)}>{v}</button>
-          ))}
+        <div className="acct-card">
+          <div className="acc-lbl">Name</div>
+          <div className="acc-name-row">
+            <input type="text" value={name} placeholder="Add your name" onChange={e => setName(e.target.value)}/>
+            <button className="acc-save-btn" onClick={saveName} disabled={busy || name.trim() === currentName}>
+              {saved ? <IcoCheck/> : (busy ? 'Saving…' : 'Save')}
+            </button>
+          </div>
+        </div>
+
+        <div className="acct-card">
+          <div className="acc-lbl">UI Language</div>
+          <div className="sb-disc" style={{maxWidth:320}}>
+            {Object.entries(LANGS).map(([k, v]) => (
+              <button key={k} className={`sb-disc-btn ${lang===k?'active':''}`} onClick={() => setLang(k)}>{v}</button>
+            ))}
+          </div>
+        </div>
+
+        <div className="acct-card danger">
+          <div className="acc-lbl">Danger Zone</div>
+          <p className="acct-danger-copy">Permanently delete your account and all saved series, discourses, and account data. This can&rsquo;t be undone.</p>
+          {deleteError && <div className="auth-error" style={{marginBottom:12}}>{deleteError}</div>}
+          {confirmingDelete ? (
+            <div className="acct-danger-confirm">
+              <span>Are you sure?</span>
+              <button className="acct-delete-btn" onClick={confirmDelete} disabled={deleting}>
+                {deleting ? 'Deleting…' : 'Yes, Delete'}
+              </button>
+              <button className="acct-cancel-btn" onClick={() => setConfirmingDelete(false)} disabled={deleting}>Cancel</button>
+            </div>
+          ) : (
+            <button className="acct-delete-btn" onClick={() => setConfirmingDelete(true)}>Delete Account</button>
+          )}
         </div>
       </div>
     </div>

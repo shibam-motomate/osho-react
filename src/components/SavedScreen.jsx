@@ -10,8 +10,9 @@ export function SavedScreen({onBack, seriesList, savedSeries, onToggleSave, save
   return (
     <div>
       <div className="back-bar">
-        <button className="back-btn" onClick={onBack}><IcoBack/>Profile</button>
+        <button className="back-btn" onClick={onBack}><IcoBack/>Home</button>
       </div>
+      <h1 className="page-h1">Saved</h1>
       <div className="saved-tabs">
         <button className={`saved-tab-btn${tab==='series'?' active':''}`} onClick={() => setTab('series')}>Whole Series</button>
         <button className={`saved-tab-btn${tab==='episodes'?' active':''}`} onClick={() => setTab('episodes')}>Individual Discourses</button>

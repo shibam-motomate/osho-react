@@ -16,10 +16,11 @@ import { supabase, supabaseEnabled } from './lib/supabaseClient.js';
 
 const HISTORY_LIMIT = 60;
 
+const PROFILE_SCREENS = ['saved', 'history', 'account'];
+
 function App() {
-  const {user, signOut} = useAuth();
+  const {user, authLoading, signOut} = useAuth();
   const [showAuth, setShowAuth] = useState(false);
-  const [sidebarMode, setSidebarMode] = useState('browse'); // 'browse' | 'profile'
   const [screen,      setScreen]    = useState('home');
   const [selSeries,   setSelSeries] = useState(null);
   const [lang,        setLang]      = useState('en');
@@ -54,6 +55,59 @@ function App() {
   const toastTimer = useRef(null);
   const sleepOptionRef = useRef('off');
   const seriesCacheRef = useRef({});
+
+  const sidebarMode = PROFILE_SCREENS.includes(screen) ? 'profile' : 'browse';
+
+  // Real URL navigation — pushes browser history so back/forward and
+  // shareable links work, instead of just swapping in-memory screen state.
+  const navigate = useCallback((nextScreen, series = null) => {
+    setScreen(nextScreen);
+    if (nextScreen === 'series' && series) setSelSeries(series);
+    else if (nextScreen === 'home') setSelSeries(null);
+    const path = nextScreen === 'series' ? `/series/${encodeURIComponent(series.i)}`
+      : nextScreen === 'home' ? '/' : `/${nextScreen}`;
+    if (window.location.pathname !== path) window.history.pushState({}, '', path);
+  }, []);
+
+  const resolveSeriesById = useCallback(async id => {
+    for (const l of ['en', 'hi']) {
+      let list = seriesCacheRef.current[l];
+      if (!list) {
+        const mod = await (l === 'hi' ? import('./data/oshoData.hi.js') : import('./data/oshoData.en.js'));
+        list = l === 'hi' ? mod.OSHO_DATA_HI : mod.OSHO_DATA_EN;
+        seriesCacheRef.current[l] = list;
+      }
+      const found = list.find(s => s.i === id);
+      if (found) return {series: found, lang: l};
+    }
+    return null;
+  }, []);
+
+  // Parse the current URL into screen state, both on first load and on
+  // browser back/forward navigation.
+  useEffect(() => {
+    const applyPath = async path => {
+      if (path.startsWith('/series/')) {
+        const found = await resolveSeriesById(decodeURIComponent(path.slice('/series/'.length)));
+        if (found) {
+          setDiscLang(found.lang);
+          setSelSeries(found.series);
+          setScreen('series');
+          setSeriesVersion(v => v + 1);
+        } else {
+          setScreen('home');
+        }
+      } else if (path === '/saved' || path === '/history' || path === '/account') {
+        setScreen(path.slice(1));
+      } else {
+        setScreen('home');
+      }
+    };
+    applyPath(window.location.pathname);
+    const onPop = () => applyPath(window.location.pathname);
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [resolveSeriesById]);
 
   // Seeking before the browser has loaded metadata (readyState 0, common with
   // preload="none") is silently ignored, so defer the seek until it's ready.
@@ -222,9 +276,8 @@ function App() {
     setDiscLang(entry.discLang);
     playEp(series, episode);
     setPO(true);
-    setScreen('home');
-    setSidebarMode('browse');
-  }, [playEp]);
+    navigate('home');
+  }, [playEp, navigate]);
 
   const onTogglePlay = useCallback(() => {
     const audio = audioRef.current;
@@ -380,21 +433,24 @@ function App() {
     return () => { cancelled = true; };
   }, [user]);
 
-  // Revert the sidebar to Browse if signed out while showing the Profile panel
+  // Kick back to Home if signed out while on the account page (Saved/History stay guest-usable).
+  // Waits for authLoading to settle first so a logged-in session restoring from storage
+  // isn't mistaken for a logged-out user on direct/deep-link loads.
   useEffect(() => {
-    if (sidebarMode === 'profile' && !user) setSidebarMode('browse');
-  }, [sidebarMode, user]);
+    if (!authLoading && screen === 'account' && !user) navigate('home');
+  }, [authLoading, screen, user, navigate]);
 
-  const goHome = useCallback(() => {
-    setScreen('home');
-    setSelSeries(null);
-    setSidebarMode('browse');
+  const removeHistoryEntry = useCallback(episodeUrl => {
+    setHistory(prev => {
+      const next = prev.filter(h => h.episodeUrl !== episodeUrl);
+      try { localStorage.setItem('osho_history', JSON.stringify(next)); } catch(e) {}
+      return next;
+    });
   }, []);
 
-  const openSeriesFromSidebar = useCallback(s => {
-    setSelSeries(s);
-    setScreen('series');
-    setSidebarMode('browse');
+  const clearHistory = useCallback(() => {
+    setHistory([]);
+    try { localStorage.setItem('osho_history', '[]'); } catch(e) {}
   }, []);
 
   const savedEpisodeUrls = useMemo(() => new Set(savedEpisodes.map(e => e.episodeUrl)), [savedEpisodes]);
@@ -409,37 +465,37 @@ function App() {
   return (
     <div id="app" className={playerOpen ? 'player-open' : ''} style={{fontFamily:appFont,height:'100vh'}}>
       <audio ref={audioRef} preload="none" style={{display:'none'}}/>
-      <Sidebar mode={sidebarMode} onLogoClick={goHome} discLang={discLang} setDiscLang={setDiscLang} activePill={activePill} setActivePill={setPill} t={t} seriesList={seriesList}
+      <Sidebar mode={sidebarMode} screen={screen} onLogoClick={() => navigate('home')} discLang={discLang} setDiscLang={setDiscLang} activePill={activePill} setActivePill={setPill} t={t} seriesList={seriesList}
         user={user} onSignOut={signOut}
-        onOpenAccount={() => setScreen('account')} onOpenSaved={() => setScreen('saved')} onOpenHistory={() => setScreen('history')}/>
+        onOpenAccount={() => navigate('account')} onOpenSaved={() => navigate('saved')} onOpenHistory={() => navigate('history')}/>
       <div className="main">
         <div className={homeClass}>
-          <HomeScreen seriesList={seriesList} dataLoading={dataLoading} onSeries={s => { setSelSeries(s); setScreen('series'); }} activePill={activePill} setActivePill={setPill} discLang={discLang} setDiscLang={setDiscLang} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} onShareApp={shareApp} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} t={t} isDesktop={isDesktop} user={user}
-            onSelectBrowse={() => setSidebarMode('browse')}
-            onSelectProfile={() => user ? setSidebarMode('profile') : setShowAuth(true)}
+          <HomeScreen seriesList={seriesList} dataLoading={dataLoading} onSeries={s => navigate('series', s)} activePill={activePill} setActivePill={setPill} discLang={discLang} setDiscLang={setDiscLang} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} onShareApp={shareApp} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} t={t} isDesktop={isDesktop} user={user}
+            onSelectBrowse={() => navigate('home')}
+            onSelectProfile={() => user ? navigate('account') : setShowAuth(true)}
             onSelectLogout={signOut}/>
         </div>
         <div className={serClass}>
-          {selSeries && <SeriesScreen series={selSeries} onBack={() => setScreen('home')} onEpisode={ep => { playEp(selSeries, ep); setPO(true); }} currentEp={nowPlaying?.series?.i === selSeries?.i ? nowPlaying?.episode : null} savedEpisodeUrls={savedEpisodeUrls} onToggleSaveEpisode={toggleSaveEpisode} t={t}/>}
+          {selSeries && <SeriesScreen series={selSeries} onBack={() => navigate('home')} onEpisode={ep => { playEp(selSeries, ep); setPO(true); }} currentEp={nowPlaying?.series?.i === selSeries?.i ? nowPlaying?.episode : null} savedEpisodeUrls={savedEpisodeUrls} onToggleSaveEpisode={toggleSaveEpisode} t={t}/>}
         </div>
         <div className={savedClass}>
-          <SavedScreen onBack={() => { setSidebarMode('profile'); setScreen('home'); }} seriesList={seriesList} savedSeries={savedSeries} onToggleSave={toggleSaveSeries}
+          <SavedScreen onBack={() => navigate('home')} seriesList={seriesList} savedSeries={savedSeries} onToggleSave={toggleSaveSeries}
             savedEpisodes={savedEpisodes} onToggleSaveEpisode={toggleSaveEpisode} onPlayEpisode={playEntry}
-            onSeries={openSeriesFromSidebar} discLang={discLang} t={t}/>
+            onSeries={s => navigate('series', s)} discLang={discLang} t={t}/>
         </div>
         <div className={histClass}>
-          <HistoryScreen onBack={() => { setSidebarMode('profile'); setScreen('home'); }} history={history} onPlayEntry={playEntry}/>
+          <HistoryScreen onBack={() => navigate('home')} history={history} onPlayEntry={playEntry} onRemove={removeHistoryEntry} onClearAll={clearHistory}/>
         </div>
         <div className={acctClass}>
-          <AccountScreen onBack={() => { setSidebarMode('profile'); setScreen('home'); }} lang={lang} setLang={setLang}/>
+          <AccountScreen onBack={() => navigate('home')} lang={lang} setLang={setLang} onAccountDeleted={() => { navigate('home'); showToast('Account deleted'); }}/>
         </div>
       </div>
       <MiniPlayer nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} onPrev={onPrev} onNext={onNext} onOpen={() => setPO(true)} audioRef={audioRef}/>
       <MobileNav active={screen === 'series' ? 'home' : screen}
-        onBrowse={goHome}
-        onSaved={() => { setSidebarMode('profile'); setScreen('saved'); }}
-        onHistory={() => { setSidebarMode('profile'); setScreen('history'); }}
-        onAccount={() => { if (user) { setSidebarMode('profile'); setScreen('account'); } else { setShowAuth(true); } }}/>
+        onBrowse={() => navigate('home')}
+        onSaved={() => navigate('saved')}
+        onHistory={() => navigate('history')}
+        onAccount={() => user ? navigate('account') : setShowAuth(true)}/>
       <FullPlayer open={playerOpen} onClose={() => setPO(false)} nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} audioRef={audioRef} onPrev={onPrev} onNext={onNext} onSeekSeconds={onSeekSeconds} t={t} isDesktop={isDesktop}
         playbackSpeed={playbackSpeed} setPlaybackSpeed={setPlaybackSpeed}
         sleepOption={sleepOption} setSleepOption={setSleepOption} sleepRemaining={sleepRemaining}
