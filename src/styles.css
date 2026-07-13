@@ -53,12 +53,18 @@ body{font-family:var(--font);}
 .sb-genre-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .sb-genre-name{font-size:13px;font-weight:500;color:var(--text2);flex:1;}
 .sb-genre-item.active .sb-genre-name{color:var(--accent);font-weight:600;}
-.sb-account{display:flex;align-items:center;gap:6px;padding:12px;border-top:1px solid var(--border);}
-.sb-account-btn{flex:1;min-width:0;display:flex;align-items:center;gap:8px;background:none;border:none;cursor:pointer;padding:8px;border-radius:10px;color:var(--text2);transition:background 0.15s;text-align:left;}
-.sb-account-btn:hover{background:var(--bg);}
-.sb-account-email{font-size:12.5px;font-weight:600;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.sb-logout-btn{flex-shrink:0;background:none;border:none;cursor:pointer;padding:8px;border-radius:10px;color:var(--muted);display:flex;transition:all 0.15s;}
-.sb-logout-btn:hover{background:var(--accent-dim);color:var(--accent);}
+/* Sidebar: Profile mode */
+.sb-profile-id{display:flex;align-items:center;gap:10px;}
+.sb-profile-email{font-size:13px;font-weight:600;color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sb-empty{font-size:12.5px;color:var(--muted);padding:0 8px;line-height:1.5;}
+.sb-saved-item{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;cursor:pointer;transition:background 0.15s;}
+.sb-saved-item:hover{background:var(--bg);}
+.sb-saved-name{flex:1;min-width:0;font-size:13px;font-weight:500;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sb-saved-unsave{flex-shrink:0;background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex;border-radius:6px;}
+.sb-saved-unsave:hover{background:var(--accent-dim);color:var(--accent);}
+.sb-foot{padding:12px;border-top:1px solid var(--border);}
+.sb-logout-full{width:100%;display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;border:none;background:none;cursor:pointer;color:var(--muted);font-family:inherit;font-size:13px;font-weight:600;transition:all 0.15s;}
+.sb-logout-full:hover{background:var(--accent-dim);color:var(--accent);}
 
 /* Icon buttons (share / language) */
 .icon-btn{background:var(--icon-surface);border:1px solid var(--border);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;color:var(--text2);transition:background 0.15s;}
@@ -207,13 +213,8 @@ body{font-family:var(--font);}
 @media(min-width:900px){.back-bar{padding:28px 32px 16px;}}
 .back-btn{display:flex;align-items:center;gap:4px;background:none;border:none;color:var(--accent);font-family:inherit;font-size:15px;font-weight:500;cursor:pointer;padding:0;}
 
-/* ── My Account ── */
-.acc-profile{display:flex;align-items:center;gap:14px;padding:24px 20px;}
-@media(min-width:900px){.acc-profile{padding:28px 32px;}}
+/* ── Profile avatar (sidebar) ── */
 .acc-avatar{width:52px;height:52px;border-radius:50%;background:var(--accent);color:#fff;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.acc-email{flex:1;min-width:0;font-size:15px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.acc-logout{display:flex;align-items:center;gap:6px;background:var(--icon-surface);border:1px solid var(--border);border-radius:20px;padding:8px 14px;cursor:pointer;color:var(--text2);font-family:inherit;font-size:12.5px;font-weight:600;transition:all 0.15s;flex-shrink:0;}
-.acc-logout:hover{background:var(--accent);border-color:var(--accent);color:#fff;}
 
 /* Series hero */
 .series-hero{padding:32px 24px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;}

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { T } from './config.js';
-import { AccountScreen } from './components/AccountScreen.jsx';
 import { AuthScreen } from './components/AuthScreen.jsx';
 import { FullPlayer } from './components/FullPlayer.jsx';
 import { HomeScreen } from './components/HomeScreen.jsx';
@@ -14,6 +13,7 @@ import { supabase, supabaseEnabled } from './lib/supabaseClient.js';
 function App() {
   const {user, signOut} = useAuth();
   const [showAuth, setShowAuth] = useState(false);
+  const [sidebarMode, setSidebarMode] = useState('browse'); // 'browse' | 'profile'
   const [screen,      setScreen]    = useState('home');
   const [selSeries,   setSelSeries] = useState(null);
   const [lang,        setLang]      = useState('en');
@@ -296,29 +296,40 @@ function App() {
     return () => { cancelled = true; };
   }, [user]);
 
-  // Kick back to home if signed out while on the account screen
+  // Revert the sidebar to Browse if signed out while showing the Profile panel
   useEffect(() => {
-    if (screen === 'account' && !user) setScreen('home');
-  }, [screen, user]);
+    if (sidebarMode === 'profile' && !user) setSidebarMode('browse');
+  }, [sidebarMode, user]);
+
+  const goHome = useCallback(() => {
+    setScreen('home');
+    setSelSeries(null);
+    setSidebarMode('browse');
+  }, []);
+
+  const openSeriesFromSidebar = useCallback(s => {
+    setSelSeries(s);
+    setScreen('series');
+    setSidebarMode('browse');
+  }, []);
 
   const appFont = lang === 'hi' ? 'var(--font-hi)' : lang === 'bn' ? 'var(--font-bn)' : 'var(--font)';
   const homeClass  = `screen${!isDesktop ? (screen !== 'home'   ? ' behind' : '') : ''} ${isDesktop && screen === 'home'   ? 'desk-show' : ''}`;
   const serClass   = `screen${!isDesktop ? (screen !== 'series' ? ' hidden' : '') : ''} ${isDesktop && screen === 'series' ? 'desk-show' : ''}`;
-  const accClass   = `screen${!isDesktop ? (screen !== 'account' ? ' hidden' : '') : ''} ${isDesktop && screen === 'account' ? 'desk-show' : ''}`;
 
   return (
     <div id="app" className={playerOpen ? 'player-open' : ''} style={{fontFamily:appFont,height:'100vh'}}>
       <audio ref={audioRef} preload="none" style={{display:'none'}}/>
-      <Sidebar discLang={discLang} setDiscLang={setDiscLang} activePill={activePill} setActivePill={setPill} t={t} seriesList={seriesList} user={user} onOpenAccount={() => setScreen('account')} onSignOut={signOut}/>
+      <Sidebar mode={sidebarMode} onLogoClick={goHome} discLang={discLang} setDiscLang={setDiscLang} activePill={activePill} setActivePill={setPill} t={t} seriesList={seriesList}
+        user={user} lang={lang} setLang={setLang} onSignOut={signOut} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} onOpenSeries={openSeriesFromSidebar}/>
       <div className="main">
         <div className={homeClass}>
-          <HomeScreen seriesList={seriesList} dataLoading={dataLoading} onSeries={s => { setSelSeries(s); setScreen('series'); }} activePill={activePill} setActivePill={setPill} lang={lang} setLang={setLang} discLang={discLang} setDiscLang={setDiscLang} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} onShareApp={shareApp} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} t={t} isDesktop={isDesktop} user={user} onOpenAuth={() => setShowAuth(true)} onOpenAccount={() => setScreen('account')}/>
+          <HomeScreen seriesList={seriesList} dataLoading={dataLoading} onSeries={s => { setSelSeries(s); setScreen('series'); }} activePill={activePill} setActivePill={setPill} discLang={discLang} setDiscLang={setDiscLang} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} onShareApp={shareApp} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} t={t} isDesktop={isDesktop}
+            onSelectBrowse={() => setSidebarMode('browse')}
+            onSelectProfile={() => user ? setSidebarMode('profile') : setShowAuth(true)}/>
         </div>
         <div className={serClass}>
           {selSeries && <SeriesScreen series={selSeries} onBack={() => setScreen('home')} onEpisode={ep => { playEp(selSeries, ep); setPO(true); }} currentEp={nowPlaying?.series?.i === selSeries?.i ? nowPlaying?.episode : null} t={t}/>}
-        </div>
-        <div className={accClass}>
-          {user && <AccountScreen user={user} onBack={() => setScreen('home')} onSignOut={signOut} seriesList={seriesList} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} onSeries={s => { setSelSeries(s); setScreen('series'); }} discLang={discLang} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} t={t}/>}
         </div>
       </div>
       <MiniPlayer nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} onPrev={onPrev} onNext={onNext} onOpen={() => setPO(true)} audioRef={audioRef}/>
