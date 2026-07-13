@@ -20,12 +20,15 @@ export function AuthProvider({children}) {
   }, []);
 
   const notConfigured = () => Promise.resolve({error: {message: 'Login is not configured for this deployment.'}});
-  const signUp = (email, password) => supabaseEnabled ? supabase.auth.signUp({email, password}) : notConfigured();
+  const signUp = (email, password, fullName) => supabaseEnabled
+    ? supabase.auth.signUp({email, password, options: {data: {full_name: fullName || undefined}}})
+    : notConfigured();
   const signIn = (email, password) => supabaseEnabled ? supabase.auth.signInWithPassword({email, password}) : notConfigured();
   const signOut = () => supabaseEnabled ? supabase.auth.signOut() : Promise.resolve();
+  const updateName = fullName => supabaseEnabled ? supabase.auth.updateUser({data: {full_name: fullName}}) : notConfigured();
 
   return (
-    <AuthContext.Provider value={{user, authLoading, signUp, signIn, signOut}}>
+    <AuthContext.Provider value={{user, authLoading, signUp, signIn, signOut, updateName}}>
       {children}
     </AuthContext.Provider>
   );

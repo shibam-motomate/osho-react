@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { IcoBack, IcoSearch, Wave } from './Icons.jsx';
+import { IcoBack, IcoHeart, IcoSearch, Wave } from './Icons.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
 
 /* ── Series Detail ── */
-export function SeriesScreen({series, onBack, onEpisode, currentEp, t}) {
+export function SeriesScreen({series, onBack, onEpisode, currentEp, savedEpisodeUrls, onToggleSaveEpisode, t}) {
   const [epQ, setEpQ] = useState('');
   const episodes = series.e;
   const filtered = epQ ? episodes.filter(e => e.t.toLowerCase().includes(epQ.toLowerCase())) : episodes;
@@ -35,6 +35,7 @@ export function SeriesScreen({series, onBack, onEpisode, currentEp, t}) {
       <div className="ep-list">
         {filtered.map((ep, idx) => {
           const active = currentEp?.u === ep.u;
+          const saved = savedEpisodeUrls.has(ep.u);
           return (
             <div key={ep.u} className="ep-row" onClick={() => onEpisode(ep)}>
               <div className="ep-num" style={{color:active?'var(--accent)':undefined}}>
@@ -44,6 +45,10 @@ export function SeriesScreen({series, onBack, onEpisode, currentEp, t}) {
                 <div className={`ep-name${active?' now':''}`}>{ep.t}</div>
               </div>
               <div className="ep-dur">{ep.d}</div>
+              <button className={`ep-save-btn${saved?' saved':''}`} aria-label="Save discourse"
+                onClick={e => { e.stopPropagation(); onToggleSaveEpisode(series, ep); }}>
+                <IcoHeart s={14} filled={saved}/>
+              </button>
             </div>
           );
         })}

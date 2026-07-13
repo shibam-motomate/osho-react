@@ -1,0 +1,12 @@
+{
+  "name": "Osho Discourses",
+  "short_name": "Osho",
+  "description": "Free Osho audio discourses",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F4F4F1",
+  "theme_color": "#7A1F2E",
+  "icons": [
+    {"src": "https://syxvczeaohszykjbqwts.supabase.co/storage/v1/object/public/Assets/osho-dp.webp", "sizes": "any", "type": "image/webp"}
+  ]
+}
