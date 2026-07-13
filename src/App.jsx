@@ -1,13 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { T } from './config.js';
+import { AuthScreen } from './components/AuthScreen.jsx';
 import { FullPlayer } from './components/FullPlayer.jsx';
 import { HomeScreen } from './components/HomeScreen.jsx';
 import { MiniPlayer } from './components/MiniPlayer.jsx';
 import { SeriesScreen } from './components/SeriesScreen.jsx';
 import { Sidebar } from './components/Sidebar.jsx';
 import { Splash } from './components/Splash.jsx';
+import { useAuth } from './contexts/AuthContext.jsx';
+import { supabase, supabaseEnabled } from './lib/supabaseClient.js';
 
 function App() {
+  const {user, signOut} = useAuth();
+  const [showAuth, setShowAuth] = useState(false);
   const [screen,      setScreen]    = useState('home');
   const [selSeries,   setSelSeries] = useState(null);
   const [lang,        setLang]      = useState('en');
@@ -253,11 +258,42 @@ function App() {
   const toggleSaveSeries = useCallback(id => {
     setSavedSeries(prev => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      const willSave = !next.has(id);
+      willSave ? next.add(id) : next.delete(id);
       try { localStorage.setItem('osho_saved_series', JSON.stringify(Array.from(next))); } catch(e) {}
+      if (supabaseEnabled && user) {
+        if (willSave) {
+          supabase.from('saved_series').upsert({user_id: user.id, series_id: id}, {onConflict: 'user_id,series_id'});
+        } else {
+          supabase.from('saved_series').delete().eq('user_id', user.id).eq('series_id', id);
+        }
+      }
       return next;
     });
-  }, []);
+  }, [user]);
+
+  // On login, merge the account's saved series with whatever is saved locally
+  // (guest usage before signing in), then push any local-only saves up.
+  useEffect(() => {
+    if (!supabaseEnabled || !user) return;
+    let cancelled = false;
+    (async () => {
+      const {data, error} = await supabase.from('saved_series').select('series_id').eq('user_id', user.id);
+      if (cancelled || error) return;
+      const remoteIds = new Set((data || []).map(r => r.series_id));
+      setSavedSeries(prev => {
+        const toPush = Array.from(prev).filter(id => !remoteIds.has(id));
+        if (toPush.length) {
+          supabase.from('saved_series')
+            .upsert(toPush.map(series_id => ({user_id: user.id, series_id})), {onConflict: 'user_id,series_id'});
+        }
+        const merged = new Set([...prev, ...remoteIds]);
+        try { localStorage.setItem('osho_saved_series', JSON.stringify(Array.from(merged))); } catch(e) {}
+        return merged;
+      });
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
 
   const appFont = lang === 'hi' ? 'var(--font-hi)' : lang === 'bn' ? 'var(--font-bn)' : 'var(--font)';
   const homeClass  = `screen${!isDesktop ? (screen !== 'home'   ? ' behind' : '') : ''} ${isDesktop && screen === 'home'   ? 'desk-show' : ''}`;
@@ -269,7 +305,7 @@ function App() {
       <Sidebar discLang={discLang} setDiscLang={setDiscLang} activePill={activePill} setActivePill={setPill} t={t} seriesList={seriesList}/>
       <div className="main">
         <div className={homeClass}>
-          <HomeScreen seriesList={seriesList} dataLoading={dataLoading} onSeries={s => { setSelSeries(s); setScreen('series'); }} activePill={activePill} setActivePill={setPill} lang={lang} setLang={setLang} discLang={discLang} setDiscLang={setDiscLang} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} onShareApp={shareApp} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} t={t} isDesktop={isDesktop}/>
+          <HomeScreen seriesList={seriesList} dataLoading={dataLoading} onSeries={s => { setSelSeries(s); setScreen('series'); }} activePill={activePill} setActivePill={setPill} lang={lang} setLang={setLang} discLang={discLang} setDiscLang={setDiscLang} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} onShareApp={shareApp} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} t={t} isDesktop={isDesktop} user={user} onOpenAuth={() => setShowAuth(true)} onSignOut={signOut}/>
         </div>
         <div className={serClass}>
           {selSeries && <SeriesScreen series={selSeries} onBack={() => setScreen('home')} onEpisode={ep => { playEp(selSeries, ep); setPO(true); }} currentEp={nowPlaying?.series?.i === selSeries?.i ? nowPlaying?.episode : null} t={t}/>}
@@ -282,6 +318,7 @@ function App() {
         episodeIndex={episodeIndex} totalEpisodes={nowPlaying?.series?.e?.length || 0} nextEpisode={nextEpisode}/>
       <div className={`toast${toast?' show':''}`}>{toast}</div>
       {showSplash && <Splash onDone={dismissSplash}/>}
+      {showAuth && <AuthScreen onClose={() => setShowAuth(false)}/>}
     </div>
   );
 }
