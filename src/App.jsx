@@ -1,7 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { T } from './config.js';
-import { AccountScreen } from './components/AccountScreen.jsx';
-import { AuthScreen } from './components/AuthScreen.jsx';
 import { FullPlayer } from './components/FullPlayer.jsx';
 import { HistoryScreen } from './components/HistoryScreen.jsx';
 import { HomeScreen } from './components/HomeScreen.jsx';
@@ -13,6 +11,9 @@ import { Sidebar } from './components/Sidebar.jsx';
 import { Splash } from './components/Splash.jsx';
 import { useAuth } from './contexts/AuthContext.jsx';
 import { supabase, supabaseEnabled } from './lib/supabaseClient.js';
+
+const AccountScreen = lazy(() => import('./components/AccountScreen.jsx').then(m => ({default: m.AccountScreen})));
+const AuthScreen = lazy(() => import('./components/AuthScreen.jsx').then(m => ({default: m.AuthScreen})));
 
 const HISTORY_LIMIT = 60;
 
@@ -30,6 +31,7 @@ const logSupaError = label => [
 function App() {
   const {user, authLoading, signOut} = useAuth();
   const [showAuth, setShowAuth] = useState(false);
+  const visitedAccount = useRef(false);
   const [screen,      setScreen]    = useState('home');
   const [selSeries,   setSelSeries] = useState(null);
   const [lang,        setLang]      = useState('en');
@@ -556,7 +558,11 @@ function App() {
           <HistoryScreen onBack={() => navigate('home')} history={history} onPlayEntry={playEntry} onRemove={removeHistoryEntry} onClearAll={clearHistory}/>
         </div>
         <div className={acctClass}>
-          <AccountScreen onBack={() => navigate('home')} lang={lang} setLang={setLang} onAccountDeleted={() => { navigate('home'); showToast('Account deleted'); }}/>
+          {(screen === 'account' || visitedAccount.current) && (visitedAccount.current = true) && (
+            <Suspense fallback={null}>
+              <AccountScreen onBack={() => navigate('home')} lang={lang} setLang={setLang} onAccountDeleted={() => { navigate('home'); showToast('Account deleted'); }}/>
+            </Suspense>
+          )}
         </div>
       </div>
       <MiniPlayer nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} onPrev={onPrev} onNext={onNext} onOpen={() => setPO(true)} audioRef={audioRef}/>
@@ -571,7 +577,7 @@ function App() {
         episodeIndex={episodeIndex} totalEpisodes={nowPlaying?.series?.e?.length || 0} nextEpisode={nextEpisode}/>
       <div className={`toast${toast?' show':''}`}>{toast}</div>
       {showSplash && <Splash onDone={dismissSplash}/>}
-      {showAuth && <AuthScreen onClose={() => setShowAuth(false)}/>}
+      {showAuth && <Suspense fallback={null}><AuthScreen onClose={() => setShowAuth(false)}/></Suspense>}
     </div>
   );
 }

@@ -1,13 +1,13 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-@font-face{font-family:'Instrument Sans';src:url('/fonts/InstrumentSans-Variable.ttf') format('truetype');font-weight:400 700;font-style:normal;font-display:swap;}
-@font-face{font-family:'Instrument Sans';src:url('/fonts/InstrumentSans-Italic-Variable.ttf') format('truetype');font-weight:400 700;font-style:italic;font-display:swap;}
-@font-face{font-family:'Martel';src:url('/fonts/Martel-Regular.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap;}
-@font-face{font-family:'Martel';src:url('/fonts/Martel-SemiBold.ttf') format('truetype');font-weight:600;font-style:normal;font-display:swap;}
-@font-face{font-family:'Martel';src:url('/fonts/Martel-Bold.ttf') format('truetype');font-weight:700;font-style:normal;font-display:swap;}
-@font-face{font-family:'Hind Siliguri';src:url('/fonts/HindSiliguri-Regular.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap;}
-@font-face{font-family:'Hind Siliguri';src:url('/fonts/HindSiliguri-Medium.ttf') format('truetype');font-weight:500;font-style:normal;font-display:swap;}
-@font-face{font-family:'Hind Siliguri';src:url('/fonts/HindSiliguri-SemiBold.ttf') format('truetype');font-weight:600;font-style:normal;font-display:swap;}
-@font-face{font-family:'Hind Siliguri';src:url('/fonts/HindSiliguri-Bold.ttf') format('truetype');font-weight:700;font-style:normal;font-display:swap;}
+@font-face{font-family:'Instrument Sans';src:url('/fonts/InstrumentSans-Variable.woff2') format('woff2'),url('/fonts/InstrumentSans-Variable.ttf') format('truetype');font-weight:400 700;font-style:normal;font-display:swap;}
+@font-face{font-family:'Instrument Sans';src:url('/fonts/InstrumentSans-Italic-Variable.woff2') format('woff2'),url('/fonts/InstrumentSans-Italic-Variable.ttf') format('truetype');font-weight:400 700;font-style:italic;font-display:swap;}
+@font-face{font-family:'Martel';src:url('/fonts/Martel-Regular.woff2') format('woff2'),url('/fonts/Martel-Regular.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:'Martel';src:url('/fonts/Martel-SemiBold.woff2') format('woff2'),url('/fonts/Martel-SemiBold.ttf') format('truetype');font-weight:600;font-style:normal;font-display:swap;}
+@font-face{font-family:'Martel';src:url('/fonts/Martel-Bold.woff2') format('woff2'),url('/fonts/Martel-Bold.ttf') format('truetype');font-weight:700;font-style:normal;font-display:swap;}
+@font-face{font-family:'Hind Siliguri';src:url('/fonts/HindSiliguri-Regular.woff2') format('woff2'),url('/fonts/HindSiliguri-Regular.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:'Hind Siliguri';src:url('/fonts/HindSiliguri-Medium.woff2') format('woff2'),url('/fonts/HindSiliguri-Medium.ttf') format('truetype');font-weight:500;font-style:normal;font-display:swap;}
+@font-face{font-family:'Hind Siliguri';src:url('/fonts/HindSiliguri-SemiBold.woff2') format('woff2'),url('/fonts/HindSiliguri-SemiBold.ttf') format('truetype');font-weight:600;font-style:normal;font-display:swap;}
+@font-face{font-family:'Hind Siliguri';src:url('/fonts/HindSiliguri-Bold.woff2') format('woff2'),url('/fonts/HindSiliguri-Bold.ttf') format('truetype');font-weight:700;font-style:normal;font-display:swap;}
 
 :root{
   --bg:#F4F4F1;--surface:#FFFFFF;--icon-surface:#F2E0E1;
