@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { IcoUser } from './Icons.jsx';
 
-/* ── Top-right profile icon + dropdown: All Discourses / My Profile ── */
-export function ProfileMenu({size = 32, onSelectBrowse, onSelectProfile}) {
+/* ── Top-right profile icon + dropdown: All Discourses / My Profile / Log Out ── */
+export function ProfileMenu({size = 32, user, onSelectBrowse, onSelectProfile, onSelectLogout}) {
   const [open, setOpen] = useState(false);
   const [rect, setRect] = useState(null);
   const btnRef = useRef();
@@ -33,6 +33,7 @@ export function ProfileMenu({size = 32, onSelectBrowse, onSelectProfile}) {
     <div ref={ddRef} className={`lang-dd${open?' open':''}`} style={{top:rect.top, right:rect.right, left:'auto'}}>
       <div className="lang-opt" onClick={pick(onSelectBrowse)}>All Discourses</div>
       <div className="lang-opt" onClick={pick(onSelectProfile)}>My Profile</div>
+      {user && <div className="lang-opt" onClick={pick(onSelectLogout)}>Log Out</div>}
     </div>,
     document.body
   );
@@ -40,7 +41,7 @@ export function ProfileMenu({size = 32, onSelectBrowse, onSelectProfile}) {
   return (
     <div className="icon-btn-wrap">
       <button ref={btnRef} className={`icon-btn${size>=36?' lg':''}`} onClick={toggle} aria-label="Profile menu">
-        <IcoUser/>
+        {user ? <span className="profile-badge">{user.email[0].toUpperCase()}</span> : <IcoUser/>}
       </button>
       {dd}
     </div>

@@ -6,7 +6,7 @@ import { SeriesCard } from './SeriesCard.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
 
 /* ── Home Screen ── */
-export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setActivePill, discLang, setDiscLang, nowPlaying, audioPct, onResume, onDismissCL, onShareApp, savedSeries, onToggleSave, t, isDesktop, onSelectBrowse, onSelectProfile}) {
+export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setActivePill, discLang, setDiscLang, nowPlaying, audioPct, onResume, onDismissCL, onShareApp, savedSeries, onToggleSave, t, isDesktop, user, onSelectBrowse, onSelectProfile, onSelectLogout}) {
   const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
@@ -31,7 +31,7 @@ export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setAc
         <div className="topbar-wm">Osho<em>·</em></div>
         <div className="topbar-right">
           <button className="icon-btn-label" aria-label="Share" onClick={onShareApp}><IcoShare/><span>Share</span></button>
-          <ProfileMenu size={32} onSelectBrowse={onSelectBrowse} onSelectProfile={onSelectProfile}/>
+          <ProfileMenu size={32} user={user} onSelectBrowse={onSelectBrowse} onSelectProfile={onSelectProfile} onSelectLogout={onSelectLogout}/>
         </div>
       </div>
       <div className="mob-disc-row">
@@ -47,7 +47,7 @@ export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setAc
         <h1>{t.allSeries}<span className="desk-header-count">{filtered.length} series</span></h1>
         <div className="desk-header-right">
           <button className="icon-btn-label lg" aria-label="Share" onClick={onShareApp}><IcoShare s={16}/><span>Share</span></button>
-          <ProfileMenu size={36} onSelectBrowse={onSelectBrowse} onSelectProfile={onSelectProfile}/>
+          <ProfileMenu size={36} user={user} onSelectBrowse={onSelectBrowse} onSelectProfile={onSelectProfile} onSelectLogout={onSelectLogout}/>
         </div>
       </div>
 

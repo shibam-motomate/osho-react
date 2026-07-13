@@ -2,13 +2,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { T } from './config.js';
 import { AuthScreen } from './components/AuthScreen.jsx';
 import { FullPlayer } from './components/FullPlayer.jsx';
+import { HistoryScreen } from './components/HistoryScreen.jsx';
 import { HomeScreen } from './components/HomeScreen.jsx';
 import { MiniPlayer } from './components/MiniPlayer.jsx';
+import { SavedScreen } from './components/SavedScreen.jsx';
 import { SeriesScreen } from './components/SeriesScreen.jsx';
 import { Sidebar } from './components/Sidebar.jsx';
 import { Splash } from './components/Splash.jsx';
 import { useAuth } from './contexts/AuthContext.jsx';
 import { supabase, supabaseEnabled } from './lib/supabaseClient.js';
+
+const HISTORY_LIMIT = 60;
 
 function App() {
   const {user, signOut} = useAuth();
@@ -35,6 +39,9 @@ function App() {
   });
   const [savedSeries, setSavedSeries] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem('osho_saved_series') || '[]')); } catch(e) { return new Set(); }
+  });
+  const [history, setHistory] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('osho_history') || '[]'); } catch(e) { return []; }
   });
   const [dataLoading, setDataLoading] = useState(true);
   const [seriesVersion, setSeriesVersion] = useState(0);
@@ -186,7 +193,31 @@ function App() {
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(() => {});
     }
-  }, []);
+    setHistory(prev => {
+      const entry = {seriesId: series.i, seriesName: series.n, episodeUrl: episode.u, episodeTitle: episode.t, discLang, playedAt: Date.now()};
+      const next = [entry, ...prev.filter(h => h.episodeUrl !== episode.u)].slice(0, HISTORY_LIMIT);
+      try { localStorage.setItem('osho_history', JSON.stringify(next)); } catch(e) {}
+      return next;
+    });
+  }, [discLang]);
+
+  const playFromHistory = useCallback(async entry => {
+    let list = seriesCacheRef.current[entry.discLang];
+    if (!list) {
+      const mod = await (entry.discLang === 'hi' ? import('./data/oshoData.hi.js') : import('./data/oshoData.en.js'));
+      list = entry.discLang === 'hi' ? mod.OSHO_DATA_HI : mod.OSHO_DATA_EN;
+      seriesCacheRef.current[entry.discLang] = list;
+      setSeriesVersion(v => v + 1);
+    }
+    const series = list.find(s => s.i === entry.seriesId);
+    const episode = series?.e.find(e => e.u === entry.episodeUrl);
+    if (!series || !episode) return;
+    setDiscLang(entry.discLang);
+    playEp(series, episode);
+    setPO(true);
+    setScreen('home');
+    setSidebarMode('browse');
+  }, [playEp]);
 
   const onTogglePlay = useCallback(() => {
     const audio = audioRef.current;
@@ -314,22 +345,32 @@ function App() {
   }, []);
 
   const appFont = lang === 'hi' ? 'var(--font-hi)' : lang === 'bn' ? 'var(--font-bn)' : 'var(--font)';
-  const homeClass  = `screen${!isDesktop ? (screen !== 'home'   ? ' behind' : '') : ''} ${isDesktop && screen === 'home'   ? 'desk-show' : ''}`;
-  const serClass   = `screen${!isDesktop ? (screen !== 'series' ? ' hidden' : '') : ''} ${isDesktop && screen === 'series' ? 'desk-show' : ''}`;
+  const homeClass  = `screen${!isDesktop ? (screen !== 'home'    ? ' behind' : '') : ''} ${isDesktop && screen === 'home'    ? 'desk-show' : ''}`;
+  const serClass   = `screen${!isDesktop ? (screen !== 'series'  ? ' hidden' : '') : ''} ${isDesktop && screen === 'series'  ? 'desk-show' : ''}`;
+  const savedClass = `screen${!isDesktop ? (screen !== 'saved'   ? ' hidden' : '') : ''} ${isDesktop && screen === 'saved'   ? 'desk-show' : ''}`;
+  const histClass  = `screen${!isDesktop ? (screen !== 'history' ? ' hidden' : '') : ''} ${isDesktop && screen === 'history' ? 'desk-show' : ''}`;
 
   return (
     <div id="app" className={playerOpen ? 'player-open' : ''} style={{fontFamily:appFont,height:'100vh'}}>
       <audio ref={audioRef} preload="none" style={{display:'none'}}/>
       <Sidebar mode={sidebarMode} onLogoClick={goHome} discLang={discLang} setDiscLang={setDiscLang} activePill={activePill} setActivePill={setPill} t={t} seriesList={seriesList}
-        user={user} lang={lang} setLang={setLang} onSignOut={signOut} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} onOpenSeries={openSeriesFromSidebar}/>
+        user={user} lang={lang} setLang={setLang} onSignOut={signOut}
+        onOpenSaved={() => setScreen('saved')} onOpenHistory={() => setScreen('history')}/>
       <div className="main">
         <div className={homeClass}>
-          <HomeScreen seriesList={seriesList} dataLoading={dataLoading} onSeries={s => { setSelSeries(s); setScreen('series'); }} activePill={activePill} setActivePill={setPill} discLang={discLang} setDiscLang={setDiscLang} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} onShareApp={shareApp} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} t={t} isDesktop={isDesktop}
+          <HomeScreen seriesList={seriesList} dataLoading={dataLoading} onSeries={s => { setSelSeries(s); setScreen('series'); }} activePill={activePill} setActivePill={setPill} discLang={discLang} setDiscLang={setDiscLang} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} onShareApp={shareApp} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} t={t} isDesktop={isDesktop} user={user}
             onSelectBrowse={() => setSidebarMode('browse')}
-            onSelectProfile={() => user ? setSidebarMode('profile') : setShowAuth(true)}/>
+            onSelectProfile={() => user ? setSidebarMode('profile') : setShowAuth(true)}
+            onSelectLogout={signOut}/>
         </div>
         <div className={serClass}>
           {selSeries && <SeriesScreen series={selSeries} onBack={() => setScreen('home')} onEpisode={ep => { playEp(selSeries, ep); setPO(true); }} currentEp={nowPlaying?.series?.i === selSeries?.i ? nowPlaying?.episode : null} t={t}/>}
+        </div>
+        <div className={savedClass}>
+          <SavedScreen onBack={() => { setSidebarMode('profile'); setScreen('home'); }} seriesList={seriesList} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} onSeries={openSeriesFromSidebar} discLang={discLang} t={t}/>
+        </div>
+        <div className={histClass}>
+          <HistoryScreen onBack={() => { setSidebarMode('profile'); setScreen('home'); }} history={history} onPlayEntry={playFromHistory}/>
         </div>
       </div>
       <MiniPlayer nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} onPrev={onPrev} onNext={onNext} onOpen={() => setPO(true)} audioRef={audioRef}/>
