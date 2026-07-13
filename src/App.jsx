@@ -16,10 +16,20 @@ import { supabase, supabaseEnabled } from './lib/supabaseClient.js';
 
 const HISTORY_LIMIT = 60;
 
+const PROFILE_SCREENS = ['saved', 'history', 'account'];
+
+// Supabase writes below are fire-and-forget (state is already updated locally/optimistically),
+// but silently swallowing errors makes sync failures invisible — surface them in the console.
+// Two-arg .then() form so both a resolved {error} and an outright rejected promise (e.g. a
+// network failure) get logged instead of one of them vanishing silently.
+const logSupaError = label => [
+  result => { if (result?.error) console.error(`[supabase] ${label}:`, result.error); },
+  err => console.error(`[supabase] ${label} (request failed):`, err),
+];
+
 function App() {
-  const {user, signOut} = useAuth();
+  const {user, authLoading, signOut} = useAuth();
   const [showAuth, setShowAuth] = useState(false);
-  const [sidebarMode, setSidebarMode] = useState('browse'); // 'browse' | 'profile'
   const [screen,      setScreen]    = useState('home');
   const [selSeries,   setSelSeries] = useState(null);
   const [lang,        setLang]      = useState('en');
@@ -54,6 +64,59 @@ function App() {
   const toastTimer = useRef(null);
   const sleepOptionRef = useRef('off');
   const seriesCacheRef = useRef({});
+
+  const sidebarMode = PROFILE_SCREENS.includes(screen) ? 'profile' : 'browse';
+
+  // Real URL navigation — pushes browser history so back/forward and
+  // shareable links work, instead of just swapping in-memory screen state.
+  const navigate = useCallback((nextScreen, series = null) => {
+    setScreen(nextScreen);
+    if (nextScreen === 'series' && series) setSelSeries(series);
+    else if (nextScreen === 'home') setSelSeries(null);
+    const path = nextScreen === 'series' ? `/series/${encodeURIComponent(series.i)}`
+      : nextScreen === 'home' ? '/' : `/${nextScreen}`;
+    if (window.location.pathname !== path) window.history.pushState({}, '', path);
+  }, []);
+
+  const resolveSeriesById = useCallback(async id => {
+    for (const l of ['en', 'hi']) {
+      let list = seriesCacheRef.current[l];
+      if (!list) {
+        const mod = await (l === 'hi' ? import('./data/oshoData.hi.js') : import('./data/oshoData.en.js'));
+        list = l === 'hi' ? mod.OSHO_DATA_HI : mod.OSHO_DATA_EN;
+        seriesCacheRef.current[l] = list;
+      }
+      const found = list.find(s => s.i === id);
+      if (found) return {series: found, lang: l};
+    }
+    return null;
+  }, []);
+
+  // Parse the current URL into screen state, both on first load and on
+  // browser back/forward navigation.
+  useEffect(() => {
+    const applyPath = async path => {
+      if (path.startsWith('/series/')) {
+        const found = await resolveSeriesById(decodeURIComponent(path.slice('/series/'.length)));
+        if (found) {
+          setDiscLang(found.lang);
+          setSelSeries(found.series);
+          setScreen('series');
+          setSeriesVersion(v => v + 1);
+        } else {
+          setScreen('home');
+        }
+      } else if (path === '/saved' || path === '/history' || path === '/account') {
+        setScreen(path.slice(1));
+      } else {
+        setScreen('home');
+      }
+    };
+    applyPath(window.location.pathname);
+    const onPop = () => applyPath(window.location.pathname);
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [resolveSeriesById]);
 
   // Seeking before the browser has loaded metadata (readyState 0, common with
   // preload="none") is silently ignored, so defer the seek until it's ready.
@@ -202,9 +265,15 @@ function App() {
       const entry = {seriesId: series.i, seriesName: series.n, episodeUrl: episode.u, episodeTitle: episode.t, discLang, playedAt: Date.now()};
       const next = [entry, ...prev.filter(h => h.episodeUrl !== episode.u)].slice(0, HISTORY_LIMIT);
       try { localStorage.setItem('osho_history', JSON.stringify(next)); } catch(e) {}
+      if (supabaseEnabled && user) {
+        supabase.from('listening_history').upsert({
+          user_id: user.id, series_id: series.i, series_name: series.n,
+          episode_url: episode.u, episode_title: episode.t, disc_lang: discLang, played_at: new Date(entry.playedAt).toISOString(),
+        }, {onConflict: 'user_id,episode_url'}).then(...logSupaError('save history entry'));
+      }
       return next;
     });
-  }, [discLang]);
+  }, [discLang, user]);
 
   // Shared resolver for anything stored as {seriesId, episodeUrl, discLang} —
   // history entries and saved episodes both use this shape.
@@ -222,9 +291,8 @@ function App() {
     setDiscLang(entry.discLang);
     playEp(series, episode);
     setPO(true);
-    setScreen('home');
-    setSidebarMode('browse');
-  }, [playEp]);
+    navigate('home');
+  }, [playEp, navigate]);
 
   const onTogglePlay = useCallback(() => {
     const audio = audioRef.current;
@@ -302,9 +370,9 @@ function App() {
       try { localStorage.setItem('osho_saved_series', JSON.stringify(Array.from(next))); } catch(e) {}
       if (supabaseEnabled && user) {
         if (willSave) {
-          supabase.from('saved_series').upsert({user_id: user.id, series_id: id}, {onConflict: 'user_id,series_id'});
+          supabase.from('saved_series').upsert({user_id: user.id, series_id: id}, {onConflict: 'user_id,series_id'}).then(...logSupaError('save series'));
         } else {
-          supabase.from('saved_series').delete().eq('user_id', user.id).eq('series_id', id);
+          supabase.from('saved_series').delete().eq('user_id', user.id).eq('series_id', id).then(...logSupaError('unsave series'));
         }
       }
       return next;
@@ -318,13 +386,14 @@ function App() {
     let cancelled = false;
     (async () => {
       const {data, error} = await supabase.from('saved_series').select('series_id').eq('user_id', user.id);
+      if (error) console.error('[supabase] fetch saved series:', error);
       if (cancelled || error) return;
       const remoteIds = new Set((data || []).map(r => r.series_id));
       setSavedSeries(prev => {
         const toPush = Array.from(prev).filter(id => !remoteIds.has(id));
         if (toPush.length) {
           supabase.from('saved_series')
-            .upsert(toPush.map(series_id => ({user_id: user.id, series_id})), {onConflict: 'user_id,series_id'});
+            .upsert(toPush.map(series_id => ({user_id: user.id, series_id})), {onConflict: 'user_id,series_id'}).then(...logSupaError('push local saved series'));
         }
         const merged = new Set([...prev, ...remoteIds]);
         try { localStorage.setItem('osho_saved_series', JSON.stringify(Array.from(merged))); } catch(e) {}
@@ -346,9 +415,9 @@ function App() {
           supabase.from('saved_episodes').upsert({
             user_id: user.id, series_id: series.i, series_name: series.n,
             episode_url: episode.u, episode_title: episode.t, duration: episode.d, disc_lang: discLang,
-          }, {onConflict: 'user_id,episode_url'});
+          }, {onConflict: 'user_id,episode_url'}).then(...logSupaError('save episode'));
         } else {
-          supabase.from('saved_episodes').delete().eq('user_id', user.id).eq('episode_url', episode.u);
+          supabase.from('saved_episodes').delete().eq('user_id', user.id).eq('episode_url', episode.u).then(...logSupaError('unsave episode'));
         }
       }
       return next;
@@ -361,6 +430,7 @@ function App() {
     let cancelled = false;
     (async () => {
       const {data, error} = await supabase.from('saved_episodes').select('*').eq('user_id', user.id);
+      if (error) console.error('[supabase] fetch saved episodes:', error);
       if (cancelled || error) return;
       const remote = (data || []).map(r => ({seriesId: r.series_id, seriesName: r.series_name, episodeUrl: r.episode_url, episodeTitle: r.episode_title, duration: r.duration, discLang: r.disc_lang}));
       const remoteUrls = new Set(remote.map(r => r.episodeUrl));
@@ -370,7 +440,7 @@ function App() {
           supabase.from('saved_episodes').upsert(toPush.map(e => ({
             user_id: user.id, series_id: e.seriesId, series_name: e.seriesName,
             episode_url: e.episodeUrl, episode_title: e.episodeTitle, duration: e.duration, disc_lang: e.discLang,
-          })), {onConflict: 'user_id,episode_url'});
+          })), {onConflict: 'user_id,episode_url'}).then(...logSupaError('push local saved episodes'));
         }
         const merged = [...toPush, ...remote];
         try { localStorage.setItem('osho_saved_episodes', JSON.stringify(merged)); } catch(e) {}
@@ -380,22 +450,63 @@ function App() {
     return () => { cancelled = true; };
   }, [user]);
 
-  // Revert the sidebar to Browse if signed out while showing the Profile panel
+  // On login, merge the account's listening history with whatever is local, keeping
+  // the most recent playedAt per episode, then push any local-only entries up.
   useEffect(() => {
-    if (sidebarMode === 'profile' && !user) setSidebarMode('browse');
-  }, [sidebarMode, user]);
+    if (!supabaseEnabled || !user) return;
+    let cancelled = false;
+    (async () => {
+      const {data, error} = await supabase.from('listening_history').select('*').eq('user_id', user.id);
+      if (error) console.error('[supabase] fetch history:', error);
+      if (cancelled || error) return;
+      const remote = (data || []).map(r => ({seriesId: r.series_id, seriesName: r.series_name, episodeUrl: r.episode_url, episodeTitle: r.episode_title, discLang: r.disc_lang, playedAt: new Date(r.played_at).getTime()}));
+      setHistory(prev => {
+        const byUrl = new Map();
+        for (const h of [...prev, ...remote]) {
+          const existing = byUrl.get(h.episodeUrl);
+          if (!existing || h.playedAt > existing.playedAt) byUrl.set(h.episodeUrl, h);
+        }
+        const merged = Array.from(byUrl.values()).sort((a, b) => b.playedAt - a.playedAt).slice(0, HISTORY_LIMIT);
+        const remoteUrls = new Set(remote.map(r => r.episodeUrl));
+        const toPush = merged.filter(h => !remoteUrls.has(h.episodeUrl));
+        if (toPush.length) {
+          supabase.from('listening_history').upsert(toPush.map(h => ({
+            user_id: user.id, series_id: h.seriesId, series_name: h.seriesName,
+            episode_url: h.episodeUrl, episode_title: h.episodeTitle, disc_lang: h.discLang, played_at: new Date(h.playedAt).toISOString(),
+          })), {onConflict: 'user_id,episode_url'}).then(...logSupaError('push local history'));
+        }
+        try { localStorage.setItem('osho_history', JSON.stringify(merged)); } catch(e) {}
+        return merged;
+      });
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
 
-  const goHome = useCallback(() => {
-    setScreen('home');
-    setSelSeries(null);
-    setSidebarMode('browse');
-  }, []);
+  // Kick back to Home if signed out while on the account page (Saved/History stay guest-usable).
+  // Waits for authLoading to settle first so a logged-in session restoring from storage
+  // isn't mistaken for a logged-out user on direct/deep-link loads.
+  useEffect(() => {
+    if (!authLoading && screen === 'account' && !user) navigate('home');
+  }, [authLoading, screen, user, navigate]);
 
-  const openSeriesFromSidebar = useCallback(s => {
-    setSelSeries(s);
-    setScreen('series');
-    setSidebarMode('browse');
-  }, []);
+  const removeHistoryEntry = useCallback(episodeUrl => {
+    setHistory(prev => {
+      const next = prev.filter(h => h.episodeUrl !== episodeUrl);
+      try { localStorage.setItem('osho_history', JSON.stringify(next)); } catch(e) {}
+      return next;
+    });
+    if (supabaseEnabled && user) {
+      supabase.from('listening_history').delete().eq('user_id', user.id).eq('episode_url', episodeUrl).then(...logSupaError('remove history entry'));
+    }
+  }, [user]);
+
+  const clearHistory = useCallback(() => {
+    setHistory([]);
+    try { localStorage.setItem('osho_history', '[]'); } catch(e) {}
+    if (supabaseEnabled && user) {
+      supabase.from('listening_history').delete().eq('user_id', user.id).then(...logSupaError('clear history'));
+    }
+  }, [user]);
 
   const savedEpisodeUrls = useMemo(() => new Set(savedEpisodes.map(e => e.episodeUrl)), [savedEpisodes]);
 
@@ -409,37 +520,37 @@ function App() {
   return (
     <div id="app" className={playerOpen ? 'player-open' : ''} style={{fontFamily:appFont,height:'100vh'}}>
       <audio ref={audioRef} preload="none" style={{display:'none'}}/>
-      <Sidebar mode={sidebarMode} onLogoClick={goHome} discLang={discLang} setDiscLang={setDiscLang} activePill={activePill} setActivePill={setPill} t={t} seriesList={seriesList}
+      <Sidebar mode={sidebarMode} screen={screen} onLogoClick={() => navigate('home')} discLang={discLang} setDiscLang={setDiscLang} activePill={activePill} setActivePill={setPill} t={t} seriesList={seriesList}
         user={user} onSignOut={signOut}
-        onOpenAccount={() => setScreen('account')} onOpenSaved={() => setScreen('saved')} onOpenHistory={() => setScreen('history')}/>
+        onOpenAccount={() => navigate('account')} onOpenSaved={() => navigate('saved')} onOpenHistory={() => navigate('history')}/>
       <div className="main">
         <div className={homeClass}>
-          <HomeScreen seriesList={seriesList} dataLoading={dataLoading} onSeries={s => { setSelSeries(s); setScreen('series'); }} activePill={activePill} setActivePill={setPill} discLang={discLang} setDiscLang={setDiscLang} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} onShareApp={shareApp} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} t={t} isDesktop={isDesktop} user={user}
-            onSelectBrowse={() => setSidebarMode('browse')}
-            onSelectProfile={() => user ? setSidebarMode('profile') : setShowAuth(true)}
+          <HomeScreen seriesList={seriesList} dataLoading={dataLoading} onSeries={s => navigate('series', s)} activePill={activePill} setActivePill={setPill} discLang={discLang} setDiscLang={setDiscLang} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} onShareApp={shareApp} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} t={t} isDesktop={isDesktop} user={user}
+            onSelectBrowse={() => navigate('home')}
+            onSelectProfile={() => user ? navigate('account') : setShowAuth(true)}
             onSelectLogout={signOut}/>
         </div>
         <div className={serClass}>
-          {selSeries && <SeriesScreen series={selSeries} onBack={() => setScreen('home')} onEpisode={ep => { playEp(selSeries, ep); setPO(true); }} currentEp={nowPlaying?.series?.i === selSeries?.i ? nowPlaying?.episode : null} savedEpisodeUrls={savedEpisodeUrls} onToggleSaveEpisode={toggleSaveEpisode} t={t}/>}
+          {selSeries && <SeriesScreen series={selSeries} onBack={() => navigate('home')} onEpisode={ep => { playEp(selSeries, ep); setPO(true); }} currentEp={nowPlaying?.series?.i === selSeries?.i ? nowPlaying?.episode : null} savedEpisodeUrls={savedEpisodeUrls} onToggleSaveEpisode={toggleSaveEpisode} t={t}/>}
         </div>
         <div className={savedClass}>
-          <SavedScreen onBack={() => { setSidebarMode('profile'); setScreen('home'); }} seriesList={seriesList} savedSeries={savedSeries} onToggleSave={toggleSaveSeries}
+          <SavedScreen onBack={() => navigate('home')} seriesList={seriesList} savedSeries={savedSeries} onToggleSave={toggleSaveSeries}
             savedEpisodes={savedEpisodes} onToggleSaveEpisode={toggleSaveEpisode} onPlayEpisode={playEntry}
-            onSeries={openSeriesFromSidebar} discLang={discLang} t={t}/>
+            onSeries={s => navigate('series', s)} discLang={discLang} t={t}/>
         </div>
         <div className={histClass}>
-          <HistoryScreen onBack={() => { setSidebarMode('profile'); setScreen('home'); }} history={history} onPlayEntry={playEntry}/>
+          <HistoryScreen onBack={() => navigate('home')} history={history} onPlayEntry={playEntry} onRemove={removeHistoryEntry} onClearAll={clearHistory}/>
         </div>
         <div className={acctClass}>
-          <AccountScreen onBack={() => { setSidebarMode('profile'); setScreen('home'); }} lang={lang} setLang={setLang}/>
+          <AccountScreen onBack={() => navigate('home')} lang={lang} setLang={setLang} onAccountDeleted={() => { navigate('home'); showToast('Account deleted'); }}/>
         </div>
       </div>
       <MiniPlayer nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} onPrev={onPrev} onNext={onNext} onOpen={() => setPO(true)} audioRef={audioRef}/>
       <MobileNav active={screen === 'series' ? 'home' : screen}
-        onBrowse={goHome}
-        onSaved={() => { setSidebarMode('profile'); setScreen('saved'); }}
-        onHistory={() => { setSidebarMode('profile'); setScreen('history'); }}
-        onAccount={() => { if (user) { setSidebarMode('profile'); setScreen('account'); } else { setShowAuth(true); } }}/>
+        onBrowse={() => navigate('home')}
+        onSaved={() => navigate('saved')}
+        onHistory={() => navigate('history')}
+        onAccount={() => user ? navigate('account') : setShowAuth(true)}/>
       <FullPlayer open={playerOpen} onClose={() => setPO(false)} nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} audioRef={audioRef} onPrev={onPrev} onNext={onNext} onSeekSeconds={onSeekSeconds} t={t} isDesktop={isDesktop}
         playbackSpeed={playbackSpeed} setPlaybackSpeed={setPlaybackSpeed}
         sleepOption={sleepOption} setSleepOption={setSleepOption} sleepRemaining={sleepRemaining}

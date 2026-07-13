@@ -3,7 +3,7 @@ import { EPISODE_COUNTS, GENRE_COLORS, GENRE_LIST } from '../config.js';
 import { IcoClock, IcoHeart, IcoLogOut, IcoUser } from './Icons.jsx';
 
 /* ── Sidebar: Browse (genre/language) or Profile (menu) panel ── */
-export function Sidebar({mode, onLogoClick, discLang, setDiscLang, activePill, setActivePill, t, seriesList, user, onSignOut, onOpenAccount, onOpenSaved, onOpenHistory}) {
+export function Sidebar({mode, screen, onLogoClick, discLang, setDiscLang, activePill, setActivePill, t, seriesList, user, onSignOut, onOpenAccount, onOpenSaved, onOpenHistory}) {
   const genres = useMemo(() => {
     const seen = new Set();
     seriesList.forEach(s => seen.add(s.g));
@@ -20,9 +20,9 @@ export function Sidebar({mode, onLogoClick, discLang, setDiscLang, activePill, s
       {mode === 'profile' ? (
         <>
           <div className="sb-nav">
-            <button className="sb-nav-item" onClick={onOpenAccount}><IcoUser s={17}/><span>Account</span></button>
-            <button className="sb-nav-item" onClick={onOpenSaved}><IcoHeart s={17}/><span>Saved</span></button>
-            <button className="sb-nav-item" onClick={onOpenHistory}><IcoClock s={17}/><span>History</span></button>
+            <button className={`sb-nav-item${screen==='account'?' active':''}`} onClick={onOpenAccount}><IcoUser s={17}/><span>Account</span></button>
+            <button className={`sb-nav-item${screen==='saved'?' active':''}`} onClick={onOpenSaved}><IcoHeart s={17}/><span>Saved</span></button>
+            <button className={`sb-nav-item${screen==='history'?' active':''}`} onClick={onOpenHistory}><IcoClock s={17}/><span>History</span></button>
           </div>
           <div style={{flex:1}}/>
           {user && (
