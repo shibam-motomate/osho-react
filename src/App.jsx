@@ -5,7 +5,6 @@ import { AuthScreen } from './components/AuthScreen.jsx';
 import { FullPlayer } from './components/FullPlayer.jsx';
 import { HomeScreen } from './components/HomeScreen.jsx';
 import { MiniPlayer } from './components/MiniPlayer.jsx';
-import { SavedScreen } from './components/SavedScreen.jsx';
 import { SeriesScreen } from './components/SeriesScreen.jsx';
 import { Sidebar } from './components/Sidebar.jsx';
 import { Splash } from './components/Splash.jsx';
@@ -297,33 +296,29 @@ function App() {
     return () => { cancelled = true; };
   }, [user]);
 
-  // Kick back to home if signed out while on the profile screen
+  // Kick back to home if signed out while on the account screen
   useEffect(() => {
-    if (screen === 'profile' && !user) setScreen('home');
+    if (screen === 'account' && !user) setScreen('home');
   }, [screen, user]);
 
   const appFont = lang === 'hi' ? 'var(--font-hi)' : lang === 'bn' ? 'var(--font-bn)' : 'var(--font)';
   const homeClass  = `screen${!isDesktop ? (screen !== 'home'   ? ' behind' : '') : ''} ${isDesktop && screen === 'home'   ? 'desk-show' : ''}`;
   const serClass   = `screen${!isDesktop ? (screen !== 'series' ? ' hidden' : '') : ''} ${isDesktop && screen === 'series' ? 'desk-show' : ''}`;
-  const savedClass = `screen${!isDesktop ? (screen !== 'saved'  ? ' hidden' : '') : ''} ${isDesktop && screen === 'saved'  ? 'desk-show' : ''}`;
-  const profClass  = `screen${!isDesktop ? (screen !== 'profile'? ' hidden' : '') : ''} ${isDesktop && screen === 'profile'? 'desk-show' : ''}`;
+  const accClass   = `screen${!isDesktop ? (screen !== 'account' ? ' hidden' : '') : ''} ${isDesktop && screen === 'account' ? 'desk-show' : ''}`;
 
   return (
     <div id="app" className={playerOpen ? 'player-open' : ''} style={{fontFamily:appFont,height:'100vh'}}>
       <audio ref={audioRef} preload="none" style={{display:'none'}}/>
-      <Sidebar screen={screen} setScreen={setScreen} user={user} onOpenAuth={() => setShowAuth(true)} onSignOut={signOut}/>
+      <Sidebar discLang={discLang} setDiscLang={setDiscLang} activePill={activePill} setActivePill={setPill} t={t} seriesList={seriesList} user={user} onOpenAccount={() => setScreen('account')} onSignOut={signOut}/>
       <div className="main">
         <div className={homeClass}>
-          <HomeScreen seriesList={seriesList} dataLoading={dataLoading} onSeries={s => { setSelSeries(s); setScreen('series'); }} activePill={activePill} setActivePill={setPill} lang={lang} setLang={setLang} discLang={discLang} setDiscLang={setDiscLang} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} onShareApp={shareApp} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} t={t} isDesktop={isDesktop} user={user} onOpenAuth={() => setShowAuth(true)} onOpenAccount={() => setScreen('profile')} onOpenSaved={() => setScreen('saved')}/>
+          <HomeScreen seriesList={seriesList} dataLoading={dataLoading} onSeries={s => { setSelSeries(s); setScreen('series'); }} activePill={activePill} setActivePill={setPill} lang={lang} setLang={setLang} discLang={discLang} setDiscLang={setDiscLang} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} onShareApp={shareApp} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} t={t} isDesktop={isDesktop} user={user} onOpenAuth={() => setShowAuth(true)} onOpenAccount={() => setScreen('account')}/>
         </div>
         <div className={serClass}>
           {selSeries && <SeriesScreen series={selSeries} onBack={() => setScreen('home')} onEpisode={ep => { playEp(selSeries, ep); setPO(true); }} currentEp={nowPlaying?.series?.i === selSeries?.i ? nowPlaying?.episode : null} t={t}/>}
         </div>
-        <div className={savedClass}>
-          <SavedScreen onBack={() => setScreen('home')} seriesList={seriesList} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} onSeries={s => { setSelSeries(s); setScreen('series'); }} discLang={discLang} t={t}/>
-        </div>
-        <div className={profClass}>
-          {user && <AccountScreen user={user} onBack={() => setScreen('home')} onSignOut={signOut}/>}
+        <div className={accClass}>
+          {user && <AccountScreen user={user} onBack={() => setScreen('home')} onSignOut={signOut} seriesList={seriesList} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} onSeries={s => { setSelSeries(s); setScreen('series'); }} discLang={discLang} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} t={t}/>}
         </div>
       </div>
       <MiniPlayer nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} onPrev={onPrev} onNext={onNext} onOpen={() => setPO(true)} audioRef={audioRef}/>
