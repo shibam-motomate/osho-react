@@ -15,7 +15,7 @@ const SITEMAP_URL = `${BASE}/sitemap.xml`;
 // outright regardless of headers, but allows curl with a browser UA. Shell
 // out to curl instead of using fetch.
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36';
-const CONCURRENCY = 2;
+const CONCURRENCY = 3;
 const DELAY_MS = 500;
 const MAX_RETRIES = 4;
 
