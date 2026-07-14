@@ -15,18 +15,30 @@ const SITEMAP_URL = `${BASE}/sitemap.xml`;
 // outright regardless of headers, but allows curl with a browser UA. Shell
 // out to curl instead of using fetch.
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36';
-const CONCURRENCY = 4;
-const DELAY_MS = 250;
+const CONCURRENCY = 2;
+const DELAY_MS = 500;
+const MAX_RETRIES = 4;
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+// Their bot protection intermittently resets connections under sustained
+// crawling even for legitimate pages, so retry with backoff before giving up.
 async function fetchText(url) {
-  const { stdout } = await execFileAsync('curl', ['-sS', '-L', '-A', UA, '--fail', url], {
-    maxBuffer: 20 * 1024 * 1024,
-  });
-  return stdout;
+  let lastErr;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const { stdout } = await execFileAsync('curl', ['-sS', '-L', '-A', UA, '--fail', url], {
+        maxBuffer: 20 * 1024 * 1024,
+      });
+      return stdout;
+    } catch (err) {
+      lastErr = err;
+      if (attempt < MAX_RETRIES) await sleep(1000 * 2 ** attempt);
+    }
+  }
+  throw lastErr;
 }
 
 function extractSlugs(sitemapXml) {
