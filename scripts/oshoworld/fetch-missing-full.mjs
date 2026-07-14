@@ -58,8 +58,24 @@ async function mapWithConcurrency(items, limit, fn) {
 }
 
 function toMp3Url(file) {
-  // file like "/wp-content/uploads/newAudios/A_Bird_(11)/A_Bird__01.mp3"
-  return BASE + file.split('/').map(encodeURIComponent).join('/');
+  // Their `file` paths are inconsistently escaped: some segments are plain
+  // text with reserved characters ("A_Bird_on_the_Wing_(11)"), others are
+  // already percent-encoded ("Hindi%20Audio"). Decode first so re-encoding
+  // is idempotent either way, instead of double-encoding the latter into
+  // "%2520" (which 404s).
+  return (
+    BASE +
+    file
+      .split('/')
+      .map((seg) => {
+        try {
+          return encodeURIComponent(decodeURIComponent(seg));
+        } catch {
+          return encodeURIComponent(seg);
+        }
+      })
+      .join('/')
+  );
 }
 
 async function fetchFullSeries(missing) {
