@@ -29,9 +29,13 @@ async function fetchText(url) {
   let lastErr;
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const { stdout } = await execFileAsync('curl', ['-sS', '-L', '-A', UA, '--fail', url], {
-        maxBuffer: 20 * 1024 * 1024,
-      });
+      // --max-time bounds the whole request; without it a stalled connection
+      // (no RST, just silence) hangs curl forever and wedges a worker slot.
+      const { stdout } = await execFileAsync(
+        'curl',
+        ['-sS', '-L', '-A', UA, '--fail', '--connect-timeout', '10', '--max-time', '30', url],
+        { maxBuffer: 20 * 1024 * 1024, timeout: 35000 },
+      );
       return stdout;
     } catch (err) {
       lastErr = err;
