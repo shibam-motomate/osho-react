@@ -22,6 +22,11 @@ const HISTORY_LIMIT = 60;
 
 const PROFILE_SCREENS = ['saved', 'history', 'account'];
 
+// The video library is Hindi-only for now (see src/data/oshoVideos.js) — if the
+// discourse-language toggle is still on English when Videos is opened, there'd be
+// nothing to show, so fall back to a language that actually has video content.
+const videoLangWithContent = lang => ((lang === 'hi' ? OSHO_VIDEOS_HI : OSHO_VIDEOS_EN).length > 0 ? lang : 'hi');
+
 // Supabase writes below are fire-and-forget (state is already updated locally/optimistically),
 // but silently swallowing errors makes sync failures invisible — surface them in the console.
 // Two-arg .then() form so both a resolved {error} and an outright rejected promise (e.g. a
@@ -97,6 +102,7 @@ function App() {
   // distinct from navigate('home') which just returns to Home in whichever tab is active.
   const selectContentType = useCallback(ct => {
     setContentType(ct);
+    if (ct === 'videos') setDiscLang(videoLangWithContent);
     setScreen('home');
     setSelSeries(null);
     const path = ct === 'videos' ? '/videos' : ct === 'books' ? '/books' : '/';
@@ -143,7 +149,9 @@ function App() {
       } else if (path === '/saved' || path === '/history' || path === '/account') {
         setScreen(path.slice(1));
       } else if (path === '/videos' || path === '/books') {
-        setContentType(path.slice(1));
+        const ct = path.slice(1);
+        setContentType(ct);
+        if (ct === 'videos') setDiscLang(videoLangWithContent);
         setScreen('home');
       } else {
         setContentType('discourses');
