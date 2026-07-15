@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { EPISODE_COUNTS, GENRE_COLORS, GENRE_LIST } from '../config.js';
-import { IcoClock, IcoHeart, IcoLogOut, IcoUser } from './Icons.jsx';
+import { IcoBook, IcoClock, IcoHeart, IcoLogOut, IcoUser } from './Icons.jsx';
 
 /* ── Sidebar: Browse (genre/language) or Profile (menu) panel ── */
-export function Sidebar({mode, screen, onLogoClick, discLang, setDiscLang, activePill, setActivePill, t, seriesList, user, onSignOut, onOpenAccount, onOpenSaved, onOpenHistory}) {
+export function Sidebar({mode, screen, onLogoClick, discLang, setDiscLang, activePill, setActivePill, t, seriesList, user, onSignOut, onOpenAccount, onOpenSaved, onOpenHistory, onOpenBooks}) {
   const genres = useMemo(() => {
     const seen = new Set();
     seriesList.forEach(s => seen.add(s.g));
@@ -33,6 +33,9 @@ export function Sidebar({mode, screen, onLogoClick, discLang, setDiscLang, activ
         </>
       ) : (
         <>
+          <div className="sb-nav">
+            <button className={`sb-nav-item${screen==='books'?' active':''}`} onClick={onOpenBooks}><IcoBook s={17}/><span>{t.books}</span></button>
+          </div>
           <div className="sb-sec">
             <div className="sb-lbl">{t.discourseLang}</div>
             <div className="sb-disc">

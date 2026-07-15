@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { T } from './config.js';
+import { BooksScreen } from './components/BooksScreen.jsx';
 import { FullPlayer } from './components/FullPlayer.jsx';
 import { HistoryScreen } from './components/HistoryScreen.jsx';
 import { HomeScreen } from './components/HomeScreen.jsx';
@@ -112,7 +113,7 @@ function App() {
         } else {
           setScreen('home');
         }
-      } else if (path === '/saved' || path === '/history' || path === '/account') {
+      } else if (path === '/saved' || path === '/history' || path === '/account' || path === '/books') {
         setScreen(path.slice(1));
       } else {
         setScreen('home');
@@ -528,6 +529,7 @@ function App() {
     return `${base} tab-hidden`;
   };
   const homeClass  = tabClass('home');
+  const booksClass = tabClass('books');
   const savedClass = tabClass('saved');
   const histClass  = tabClass('history');
   const acctClass  = tabClass('account');
@@ -538,7 +540,7 @@ function App() {
       <audio ref={audioRef} preload="none" style={{display:'none'}}/>
       <Sidebar mode={sidebarMode} screen={screen} onLogoClick={() => navigate('home')} discLang={discLang} setDiscLang={setDiscLang} activePill={activePill} setActivePill={setPill} t={t} seriesList={seriesList}
         user={user} onSignOut={signOut}
-        onOpenAccount={() => navigate('account')} onOpenSaved={() => navigate('saved')} onOpenHistory={() => navigate('history')}/>
+        onOpenAccount={() => navigate('account')} onOpenSaved={() => navigate('saved')} onOpenHistory={() => navigate('history')} onOpenBooks={() => navigate('books')}/>
       <div className="main">
         <div className={homeClass}>
           <HomeScreen seriesList={seriesList} dataLoading={dataLoading} onSeries={s => navigate('series', s)} activePill={activePill} setActivePill={setPill} discLang={discLang} setDiscLang={setDiscLang} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} onShareApp={shareApp} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} t={t} isDesktop={isDesktop} user={user}
@@ -548,6 +550,9 @@ function App() {
         </div>
         <div className={serClass}>
           {selSeries && <SeriesScreen series={selSeries} onBack={() => navigate('home')} onEpisode={ep => { playEp(selSeries, ep); setPO(true); }} currentEp={nowPlaying?.series?.i === selSeries?.i ? nowPlaying?.episode : null} savedEpisodeUrls={savedEpisodeUrls} onToggleSaveEpisode={toggleSaveEpisode} t={t}/>}
+        </div>
+        <div className={booksClass}>
+          <BooksScreen t={t} isDesktop={isDesktop}/>
         </div>
         <div className={savedClass}>
           <SavedScreen onBack={() => navigate('home')} seriesList={seriesList} savedSeries={savedSeries} onToggleSave={toggleSaveSeries}
@@ -566,8 +571,9 @@ function App() {
         </div>
       </div>
       <MiniPlayer nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} onPrev={onPrev} onNext={onNext} onOpen={() => setPO(true)} audioRef={audioRef}/>
-      <MobileNav active={screen === 'series' ? 'home' : screen}
+      <MobileNav active={screen === 'series' ? 'home' : screen} t={t}
         onBrowse={() => navigate('home')}
+        onBooks={() => navigate('books')}
         onSaved={() => navigate('saved')}
         onHistory={() => navigate('history')}
         onAccount={() => user ? navigate('account') : setShowAuth(true)}/>
