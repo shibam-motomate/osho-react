@@ -1,28 +1,50 @@
 import { useMemo, useState } from 'react';
 import { GENRE_COLORS, GENRE_LIST } from '../config.js';
+import { OSHO_BOOKS } from '../data/oshoBooks.js';
+import { BookCard } from './BookCard.jsx';
 import { IcoSearch, IcoShare, IcoX } from './Icons.jsx';
 import { ProfileMenu } from './ProfileMenu.jsx';
 import { SeriesCard } from './SeriesCard.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
 
 /* ── Home Screen ── */
-export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setActivePill, discLang, setDiscLang, nowPlaying, audioPct, onResume, onDismissCL, onShareApp, savedSeries, onToggleSave, t, isDesktop, user, onSelectBrowse, onSelectProfile, onSelectLogout}) {
+export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setActivePill, discLang, setDiscLang, contentType, onSelectContentType, nowPlaying, audioPct, onResume, onDismissCL, onShareApp, savedSeries, onToggleSave, savedBooks, onToggleSaveBook, onReadBook, t, isDesktop, user, onSelectBrowse, onSelectProfile, onSelectLogout}) {
   const [search, setSearch] = useState('');
+  const isBooks = contentType === 'books';
+  const isVideos = contentType === 'videos';
 
   const filtered = useMemo(() => {
+    if (isBooks) return [];
     let list = activePill === 'all' ? seriesList : seriesList.filter(s => s.g === activePill);
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(s => s.n.toLowerCase().includes(q));
     }
     return list;
-  }, [seriesList, activePill, search]);
+  }, [isBooks, seriesList, activePill, search]);
+
+  const filteredBooks = useMemo(() => {
+    if (!isBooks) return [];
+    let list = activePill === 'all' ? OSHO_BOOKS : OSHO_BOOKS.filter(b => b.tag === activePill);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(b => b.n.toLowerCase().includes(q) || b.author.toLowerCase().includes(q));
+    }
+    return list;
+  }, [isBooks, activePill, search]);
 
   const genres = useMemo(() => {
+    if (isBooks) return [];
     const seen = new Set();
     seriesList.forEach(s => seen.add(s.g));
     return GENRE_LIST.filter(g => g !== 'all' && seen.has(g));
-  }, [seriesList]);
+  }, [isBooks, seriesList]);
+
+  const formats = useMemo(() => Array.from(new Set(OSHO_BOOKS.map(b => b.tag))), []);
+
+  const searchPlaceholder = isBooks ? t.searchBooks : isVideos ? t.searchVideos : t.search;
+  const pageTitle = isBooks ? t.allBooks : isVideos ? t.videosTab : t.allSeries;
+  const itemCount = isBooks ? filteredBooks.length : filtered.length;
 
   return (
     <>
@@ -30,34 +52,43 @@ export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setAc
       <div className="topbar">
         <div className="topbar-wm">Osho<em>·</em></div>
         <div className="topbar-right">
-          <div className="mob-disc">
-            <button className={`mob-disc-btn ${discLang==='en'?'active':''}`} onClick={() => setDiscLang('en')}>{t.discEn}</button>
-            <button className={`mob-disc-btn ${discLang==='hi'?'active':''}`} onClick={() => setDiscLang('hi')}>{t.discHi}</button>
-          </div>
+          {!isBooks && (
+            <div className="mob-disc">
+              <button className={`mob-disc-btn ${discLang==='en'?'active':''}`} onClick={() => setDiscLang('en')}>{t.discEn}</button>
+              <button className={`mob-disc-btn ${discLang==='hi'?'active':''}`} onClick={() => setDiscLang('hi')}>{t.discHi}</button>
+            </div>
+          )}
           <button className="icon-btn" aria-label="Share" onClick={onShareApp}><IcoShare/></button>
         </div>
       </div>
 
       {/* Desktop header */}
       <div className="desk-header">
-        <h1>{t.allSeries}<span className="desk-header-count">{filtered.length} series</span></h1>
+        <h1>{pageTitle}<span className="desk-header-count">{itemCount} {isBooks ? 'books' : 'series'}</span></h1>
         <div className="desk-header-right">
           <button className="icon-btn-label lg" aria-label="Share" onClick={onShareApp}><IcoShare s={16}/><span>Share</span></button>
           <ProfileMenu size={36} user={user} onSelectBrowse={onSelectBrowse} onSelectProfile={onSelectProfile} onSelectLogout={onSelectLogout}/>
         </div>
       </div>
 
+      {/* Content-type switcher — Discourses / Videos / Books */}
+      <div className="ct-tabs">
+        <button className={`ct-tab-btn${contentType==='discourses'?' active':''}`} onClick={() => onSelectContentType('discourses')}>{t.discoursesTab}</button>
+        <button className={`ct-tab-btn${contentType==='videos'?' active':''}`} onClick={() => onSelectContentType('videos')}>{t.videosTab}</button>
+        <button className={`ct-tab-btn${contentType==='books'?' active':''}`} onClick={() => onSelectContentType('books')}>{t.booksTab}</button>
+      </div>
+
       <div className="screen-body">
       <div className="search-wrap">
         <div className="sbar">
           <span style={{color:'var(--muted)'}}><IcoSearch/></span>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t.search}/>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder={searchPlaceholder}/>
           {search && <button style={{background:'none',border:'none',cursor:'pointer',color:'var(--muted)',padding:0,display:'flex'}} onClick={() => setSearch('')}><IcoX/></button>}
         </div>
       </div>
 
       {/* Continue Listening */}
-      {nowPlaying && (
+      {!isBooks && nowPlaying && (
         <div style={{marginBottom:4}}>
           <div className="sec-lbl">{t.continueListening}</div>
           <div className="cl-card" onClick={onResume}>
@@ -77,8 +108,8 @@ export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setAc
         </div>
       )}
 
-      {/* Genre tiles — mobile only */}
-      {!search && (
+      {/* Genre tiles — mobile only, discourses/videos */}
+      {!isBooks && !search && (
         <div className="genre-section" style={{marginBottom:24}}>
           <div className="sec-lbl">{t.exploreTopic}</div>
           <div className="genre-scroll">
@@ -98,27 +129,41 @@ export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setAc
         </div>
       )}
 
-      {/* Filter pills — mobile only */}
+      {/* Filter pills — mobile only: genres for discourses/videos, format for books */}
       <div className="filter-scroll">
         <button className={`filter-pill ${activePill==='all'?'active':''}`} onClick={() => setActivePill('all')}>{t.all}</button>
-        {genres.map(g => (
-          <button key={g} className={`filter-pill ${activePill===g?'active':''}`} onClick={() => setActivePill(g)}>
-            {t.genres[g] || g}
-          </button>
-        ))}
+        {isBooks
+          ? formats.map(f => (
+              <button key={f} className={`filter-pill ${activePill===f?'active':''}`} onClick={() => setActivePill(f)}>{f}</button>
+            ))
+          : genres.map(g => (
+              <button key={g} className={`filter-pill ${activePill===g?'active':''}`} onClick={() => setActivePill(g)}>
+                {t.genres[g] || g}
+              </button>
+            ))}
       </div>
 
-      {/* Series grid */}
-      {!isDesktop && <div className="sec-lbl">{t.allSeries}</div>}
-      <div className="series-grid">
-        {dataLoading ? (
-          <div className="empty-state"><div className="loader-ring" style={{margin:'0 auto'}}/></div>
-        ) : filtered.length === 0 ? (
-          <div className="empty-state">{t.noSeries}</div>
-        ) : filtered.map(s => (
-          <SeriesCard key={s.i} s={s} discLang={discLang} saved={savedSeries.has(s.i)} onOpen={onSeries} onToggleSave={onToggleSave} t={t}/>
-        ))}
-      </div>
+      {/* Grid */}
+      {!isDesktop && <div className="sec-lbl">{pageTitle}</div>}
+      {isBooks ? (
+        <div className="series-grid book-grid">
+          {filteredBooks.length === 0 ? (
+            <div className="empty-state">{t.noBooks}</div>
+          ) : filteredBooks.map(b => (
+            <BookCard key={b.i} b={b} saved={savedBooks.has(b.i)} onToggleSave={onToggleSaveBook} onRead={onReadBook}/>
+          ))}
+        </div>
+      ) : (
+        <div className="series-grid">
+          {dataLoading ? (
+            <div className="empty-state"><div className="loader-ring" style={{margin:'0 auto'}}/></div>
+          ) : filtered.length === 0 ? (
+            <div className="empty-state">{isVideos ? t.noVideos : t.noSeries}</div>
+          ) : filtered.map(s => (
+            <SeriesCard key={s.i} s={s} discLang={discLang} saved={savedSeries.has(s.i)} onOpen={onSeries} onToggleSave={onToggleSave} t={t}/>
+          ))}
+        </div>
+      )}
       </div>
 
       <div className="footer-band">

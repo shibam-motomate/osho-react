@@ -1,14 +1,28 @@
 import { useMemo } from 'react';
-import { EPISODE_COUNTS, GENRE_COLORS, GENRE_LIST } from '../config.js';
+import { BOOK_FORMAT_COLORS, EPISODE_COUNTS, GENRE_COLORS, GENRE_LIST } from '../config.js';
+import { OSHO_BOOKS } from '../data/oshoBooks.js';
+import { OSHO_VIDEOS_EN, OSHO_VIDEOS_HI } from '../data/oshoVideos.js';
 import { IcoClock, IcoHeart, IcoLogOut, IcoUser } from './Icons.jsx';
 
+const VIDEO_EPISODE_COUNTS = {
+  en: OSHO_VIDEOS_EN.reduce((a, s) => a + s.e.length, 0),
+  hi: OSHO_VIDEOS_HI.reduce((a, s) => a + s.e.length, 0),
+};
+
 /* ── Sidebar: Browse (genre/language) or Profile (menu) panel ── */
-export function Sidebar({mode, screen, onLogoClick, discLang, setDiscLang, activePill, setActivePill, t, seriesList, user, onSignOut, onOpenAccount, onOpenSaved, onOpenHistory}) {
+export function Sidebar({mode, screen, onLogoClick, discLang, setDiscLang, activePill, setActivePill, t, seriesList, contentType, user, onSignOut, onOpenAccount, onOpenSaved, onOpenHistory}) {
+  const isBooks = contentType === 'books';
+  const isVideos = contentType === 'videos';
+
   const genres = useMemo(() => {
     const seen = new Set();
     seriesList.forEach(s => seen.add(s.g));
     return GENRE_LIST.filter(g => g === 'all' || seen.has(g));
   }, [seriesList]);
+
+  const formats = useMemo(() => ['all', ...Array.from(new Set(OSHO_BOOKS.map(b => b.tag)))], []);
+
+  const langCounts = isVideos ? VIDEO_EPISODE_COUNTS : EPISODE_COUNTS;
 
   return (
     <aside className="sb">
@@ -31,16 +45,31 @@ export function Sidebar({mode, screen, onLogoClick, discLang, setDiscLang, activ
             </div>
           )}
         </>
+      ) : isBooks ? (
+        <div className="sb-sec" style={{flex:1}}>
+          <div className="sb-lbl">{t.format}</div>
+          <div className="sb-genres">
+            {formats.map(f => {
+              const c = BOOK_FORMAT_COLORS[f] || '#C0B8B0';
+              return (
+                <div key={f} className={`sb-genre-item ${activePill===f?'active':''}`} onClick={() => setActivePill(f)}>
+                  <div className="sb-genre-dot" style={{background: f==='all' ? 'var(--muted)' : c}}/>
+                  <span className="sb-genre-name">{f==='all' ? t.all : f}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       ) : (
         <>
           <div className="sb-sec">
-            <div className="sb-lbl">{t.discourseLang}</div>
+            <div className="sb-lbl">{isVideos ? t.videosIn : t.discourseLang}</div>
             <div className="sb-disc">
               <button className={`sb-disc-btn ${discLang==='en'?'active':''}`} onClick={() => setDiscLang('en')}>
-                {t.discEn}<span style={{fontSize:10,opacity:0.7,marginLeft:4}}>· {EPISODE_COUNTS.en}</span>
+                {t.discEn}<span style={{fontSize:10,opacity:0.7,marginLeft:4}}>· {langCounts.en}</span>
               </button>
               <button className={`sb-disc-btn ${discLang==='hi'?'active':''}`} onClick={() => setDiscLang('hi')}>
-                {t.discHi}<span style={{fontSize:10,opacity:0.7,marginLeft:4}}>· {EPISODE_COUNTS.hi}</span>
+                {t.discHi}<span style={{fontSize:10,opacity:0.7,marginLeft:4}}>· {langCounts.hi}</span>
               </button>
             </div>
           </div>

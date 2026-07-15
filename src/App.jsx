@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { T } from './config.js';
+import { T, isVideoId } from './config.js';
 import { FullPlayer } from './components/FullPlayer.jsx';
 import { HistoryScreen } from './components/HistoryScreen.jsx';
 import { HomeScreen } from './components/HomeScreen.jsx';
@@ -10,6 +10,8 @@ import { SeriesScreen } from './components/SeriesScreen.jsx';
 import { Sidebar } from './components/Sidebar.jsx';
 import { Splash } from './components/Splash.jsx';
 import { useAuth } from './contexts/AuthContext.jsx';
+import { OSHO_BOOKS } from './data/oshoBooks.js';
+import { OSHO_VIDEOS_EN, OSHO_VIDEOS_HI } from './data/oshoVideos.js';
 import { supabase, supabaseEnabled } from './lib/supabaseClient.js';
 
 const AccountScreen = lazy(() => import('./components/AccountScreen.jsx').then(m => ({default: m.AccountScreen})));
@@ -51,8 +53,12 @@ function App() {
   const [showSplash, setShowSplash] = useState(() => {
     try { return !localStorage.getItem('osho_seen_intro'); } catch(e) { return false; }
   });
+  const [contentType, setContentType] = useState('discourses'); // 'discourses' | 'videos' | 'books'
   const [savedSeries, setSavedSeries] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem('osho_saved_series') || '[]')); } catch(e) { return new Set(); }
+  });
+  const [savedBooks, setSavedBooks] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('osho_saved_books') || '[]')); } catch(e) { return new Set(); }
   });
   const [history, setHistory] = useState(() => {
     try { return JSON.parse(localStorage.getItem('osho_history') || '[]'); } catch(e) { return []; }
@@ -84,7 +90,25 @@ function App() {
     if (window.location.pathname !== path) window.history.pushState({}, '', path);
   }, [screen]);
 
+  // Switching Discourses/Videos/Books is its own top-level route (#/, #/videos, #/books),
+  // distinct from navigate('home') which just returns to Home in whichever tab is active.
+  const selectContentType = useCallback(ct => {
+    setContentType(ct);
+    setScreen('home');
+    setSelSeries(null);
+    const path = ct === 'videos' ? '/videos' : ct === 'books' ? '/books' : '/';
+    if (window.location.pathname !== path) window.history.pushState({}, '', path);
+  }, []);
+
   const resolveSeriesById = useCallback(async id => {
+    if (isVideoId(id)) {
+      for (const l of ['en', 'hi']) {
+        const list = l === 'hi' ? OSHO_VIDEOS_HI : OSHO_VIDEOS_EN;
+        const found = list.find(s => s.i === id);
+        if (found) return {series: found, lang: l, pool: 'videos'};
+      }
+      return null;
+    }
     for (const l of ['en', 'hi']) {
       let list = seriesCacheRef.current[l];
       if (!list) {
@@ -93,7 +117,7 @@ function App() {
         seriesCacheRef.current[l] = list;
       }
       const found = list.find(s => s.i === id);
-      if (found) return {series: found, lang: l};
+      if (found) return {series: found, lang: l, pool: 'discourses'};
     }
     return null;
   }, []);
@@ -106,6 +130,7 @@ function App() {
         const found = await resolveSeriesById(decodeURIComponent(path.slice('/series/'.length)));
         if (found) {
           setDiscLang(found.lang);
+          setContentType(found.pool);
           setSelSeries(found.series);
           setScreen('series');
           setSeriesVersion(v => v + 1);
@@ -114,7 +139,11 @@ function App() {
         }
       } else if (path === '/saved' || path === '/history' || path === '/account') {
         setScreen(path.slice(1));
+      } else if (path === '/videos' || path === '/books') {
+        setContentType(path.slice(1));
+        setScreen('home');
       } else {
+        setContentType('discourses');
         setScreen('home');
       }
     };
@@ -149,7 +178,21 @@ function App() {
     });
   }, [discLang]);
 
-  const seriesList = useMemo(() => seriesCacheRef.current[discLang] || [], [discLang, seriesVersion]);
+  const discourseList = useMemo(() => seriesCacheRef.current[discLang] || [], [discLang, seriesVersion]);
+  const videoList = useMemo(() => (discLang === 'hi' ? OSHO_VIDEOS_HI : OSHO_VIDEOS_EN), [discLang]);
+  // Tagged with the language each series belongs to, so the Saved screen (which combines
+  // both languages into one list) can label each card correctly regardless of the current
+  // discLang toggle.
+  const allDiscourseSeries = useMemo(() => [
+    ...(seriesCacheRef.current.en || []).map(s => ({...s, _lang: 'en'})),
+    ...(seriesCacheRef.current.hi || []).map(s => ({...s, _lang: 'hi'})),
+  ], [seriesVersion]);
+  const allVideoSeries = useMemo(() => [
+    ...OSHO_VIDEOS_EN.map(s => ({...s, _lang: 'en'})),
+    ...OSHO_VIDEOS_HI.map(s => ({...s, _lang: 'hi'})),
+  ], []);
+  const seriesList = contentType === 'videos' ? videoList : contentType === 'books' ? [] : discourseList;
+  const listLoading = contentType === 'discourses' ? dataLoading : false;
 
   // Hide splash loader once app has mounted
   useEffect(() => {
@@ -160,8 +203,8 @@ function App() {
     return () => clearTimeout(t);
   }, []);
 
-  // Reset genre filter when discourse language changes
-  useEffect(() => { setPill('all'); }, [discLang]);
+  // Reset genre/format filter when discourse language or content type changes
+  useEffect(() => { setPill('all'); }, [discLang, contentType]);
 
   useEffect(() => { sleepOptionRef.current = sleepOption; }, [sleepOption]);
 
@@ -284,17 +327,24 @@ function App() {
   // Shared resolver for anything stored as {seriesId, episodeUrl, discLang} —
   // history entries and saved episodes both use this shape.
   const playEntry = useCallback(async entry => {
-    let list = seriesCacheRef.current[entry.discLang];
-    if (!list) {
-      const mod = await (entry.discLang === 'hi' ? import('./data/oshoData.hi.js') : import('./data/oshoData.en.js'));
-      list = entry.discLang === 'hi' ? mod.OSHO_DATA_HI : mod.OSHO_DATA_EN;
-      seriesCacheRef.current[entry.discLang] = list;
-      setSeriesVersion(v => v + 1);
+    const pool = isVideoId(entry.seriesId) ? 'videos' : 'discourses';
+    let list;
+    if (pool === 'videos') {
+      list = entry.discLang === 'hi' ? OSHO_VIDEOS_HI : OSHO_VIDEOS_EN;
+    } else {
+      list = seriesCacheRef.current[entry.discLang];
+      if (!list) {
+        const mod = await (entry.discLang === 'hi' ? import('./data/oshoData.hi.js') : import('./data/oshoData.en.js'));
+        list = entry.discLang === 'hi' ? mod.OSHO_DATA_HI : mod.OSHO_DATA_EN;
+        seriesCacheRef.current[entry.discLang] = list;
+        setSeriesVersion(v => v + 1);
+      }
     }
     const series = list.find(s => s.i === entry.seriesId);
     const episode = series?.e.find(e => e.u === entry.episodeUrl);
     if (!series || !episode) return;
     setDiscLang(entry.discLang);
+    setContentType(pool);
     playEp(series, episode);
     setPO(true);
     navigate('home');
@@ -352,6 +402,8 @@ function App() {
     toastTimer.current = setTimeout(() => setToast(null), 2200);
   }, []);
 
+  const onReadBook = useCallback(() => { showToast(t.readComingSoon); }, [t, showToast]);
+
   const shareApp = useCallback(() => {
     const url = window.location.href;
     if (navigator.share) {
@@ -384,6 +436,16 @@ function App() {
       return next;
     });
   }, [user]);
+
+  // Saved books are local-device only for now (no backend table for them yet)
+  const toggleSaveBook = useCallback(id => {
+    setSavedBooks(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      try { localStorage.setItem('osho_saved_books', JSON.stringify(Array.from(next))); } catch(e) {}
+      return next;
+    });
+  }, []);
 
   // On login, merge the account's saved series with whatever is saved locally
   // (guest usage before signing in), then push any local-only saves up.
@@ -536,12 +598,12 @@ function App() {
   return (
     <div id="app" className={playerOpen ? 'player-open' : ''} style={{fontFamily:appFont,height:'100vh'}}>
       <audio ref={audioRef} preload="none" style={{display:'none'}}/>
-      <Sidebar mode={sidebarMode} screen={screen} onLogoClick={() => navigate('home')} discLang={discLang} setDiscLang={setDiscLang} activePill={activePill} setActivePill={setPill} t={t} seriesList={seriesList}
+      <Sidebar mode={sidebarMode} screen={screen} onLogoClick={() => navigate('home')} discLang={discLang} setDiscLang={setDiscLang} activePill={activePill} setActivePill={setPill} t={t} seriesList={seriesList} contentType={contentType}
         user={user} onSignOut={signOut}
         onOpenAccount={() => navigate('account')} onOpenSaved={() => navigate('saved')} onOpenHistory={() => navigate('history')}/>
       <div className="main">
         <div className={homeClass}>
-          <HomeScreen seriesList={seriesList} dataLoading={dataLoading} onSeries={s => navigate('series', s)} activePill={activePill} setActivePill={setPill} discLang={discLang} setDiscLang={setDiscLang} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} onShareApp={shareApp} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} t={t} isDesktop={isDesktop} user={user}
+          <HomeScreen seriesList={seriesList} dataLoading={listLoading} onSeries={s => navigate('series', s)} activePill={activePill} setActivePill={setPill} discLang={discLang} setDiscLang={setDiscLang} contentType={contentType} onSelectContentType={selectContentType} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} onShareApp={shareApp} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} savedBooks={savedBooks} onToggleSaveBook={toggleSaveBook} onReadBook={onReadBook} t={t} isDesktop={isDesktop} user={user}
             onSelectBrowse={() => navigate('home')}
             onSelectProfile={() => user ? navigate('account') : setShowAuth(true)}
             onSelectLogout={signOut}/>
@@ -550,9 +612,10 @@ function App() {
           {selSeries && <SeriesScreen series={selSeries} onBack={() => navigate('home')} onEpisode={ep => { playEp(selSeries, ep); setPO(true); }} currentEp={nowPlaying?.series?.i === selSeries?.i ? nowPlaying?.episode : null} savedEpisodeUrls={savedEpisodeUrls} onToggleSaveEpisode={toggleSaveEpisode} t={t}/>}
         </div>
         <div className={savedClass}>
-          <SavedScreen onBack={() => navigate('home')} seriesList={seriesList} savedSeries={savedSeries} onToggleSave={toggleSaveSeries}
+          <SavedScreen onBack={() => navigate('home')} discourseSeries={allDiscourseSeries} videoSeries={allVideoSeries} books={OSHO_BOOKS} savedSeries={savedSeries} onToggleSave={toggleSaveSeries}
             savedEpisodes={savedEpisodes} onToggleSaveEpisode={toggleSaveEpisode} onPlayEpisode={playEntry}
-            onSeries={s => navigate('series', s)} discLang={discLang} t={t}/>
+            savedBooks={savedBooks} onToggleSaveBook={toggleSaveBook} onReadBook={onReadBook}
+            onSeries={s => navigate('series', s)} t={t}/>
         </div>
         <div className={histClass}>
           <HistoryScreen onBack={() => navigate('home')} history={history} onPlayEntry={playEntry} onRemove={removeHistoryEntry} onClearAll={clearHistory}/>
