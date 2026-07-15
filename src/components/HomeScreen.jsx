@@ -1,15 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { GENRE_COLORS, GENRE_LIST } from '../config.js';
 import { OSHO_BOOKS } from '../data/oshoBooks.js';
 import { BookCard } from './BookCard.jsx';
-import { IcoSearch, IcoShare, IcoX } from './Icons.jsx';
-import { ProfileMenu } from './ProfileMenu.jsx';
+import { IcoX } from './Icons.jsx';
 import { SeriesCard } from './SeriesCard.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
 
 /* ── Home Screen ── */
-export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setActivePill, discLang, setDiscLang, contentType, onSelectContentType, nowPlaying, audioPct, onResume, onDismissCL, onShareApp, savedSeries, onToggleSave, savedBooks, onToggleSaveBook, onReadBook, t, isDesktop, user, onSelectBrowse, onSelectProfile, onSelectLogout}) {
-  const [search, setSearch] = useState('');
+export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setActivePill, discLang, contentType, search, nowPlaying, audioPct, onResume, onDismissCL, savedSeries, onToggleSave, savedBooks, onToggleSaveBook, onReadBook, t, isDesktop}) {
   const isBooks = contentType === 'books';
   const isVideos = contentType === 'videos';
 
@@ -42,54 +40,19 @@ export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setAc
 
   const formats = useMemo(() => Array.from(new Set(OSHO_BOOKS.map(b => b.tag))), []);
 
-  const searchPlaceholder = isBooks ? t.searchBooks : isVideos ? t.searchVideos : t.search;
   const pageTitle = isBooks ? t.allBooks : isVideos ? t.videosTab : t.allSeries;
   const itemCount = isBooks ? filteredBooks.length : filtered.length;
 
   return (
     <>
-      {/* Mobile topbar — navigation lives in the bottom tab bar on mobile */}
-      <div className="topbar">
-        <div className="topbar-wm">Osho<em>·</em></div>
-        <div className="topbar-right">
-          {!isBooks && (
-            <div className="mob-disc">
-              <button className={`mob-disc-btn ${discLang==='en'?'active':''}`} onClick={() => setDiscLang('en')}>{t.discEn}</button>
-              <button className={`mob-disc-btn ${discLang==='hi'?'active':''}`} onClick={() => setDiscLang('hi')}>{t.discHi}</button>
-            </div>
-          )}
-          <button className="icon-btn" aria-label="Share" onClick={onShareApp}><IcoShare/></button>
-        </div>
-      </div>
-
-      {/* Desktop header */}
       <div className="desk-header">
         <h1>{pageTitle}<span className="desk-header-count">{itemCount} {isBooks ? 'books' : 'series'}</span></h1>
-        <div className="desk-header-right">
-          <button className="icon-btn-label lg" aria-label="Share" onClick={onShareApp}><IcoShare s={16}/><span>Share</span></button>
-          <ProfileMenu size={36} user={user} onSelectBrowse={onSelectBrowse} onSelectProfile={onSelectProfile} onSelectLogout={onSelectLogout}/>
-        </div>
-      </div>
-
-      {/* Content-type switcher — Discourses / Videos / Books */}
-      <div className="ct-tabs">
-        <button className={`ct-tab-btn${contentType==='discourses'?' active':''}`} onClick={() => onSelectContentType('discourses')}>{t.discoursesTab}</button>
-        <button className={`ct-tab-btn${contentType==='videos'?' active':''}`} onClick={() => onSelectContentType('videos')}>{t.videosTab}</button>
-        <button className={`ct-tab-btn${contentType==='books'?' active':''}`} onClick={() => onSelectContentType('books')}>{t.booksTab}</button>
       </div>
 
       <div className="screen-body">
-      <div className="search-wrap">
-        <div className="sbar">
-          <span style={{color:'var(--muted)'}}><IcoSearch/></span>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder={searchPlaceholder}/>
-          {search && <button style={{background:'none',border:'none',cursor:'pointer',color:'var(--muted)',padding:0,display:'flex'}} onClick={() => setSearch('')}><IcoX/></button>}
-        </div>
-      </div>
-
       {/* Continue Listening */}
       {!isBooks && nowPlaying && (
-        <div style={{marginBottom:4}}>
+        <div style={{marginBottom:4, marginTop:16}}>
           <div className="sec-lbl">{t.continueListening}</div>
           <div className="cl-card" onClick={onResume}>
             <SeriesImg series={nowPlaying.series} className="cl-art" style={{width:60,height:60,borderRadius:12,border:'1px solid var(--border)',overflow:'hidden',flexShrink:0}}/>
@@ -110,7 +73,7 @@ export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setAc
 
       {/* Genre tiles — mobile only, discourses/videos */}
       {!isBooks && !search && (
-        <div className="genre-section" style={{marginBottom:24}}>
+        <div className="genre-section" style={{marginBottom:24, marginTop:16}}>
           <div className="sec-lbl">{t.exploreTopic}</div>
           <div className="genre-scroll">
             {genres.map(g => (

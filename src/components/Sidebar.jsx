@@ -10,7 +10,7 @@ const VIDEO_EPISODE_COUNTS = {
 };
 
 /* ── Sidebar: Browse (genre/language) or Profile (menu) panel ── */
-export function Sidebar({mode, screen, onLogoClick, discLang, setDiscLang, activePill, setActivePill, t, seriesList, contentType, user, onSignOut, onOpenAccount, onOpenSaved, onOpenHistory}) {
+export function Sidebar({mode, screen, discLang, setDiscLang, activePill, setActivePill, t, seriesList, contentType, user, onSignOut, onOpenAccount, onOpenSaved, onOpenHistory}) {
   const isBooks = contentType === 'books';
   const isVideos = contentType === 'videos';
 
@@ -26,11 +26,6 @@ export function Sidebar({mode, screen, onLogoClick, discLang, setDiscLang, activ
 
   return (
     <aside className="sb">
-      <div className="sb-logo" onClick={onLogoClick} style={{cursor:'pointer'}}>
-        <div className="wordmark">Osho<em>·</em></div>
-        <div className="wordmark-sub">Discourses</div>
-      </div>
-
       {mode === 'profile' ? (
         <>
           <div className="sb-nav">

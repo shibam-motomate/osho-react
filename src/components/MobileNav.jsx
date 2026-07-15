@@ -1,19 +1,21 @@
-import { IcoClock, IcoHeart, IcoHome, IcoUser } from './Icons.jsx';
+import { IcoBook, IcoHeadphones, IcoUser, IcoVideo } from './Icons.jsx';
 
-/* ── Mobile bottom tab bar ── */
-export function MobileNav({active, onBrowse, onSaved, onHistory, onAccount}) {
+/* ── Mobile bottom tab bar — content-type switcher + Account; Saved/History are
+   reached via the header heart icon and the Account screen respectively. ── */
+export function MobileNav({screen, contentType, onSelectContentType, onAccount, t}) {
+  const isHome = screen === 'home' || screen === 'series';
   return (
     <nav className="mnav">
-      <button className={`mnav-item${active==='home'?' active':''}`} onClick={onBrowse}>
-        <IcoHome s={21}/><span>Browse</span>
+      <button className={`mnav-item${isHome && contentType==='discourses'?' active':''}`} onClick={() => onSelectContentType('discourses')}>
+        <IcoHeadphones s={20}/><span>{t.discoursesTab}</span>
       </button>
-      <button className={`mnav-item${active==='saved'?' active':''}`} onClick={onSaved}>
-        <IcoHeart s={20}/><span>Saved</span>
+      <button className={`mnav-item${isHome && contentType==='videos'?' active':''}`} onClick={() => onSelectContentType('videos')}>
+        <IcoVideo s={20}/><span>{t.videosTab}</span>
       </button>
-      <button className={`mnav-item${active==='history'?' active':''}`} onClick={onHistory}>
-        <IcoClock s={20}/><span>History</span>
+      <button className={`mnav-item${isHome && contentType==='books'?' active':''}`} onClick={() => onSelectContentType('books')}>
+        <IcoBook s={20}/><span>{t.booksTab}</span>
       </button>
-      <button className={`mnav-item${active==='account'?' active':''}`} onClick={onAccount}>
+      <button className={`mnav-item${screen==='account'?' active':''}`} onClick={onAccount}>
         <IcoUser s={20}/><span>Account</span>
       </button>
     </nav>

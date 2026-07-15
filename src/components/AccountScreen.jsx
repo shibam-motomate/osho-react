@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { LANGS } from '../config.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { supabase, supabaseEnabled } from '../lib/supabaseClient.js';
-import { IcoBack, IcoCheck } from './Icons.jsx';
+import { IcoBack, IcoCheck, IcoChevronRight, IcoClock } from './Icons.jsx';
 
-/* ── My Account: profile, preferences, feedback, delete account ── */
-export function AccountScreen({onBack, lang, setLang, onAccountDeleted}) {
+/* ── My Account: profile, activity, preferences, feedback, delete account ── */
+export function AccountScreen({onBack, onOpenHistory, lang, setLang, onAccountDeleted}) {
   const {user, updateName, deleteAccount} = useAuth();
   const currentName = user?.user_metadata?.full_name || '';
   const [name, setName] = useState(currentName);
@@ -76,6 +76,14 @@ export function AccountScreen({onBack, lang, setLang, onAccountDeleted}) {
             <div className="acc-avatar">{initial}</div>
             <div className="acc-email">{user?.email}</div>
           </div>
+        </div>
+
+        <div className="acct-group-lbl">Activity</div>
+        <div className="acct-card acct-card-rows">
+          <button className="acct-row acct-row-link" onClick={onOpenHistory}>
+            <span style={{display:'flex',alignItems:'center',gap:10}}><IcoClock s={16}/>History</span>
+            <IcoChevronRight/>
+          </button>
         </div>
 
         <div className="acct-group-lbl">Preferences</div>

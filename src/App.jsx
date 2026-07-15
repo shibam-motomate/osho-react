@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { T, isVideoId } from './config.js';
 import { FullPlayer } from './components/FullPlayer.jsx';
+import { Header } from './components/Header.jsx';
 import { HistoryScreen } from './components/HistoryScreen.jsx';
 import { HomeScreen } from './components/HomeScreen.jsx';
 import { MiniPlayer } from './components/MiniPlayer.jsx';
@@ -54,6 +55,8 @@ function App() {
     try { return !localStorage.getItem('osho_seen_intro'); } catch(e) { return false; }
   });
   const [contentType, setContentType] = useState('discourses'); // 'discourses' | 'videos' | 'books'
+  const [search, setSearch] = useState('');
+  const [mobSearchOpen, setMobSearchOpen] = useState(false);
   const [savedSeries, setSavedSeries] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem('osho_saved_series') || '[]')); } catch(e) { return new Set(); }
   });
@@ -203,8 +206,8 @@ function App() {
     return () => clearTimeout(t);
   }, []);
 
-  // Reset genre/format filter when discourse language or content type changes
-  useEffect(() => { setPill('all'); }, [discLang, contentType]);
+  // Reset genre/format filter and search when discourse language or content type changes
+  useEffect(() => { setPill('all'); setSearch(''); setMobSearchOpen(false); }, [discLang, contentType]);
 
   useEffect(() => { sleepOptionRef.current = sleepOption; }, [sleepOption]);
 
@@ -598,15 +601,16 @@ function App() {
   return (
     <div id="app" className={playerOpen ? 'player-open' : ''} style={{fontFamily:appFont,height:'100vh'}}>
       <audio ref={audioRef} preload="none" style={{display:'none'}}/>
-      <Sidebar mode={sidebarMode} screen={screen} onLogoClick={() => navigate('home')} discLang={discLang} setDiscLang={setDiscLang} activePill={activePill} setActivePill={setPill} t={t} seriesList={seriesList} contentType={contentType}
+      <Header t={t} contentType={contentType} onSelectContentType={selectContentType} search={search} setSearch={setSearch} discLang={discLang} setDiscLang={setDiscLang}
+        onShareApp={shareApp} onOpenSaved={() => navigate('saved')} onLogoClick={() => navigate('home')}
+        user={user} onSelectBrowse={() => navigate('home')} onSelectProfile={() => user ? navigate('account') : setShowAuth(true)} onSelectLogout={signOut}
+        mobSearchOpen={mobSearchOpen} onToggleMobSearch={() => setMobSearchOpen(v => !v)}/>
+      <Sidebar mode={sidebarMode} screen={screen} discLang={discLang} setDiscLang={setDiscLang} activePill={activePill} setActivePill={setPill} t={t} seriesList={seriesList} contentType={contentType}
         user={user} onSignOut={signOut}
         onOpenAccount={() => navigate('account')} onOpenSaved={() => navigate('saved')} onOpenHistory={() => navigate('history')}/>
       <div className="main">
         <div className={homeClass}>
-          <HomeScreen seriesList={seriesList} dataLoading={listLoading} onSeries={s => navigate('series', s)} activePill={activePill} setActivePill={setPill} discLang={discLang} setDiscLang={setDiscLang} contentType={contentType} onSelectContentType={selectContentType} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} onShareApp={shareApp} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} savedBooks={savedBooks} onToggleSaveBook={toggleSaveBook} onReadBook={onReadBook} t={t} isDesktop={isDesktop} user={user}
-            onSelectBrowse={() => navigate('home')}
-            onSelectProfile={() => user ? navigate('account') : setShowAuth(true)}
-            onSelectLogout={signOut}/>
+          <HomeScreen seriesList={seriesList} dataLoading={listLoading} onSeries={s => navigate('series', s)} activePill={activePill} setActivePill={setPill} discLang={discLang} contentType={contentType} search={search} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} savedBooks={savedBooks} onToggleSaveBook={toggleSaveBook} onReadBook={onReadBook} t={t} isDesktop={isDesktop}/>
         </div>
         <div className={serClass}>
           {selSeries && <SeriesScreen series={selSeries} onBack={() => navigate('home')} onEpisode={ep => { playEp(selSeries, ep); setPO(true); }} currentEp={nowPlaying?.series?.i === selSeries?.i ? nowPlaying?.episode : null} savedEpisodeUrls={savedEpisodeUrls} onToggleSaveEpisode={toggleSaveEpisode} t={t}/>}
@@ -623,16 +627,13 @@ function App() {
         <div className={acctClass}>
           {(screen === 'account' || visitedAccount.current) && (visitedAccount.current = true) && (
             <Suspense fallback={null}>
-              <AccountScreen onBack={() => navigate('home')} lang={lang} setLang={setLang} onAccountDeleted={() => { navigate('home'); showToast('Account deleted'); }}/>
+              <AccountScreen onBack={() => navigate('home')} onOpenHistory={() => navigate('history')} lang={lang} setLang={setLang} onAccountDeleted={() => { navigate('home'); showToast('Account deleted'); }}/>
             </Suspense>
           )}
         </div>
       </div>
       <MiniPlayer nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} onPrev={onPrev} onNext={onNext} onOpen={() => setPO(true)} audioRef={audioRef}/>
-      <MobileNav active={screen === 'series' ? 'home' : screen}
-        onBrowse={() => navigate('home')}
-        onSaved={() => navigate('saved')}
-        onHistory={() => navigate('history')}
+      <MobileNav screen={screen} contentType={contentType} onSelectContentType={selectContentType} t={t}
         onAccount={() => user ? navigate('account') : setShowAuth(true)}/>
       <FullPlayer open={playerOpen} onClose={() => setPO(false)} nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} audioRef={audioRef} onPrev={onPrev} onNext={onNext} onSeekSeconds={onSeekSeconds} t={t} isDesktop={isDesktop}
         playbackSpeed={playbackSpeed} setPlaybackSpeed={setPlaybackSpeed}
