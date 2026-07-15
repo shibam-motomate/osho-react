@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { GENRE_COLORS, photoFor } from '../config.js';
 
-export function SeriesImg({series, style, className}) {
+export function SeriesImg({series, img, style, className}) {
   const [err, setErr] = useState(false);
   const c = GENRE_COLORS[series.g] || '#C0B8B0';
-  const photo = photoFor(series);
+  const photo = img || series.img || photoFor(series);
   if (err) return (
     <div className={className} style={{...style, background:c, display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', position:'relative'}}>
       <svg width="55%" viewBox="0 0 80 80" style={{display:'block'}}>

@@ -212,6 +212,13 @@ body{font-family:var(--font);}
 @media(min-width:900px){.save-btn{width:28px;height:28px;}}
 .save-btn:hover{background:#fff;color:var(--accent);transform:scale(1.08);}
 .save-btn.saved{color:var(--accent);}
+
+/* Video cards — YouTube-style 16:9 thumbnail, play badge, duration chip */
+.video-card .series-card-img{aspect-ratio:16/9;}
+.video-play-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:50%;background:rgba(32,19,23,0.55);color:#fff;display:flex;align-items:center;justify-content:center;pointer-events:none;transition:background 0.15s,transform 0.15s;}
+.video-card:hover .video-play-badge{background:var(--accent);transform:translate(-50%,-50%) scale(1.08);}
+.video-play-badge svg{margin-left:2px;}
+.video-dur-badge{position:absolute;bottom:8px;right:8px;background:rgba(32,19,23,0.78);color:#fff;font-size:10.5px;font-weight:600;font-variant-numeric:tabular-nums;padding:2px 6px;border-radius:5px;}
 .series-card-info{flex:1;min-width:0;padding:10px 12px;display:flex;flex-direction:column;justify-content:center;}
 @media(min-width:900px){.series-card-info{padding:11px 12px 14px;display:block;}}
 .series-title{font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:3px;line-height:1.3;}
@@ -294,6 +301,8 @@ body{font-family:var(--font);}
 .hero-art{width:160px;height:160px;border-radius:22px;overflow:hidden;flex-shrink:0;border:1px solid var(--border);box-shadow:var(--shadow-lg);margin-bottom:20px;}
 @media(min-width:900px){.hero-art{margin-bottom:0;}}
 .hero-art img{width:100%;height:100%;object-fit:cover;display:block;}
+.hero-art-video{width:100%;max-width:400px;aspect-ratio:16/9;height:auto;}
+@media(min-width:900px){.hero-art-video{width:320px;}}
 .hero-info{display:flex;flex-direction:column;align-items:center;}
 @media(min-width:900px){.hero-info{align-items:flex-start;}}
 .hero-ttl{font-size:24px;font-weight:700;color:var(--ink);letter-spacing:-0.3px;margin-bottom:10px;line-height:1.25;}
@@ -312,6 +321,17 @@ body{font-family:var(--font);}
 .ep-name{font-size:14px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ep-name.now{color:var(--accent);}
 .ep-dur{font-size:11px;color:var(--muted);flex-shrink:0;font-variant-numeric:tabular-nums;}
+
+/* Video episode rows — YouTube-style thumbnail instead of a track number */
+.ep-row-video{align-items:flex-start;}
+.ep-thumb-wrap{position:relative;width:120px;aspect-ratio:16/9;flex-shrink:0;border-radius:8px;overflow:hidden;background:var(--icon-surface);}
+.ep-thumb{width:100%;height:100%;}
+.ep-thumb-play,.ep-thumb-playing{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:28px;height:28px;border-radius:50%;background:rgba(32,19,23,0.55);color:#fff;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+.ep-thumb-play svg{margin-left:1px;}
+.ep-thumb-playing{background:var(--accent);}
+.ep-thumb-dur{position:absolute;bottom:4px;right:4px;background:rgba(32,19,23,0.78);color:#fff;font-size:9.5px;font-weight:600;font-variant-numeric:tabular-nums;padding:1px 4px;border-radius:4px;}
+.ep-row-video .ep-info{padding-top:2px;}
+.ep-row-video .ep-name{white-space:normal;line-height:1.4;}
 .ep-save-btn{flex-shrink:0;background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex;border-radius:6px;transition:all 0.15s;}
 .ep-save-btn:hover{background:var(--accent-dim);color:var(--accent);}
 .ep-save-btn.saved{color:var(--accent);}
@@ -374,6 +394,8 @@ body{font-family:var(--font);}
 @media(min-width:900px){.art-wrap{width:160px;height:160px;border-radius:20px;margin-bottom:18px;}}
 .art-wrap img{width:100%;height:100%;object-fit:cover;display:block;}
 .art-wrap.playing{transform:scale(1.03);box-shadow:0 24px 72px rgba(122,31,46,0.14);}
+.art-wrap-video{width:100%;max-width:420px;aspect-ratio:16/9;height:auto;border-radius:18px;}
+@media(min-width:900px){.art-wrap-video{width:100%;border-radius:14px;}}
 .player-ep{font-size:20px;font-weight:700;color:var(--ink);text-align:center;margin-bottom:4px;line-height:1.35;}
 @media(min-width:900px){.player-ep{font-size:17px;}}
 .player-ser{font-size:13px;color:var(--text2);text-align:center;margin-bottom:24px;}

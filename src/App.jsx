@@ -77,9 +77,16 @@ function App() {
   const [dataLoading, setDataLoading] = useState(true);
   const [seriesVersion, setSeriesVersion] = useState(0);
   const audioRef = useRef(null);
+  const videoRef = useRef(null);
   const toastTimer = useRef(null);
   const sleepOptionRef = useRef('off');
   const seriesCacheRef = useRef({});
+
+  // Video episodes play through the <video> element (rendered visibly inside FullPlayer),
+  // audio discourses through the hidden <audio> element — both stay permanently mounted
+  // from the very first render (FullPlayer never unmounts its <video>) so a ref is always
+  // valid the instant playback starts, even before FullPlayer has ever been opened.
+  const mediaRefFor = useCallback(seriesId => (isVideoId(seriesId) ? videoRef : audioRef), []);
 
   const sidebarMode = PROFILE_SCREENS.includes(screen) ? 'profile' : 'browse';
   // Which tab screen Series was pushed from, so only that one dims/parallax-shifts
@@ -220,7 +227,10 @@ function App() {
   useEffect(() => { sleepOptionRef.current = sleepOption; }, [sleepOption]);
 
   // Playback speed
-  useEffect(() => { if (audioRef.current) audioRef.current.playbackRate = playbackSpeed; }, [playbackSpeed]);
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.playbackRate = playbackSpeed;
+    if (videoRef.current) videoRef.current.playbackRate = playbackSpeed;
+  }, [playbackSpeed]);
 
   // Sleep timer countdown
   useEffect(() => {
@@ -230,6 +240,7 @@ function App() {
       setSleepRemaining(remaining);
       if (remaining <= 0) {
         if (audioRef.current) audioRef.current.pause();
+        if (videoRef.current) videoRef.current.pause();
         setSleepOptionState('off');
         setSleepEndAt(null);
       }
@@ -251,32 +262,33 @@ function App() {
       if (saved) {
         const np = JSON.parse(saved);
         setNP(np);
-        if (audioRef.current) {
-          audioRef.current.src = np.episode.u;
+        const media = mediaRefFor(np.series.i).current;
+        if (media) {
+          media.src = np.episode.u;
           const t = parseFloat(localStorage.getItem('osho_time') || '0');
-          seekWhenReady(audioRef.current, t);
+          seekWhenReady(media, t);
         }
       }
     } catch(e) {}
-  }, [seekWhenReady]);
+  }, [seekWhenReady, mediaRefFor]);
 
-  // Persist position every 5s
+  // Persist position every 5s — whichever of audio/video is actually playing
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
     const iv = setInterval(() => {
-      if (!audio.paused) localStorage.setItem('osho_time', String(audio.currentTime));
+      const el = audioRef.current && !audioRef.current.paused ? audioRef.current
+        : videoRef.current && !videoRef.current.paused ? videoRef.current : null;
+      if (el) localStorage.setItem('osho_time', String(el.currentTime));
     }, 5000);
     return () => clearInterval(iv);
   }, []);
 
-  // Mini player progress
+  // Mini player / continue-listening progress — both elements stay mounted, so listen on
+  // both; only the one actually playing will ever fire timeupdate.
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    const onTime = () => { if (audio.duration > 0) setAudioPct((audio.currentTime / audio.duration) * 100); };
-    audio.addEventListener('timeupdate', onTime);
-    return () => audio.removeEventListener('timeupdate', onTime);
+    const onTime = e => { if (e.target.duration > 0) setAudioPct((e.target.currentTime / e.target.duration) * 100); };
+    const els = [audioRef.current, videoRef.current].filter(Boolean);
+    els.forEach(el => el.addEventListener('timeupdate', onTime));
+    return () => els.forEach(el => el.removeEventListener('timeupdate', onTime));
   }, []);
 
   // Sync play/pause state + auto-next
@@ -288,8 +300,6 @@ function App() {
   }, [nowPlaying]);
 
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
     const onPlay  = () => setPlay(true);
     const onPause = () => setPlay(false);
     const onEnded = () => {
@@ -300,14 +310,17 @@ function App() {
       }
       onNext();
     };
-    audio.addEventListener('play', onPlay);
-    audio.addEventListener('pause', onPause);
-    audio.addEventListener('ended', onEnded);
-    return () => {
-      audio.removeEventListener('play', onPlay);
-      audio.removeEventListener('pause', onPause);
-      audio.removeEventListener('ended', onEnded);
-    };
+    const els = [audioRef.current, videoRef.current].filter(Boolean);
+    els.forEach(el => {
+      el.addEventListener('play', onPlay);
+      el.addEventListener('pause', onPause);
+      el.addEventListener('ended', onEnded);
+    });
+    return () => els.forEach(el => {
+      el.removeEventListener('play', onPlay);
+      el.removeEventListener('pause', onPause);
+      el.removeEventListener('ended', onEnded);
+    });
   }, [onNext]);
 
   const playEp = useCallback((series, episode) => {
@@ -316,10 +329,13 @@ function App() {
     setCLD(false);
     localStorage.setItem('osho_np', JSON.stringify(np));
     localStorage.setItem('osho_time', '0');
-    if (audioRef.current) {
-      audioRef.current.src = episode.u;
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(() => {});
+    const media = mediaRefFor(series.i).current;
+    const other = media === videoRef.current ? audioRef.current : videoRef.current;
+    if (other) other.pause();
+    if (media) {
+      media.src = episode.u;
+      media.currentTime = 0;
+      media.play().catch(() => {});
     }
     setHistory(prev => {
       const entry = {seriesId: series.i, seriesName: series.n, episodeUrl: episode.u, episodeTitle: episode.t, discLang, playedAt: Date.now()};
@@ -333,7 +349,7 @@ function App() {
       }
       return next;
     });
-  }, [discLang, user]);
+  }, [discLang, user, mediaRefFor]);
 
   // Shared resolver for anything stored as {seriesId, episodeUrl, discLang} —
   // history entries and saved episodes both use this shape.
@@ -362,10 +378,11 @@ function App() {
   }, [playEp, navigate]);
 
   const onTogglePlay = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio || !nowPlaying) return;
-    isPlaying ? audio.pause() : audio.play().catch(() => {});
-  }, [isPlaying, nowPlaying]);
+    if (!nowPlaying) return;
+    const media = mediaRefFor(nowPlaying.series.i).current;
+    if (!media) return;
+    isPlaying ? media.pause() : media.play().catch(() => {});
+  }, [isPlaying, nowPlaying, mediaRefFor]);
 
   const onPrev = useCallback(() => {
     if (!nowPlaying) return;
@@ -375,8 +392,10 @@ function App() {
   }, [nowPlaying, playEp]);
 
   const onSeekSeconds = useCallback(delta => {
-    if (audioRef.current) audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime + delta);
-  }, []);
+    if (!nowPlaying) return;
+    const media = mediaRefFor(nowPlaying.series.i).current;
+    if (media) media.currentTime = Math.max(0, media.currentTime + delta);
+  }, [nowPlaying, mediaRefFor]);
 
   const setSleepOption = useCallback(opt => {
     setSleepOptionState(opt);
@@ -401,10 +420,12 @@ function App() {
     ? nowPlaying.series.e[episodeIndex + 1] : null;
 
   const onResume = () => {
+    if (!nowPlaying) return;
+    const media = mediaRefFor(nowPlaying.series.i).current;
     const saved = parseFloat(localStorage.getItem('osho_time') || '0');
-    seekWhenReady(audioRef.current, saved);
+    seekWhenReady(media, saved);
     setPO(true);
-    if (audioRef.current) audioRef.current.play().catch(() => {});
+    if (media) media.play().catch(() => {});
   };
 
   const showToast = useCallback(msg => {
@@ -640,10 +661,10 @@ function App() {
           )}
         </div>
       </div>
-      <MiniPlayer nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} onPrev={onPrev} onNext={onNext} onOpen={() => setPO(true)} audioRef={audioRef}/>
+      <MiniPlayer nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} onPrev={onPrev} onNext={onNext} onOpen={() => setPO(true)} audioRef={audioRef} videoRef={videoRef}/>
       <MobileNav screen={screen} contentType={contentType} onSelectContentType={selectContentType} t={t}
         onAccount={() => user ? navigate('account') : setShowAuth(true)}/>
-      <FullPlayer open={playerOpen} onClose={() => setPO(false)} nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} audioRef={audioRef} onPrev={onPrev} onNext={onNext} onSeekSeconds={onSeekSeconds} t={t} isDesktop={isDesktop}
+      <FullPlayer open={playerOpen} onClose={() => setPO(false)} nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} audioRef={audioRef} videoRef={videoRef} onPrev={onPrev} onNext={onNext} onSeekSeconds={onSeekSeconds} t={t} isDesktop={isDesktop}
         playbackSpeed={playbackSpeed} setPlaybackSpeed={setPlaybackSpeed}
         sleepOption={sleepOption} setSleepOption={setSleepOption} sleepRemaining={sleepRemaining}
         episodeIndex={episodeIndex} totalEpisodes={nowPlaying?.series?.e?.length || 0} nextEpisode={nextEpisode}/>

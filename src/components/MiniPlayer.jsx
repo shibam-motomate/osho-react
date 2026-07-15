@@ -1,45 +1,52 @@
 import { useEffect, useState } from 'react';
+import { isVideoId } from '../config.js';
 import { IcoNext, IcoPause, IcoPlay, IcoPrev } from './Icons.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
 
 const fmt = s => { s = Math.floor(s || 0); const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60; return h > 0 ? `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}` : `${m}:${String(sec).padStart(2,'0')}`; };
 
 /* ── Mini Player ── */
-export function MiniPlayer({nowPlaying, isPlaying, onTogglePlay, onPrev, onNext, onOpen, audioRef}) {
+export function MiniPlayer({nowPlaying, isPlaying, onTogglePlay, onPrev, onNext, onOpen, audioRef, videoRef}) {
   const [pct, setPct] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [buffering, setBuffering] = useState(false);
 
+  const isVideo = !!nowPlaying && isVideoId(nowPlaying.series.i);
+  const activeRef = isVideo ? videoRef : audioRef;
+
+  // Both elements stay mounted for the session — listen on both, only the one
+  // actually loaded/playing will ever fire.
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    const onTime  = () => { setCurrentTime(audio.currentTime); if (audio.duration > 0) setPct((audio.currentTime / audio.duration) * 100); };
-    const onDur   = () => setDuration(audio.duration || 0);
+    const onTime  = e => { setCurrentTime(e.target.currentTime); if (e.target.duration > 0) setPct((e.target.currentTime / e.target.duration) * 100); };
+    const onDur   = e => setDuration(e.target.duration || 0);
     const onWait  = () => setBuffering(true);
     const onReady = () => setBuffering(false);
-    audio.addEventListener('timeupdate', onTime);
-    audio.addEventListener('durationchange', onDur);
-    audio.addEventListener('loadedmetadata', onDur);
-    audio.addEventListener('waiting', onWait);
-    audio.addEventListener('canplay', onReady);
-    audio.addEventListener('playing', onReady);
-    return () => {
-      audio.removeEventListener('timeupdate', onTime);
-      audio.removeEventListener('durationchange', onDur);
-      audio.removeEventListener('loadedmetadata', onDur);
-      audio.removeEventListener('waiting', onWait);
-      audio.removeEventListener('canplay', onReady);
-      audio.removeEventListener('playing', onReady);
-    };
-  }, [audioRef]);
+    const els = [audioRef.current, videoRef.current].filter(Boolean);
+    els.forEach(el => {
+      el.addEventListener('timeupdate', onTime);
+      el.addEventListener('durationchange', onDur);
+      el.addEventListener('loadedmetadata', onDur);
+      el.addEventListener('waiting', onWait);
+      el.addEventListener('canplay', onReady);
+      el.addEventListener('playing', onReady);
+    });
+    return () => els.forEach(el => {
+      el.removeEventListener('timeupdate', onTime);
+      el.removeEventListener('durationchange', onDur);
+      el.removeEventListener('loadedmetadata', onDur);
+      el.removeEventListener('waiting', onWait);
+      el.removeEventListener('canplay', onReady);
+      el.removeEventListener('playing', onReady);
+    });
+  }, [audioRef, videoRef]);
 
   const handleSeek = e => {
     e.stopPropagation();
     if (!duration) return;
     const r = e.currentTarget.getBoundingClientRect();
     const newTime = Math.max(0, Math.min(duration, ((e.clientX - r.left) / r.width) * duration));
-    if (audioRef.current) audioRef.current.currentTime = newTime;
+    if (activeRef.current) activeRef.current.currentTime = newTime;
     setCurrentTime(newTime);
     setPct((newTime / duration) * 100);
   };
