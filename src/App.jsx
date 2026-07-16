@@ -105,14 +105,15 @@ function App() {
     if (window.location.pathname !== path) window.history.pushState({}, '', path);
   }, [screen]);
 
-  // Switching Discourses/Videos/Books is its own top-level route (#/, #/videos, #/books),
-  // distinct from navigate('home') which just returns to Home in whichever tab is active.
+  // Switching Discourses/Videos is its own top-level route (#/, #/videos), distinct from
+  // navigate('home') which just returns to Home in whichever tab is active. (Books is
+  // temporarily hidden from the UI, so it's not offered as a target here.)
   const selectContentType = useCallback(ct => {
     setContentType(ct);
     if (ct === 'videos') setDiscLang(videoLangWithContent);
     setScreen('home');
     setSelSeries(null);
-    const path = ct === 'videos' ? '/videos' : ct === 'books' ? '/books' : '/';
+    const path = ct === 'videos' ? '/videos' : '/';
     if (window.location.pathname !== path) window.history.pushState({}, '', path);
   }, []);
 
@@ -155,14 +156,16 @@ function App() {
         }
       } else if (path === '/saved' || path === '/history' || path === '/account') {
         setScreen(path.slice(1));
-      } else if (path === '/videos' || path === '/books') {
-        const ct = path.slice(1);
-        setContentType(ct);
-        if (ct === 'videos') setDiscLang(videoLangWithContent);
+      } else if (path === '/videos') {
+        setContentType('videos');
+        setDiscLang(videoLangWithContent);
         setScreen('home');
       } else {
         setContentType('discourses');
         setScreen('home');
+        // Covers stale/bookmarked links to hidden routes (e.g. /books) as well as any
+        // other unrecognized path — land on Discourses home and fix up the URL to match.
+        if (path !== '/') window.history.replaceState({}, '', '/');
       }
     };
     applyPath(window.location.pathname);

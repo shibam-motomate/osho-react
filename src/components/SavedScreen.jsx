@@ -20,10 +20,10 @@ export function SavedScreen({onBack, discourseSeries, videoSeries, books, savedS
         <button className="back-btn" onClick={onBack}><IcoBack/>Home</button>
       </div>
       <h1 className="page-h1">Saved</h1>
+      {/* Books tab hidden for now — see Header.jsx */}
       <div className="ct-tabs">
         <button className={`ct-tab-btn${ct==='discourses'?' active':''}`} onClick={() => setCt('discourses')}>{t.discoursesTab}</button>
         <button className={`ct-tab-btn${ct==='videos'?' active':''}`} onClick={() => setCt('videos')}>{t.videosTab}</button>
-        <button className={`ct-tab-btn${ct==='books'?' active':''}`} onClick={() => setCt('books')}>{t.booksTab}</button>
       </div>
 
       {ct === 'books' ? (

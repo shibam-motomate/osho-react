@@ -1,10 +1,11 @@
 import { IcoHeart, IcoSearch, IcoShare, IcoX } from './Icons.jsx';
 import { ProfileMenu } from './ProfileMenu.jsx';
 
+// Books is temporarily hidden from the UI — see also MobileNav.jsx and
+// App.jsx's routing (the /books route redirects to Discourses).
 const CT_DEFS = [
   {key: 'discourses', labelKey: 'discoursesTab'},
   {key: 'videos', labelKey: 'videosTab'},
-  {key: 'books', labelKey: 'booksTab'},
 ];
 
 /* ── Global maroon header: persistent across every screen, both layouts ── */
