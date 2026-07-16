@@ -434,7 +434,13 @@ function App() {
     toastTimer.current = setTimeout(() => setToast(null), 2200);
   }, []);
 
-  const onReadBook = useCallback(() => { showToast(t.readComingSoon); }, [t, showToast]);
+  const onReadBook = useCallback(book => {
+    if (book.archiveId) {
+      window.open(`https://archive.org/details/${book.archiveId}`, '_blank', 'noopener');
+    } else {
+      showToast(t.readComingSoon);
+    }
+  }, [t, showToast]);
 
   const shareApp = useCallback(() => {
     const url = window.location.href;

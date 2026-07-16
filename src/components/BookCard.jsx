@@ -27,7 +27,12 @@ export function BookCard({b, saved, onToggleSave, onRead}) {
           <span className="stat-pill lang" style={{color:tagColor,background:'var(--icon-surface)'}}>{b.tag}</span>
         </div>
         {open && (
-          <button className="book-read-btn" onClick={e => { e.stopPropagation(); onRead(b); }}>Read</button>
+          <>
+            <button className="book-read-btn" onClick={e => { e.stopPropagation(); onRead(b); }}>
+              {b.archiveId ? 'Read on Internet Archive ↗' : 'Read'}
+            </button>
+            {b.archiveId && <div className="book-read-note">Free library loan via archive.org — sign in there to borrow it.</div>}
+          </>
         )}
       </div>
     </div>
