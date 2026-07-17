@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { isVideoId } from '../config.js';
+import { onActivateKey } from '../lib/a11y.js';
 import { IcoBack, IcoHeart, IcoPlay, IcoSearch, Wave } from './Icons.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
 
@@ -39,7 +40,8 @@ export function SeriesScreen({series, onBack, onEpisode, currentEp, savedEpisode
           const active = currentEp?.u === ep.u;
           const saved = savedEpisodeUrls.has(ep.u);
           return (
-            <div key={ep.u} className={`ep-row${isVideo?' ep-row-video':''}`} onClick={() => onEpisode(ep)}>
+            <div key={ep.u} className={`ep-row${isVideo?' ep-row-video':''}`} onClick={() => onEpisode(ep)}
+              role="button" tabIndex={0} onKeyDown={onActivateKey(() => onEpisode(ep))}>
               {isVideo ? (
                 <div className="ep-thumb-wrap">
                   <SeriesImg series={series} img={ep.img} className="ep-thumb"/>

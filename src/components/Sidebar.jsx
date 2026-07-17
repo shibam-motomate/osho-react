@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { BOOK_FORMAT_COLORS, EPISODE_COUNTS, GENRE_COLORS, GENRE_LIST } from '../config.js';
 import { OSHO_BOOKS } from '../data/oshoBooks.js';
 import { OSHO_VIDEOS_EN, OSHO_VIDEOS_HI } from '../data/oshoVideos.js';
+import { onActivateKey } from '../lib/a11y.js';
 import { IcoClock, IcoHeart, IcoLogOut, IcoUser } from './Icons.jsx';
 
 const VIDEO_EPISODE_COUNTS = {
@@ -47,7 +48,8 @@ export function Sidebar({mode, screen, discLang, setDiscLang, activePill, setAct
             {formats.map(f => {
               const c = BOOK_FORMAT_COLORS[f] || '#C0B8B0';
               return (
-                <div key={f} className={`sb-genre-item ${activePill===f?'active':''}`} onClick={() => setActivePill(f)}>
+                <div key={f} className={`sb-genre-item ${activePill===f?'active':''}`} onClick={() => setActivePill(f)}
+                  role="button" tabIndex={0} onKeyDown={onActivateKey(() => setActivePill(f))}>
                   <div className="sb-genre-dot" style={{background: f==='all' ? 'var(--muted)' : c}}/>
                   <span className="sb-genre-name">{f==='all' ? t.all : f}</span>
                 </div>
@@ -74,7 +76,8 @@ export function Sidebar({mode, screen, discLang, setDiscLang, activePill, setAct
               {genres.map(g => {
                 const c = GENRE_COLORS[g] || '#C0B8B0';
                 return (
-                  <div key={g} className={`sb-genre-item ${activePill===g?'active':''}`} onClick={() => setActivePill(g)}>
+                  <div key={g} className={`sb-genre-item ${activePill===g?'active':''}`} onClick={() => setActivePill(g)}
+                    role="button" tabIndex={0} onKeyDown={onActivateKey(() => setActivePill(g))}>
                     <div className="sb-genre-dot" style={{background: g==='all' ? 'var(--muted)' : c}}/>
                     <span className="sb-genre-name">{g==='all' ? t.all : (t.genres[g] || g)}</span>
                   </div>
