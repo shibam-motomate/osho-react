@@ -1,4 +1,5 @@
 import { isVideoId, seriesTotalDuration } from '../config.js';
+import { onActivateKey } from '../lib/a11y.js';
 import { IcoHeart, IcoPlay } from './Icons.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
 
@@ -7,7 +8,8 @@ import { SeriesImg } from './SeriesImg.jsx';
 export function SeriesCard({s, discLang, saved, onOpen, onToggleSave, t}) {
   const isVideo = isVideoId(s.i);
   return (
-    <div className={`series-card${isVideo?' video-card':''}`} onClick={() => onOpen(s)}>
+    <div className={`series-card${isVideo?' video-card':''}`} onClick={() => onOpen(s)}
+      role="button" tabIndex={0} onKeyDown={onActivateKey(() => onOpen(s))}>
       <div className="series-card-img-wrap">
         <SeriesImg series={s} className="series-card-img"/>
         {isVideo && <div className="video-play-badge"><IcoPlay s={20}/></div>}

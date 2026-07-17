@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { isVideoId } from '../config.js';
+import { onActivateKey } from '../lib/a11y.js';
 import { IcoBack, IcoPlay, IcoX } from './Icons.jsx';
 
 const timeAgo = ts => {
@@ -39,7 +40,8 @@ export function HistoryScreen({onBack, history, onPlayEntry, onRemove, onClearAl
         {filtered.length === 0 ? (
           <div className="empty-state">Nothing played yet — your recent episodes will show up here.</div>
         ) : filtered.map(h => (
-          <div key={h.episodeUrl + h.playedAt} className="ep-row" onClick={() => onPlayEntry(h)}>
+          <div key={h.episodeUrl + h.playedAt} className="ep-row" onClick={() => onPlayEntry(h)}
+            role="button" tabIndex={0} onKeyDown={onActivateKey(() => onPlayEntry(h))}>
             <div className="ep-num"><IcoPlay s={14}/></div>
             <div className="ep-info">
               <div className="ep-name">{h.episodeTitle}</div>
