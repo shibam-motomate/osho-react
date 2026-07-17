@@ -13,6 +13,7 @@ import { Splash } from './components/Splash.jsx';
 import { useAuth } from './contexts/AuthContext.jsx';
 import { OSHO_BOOKS } from './data/oshoBooks.js';
 import { OSHO_VIDEOS_EN, OSHO_VIDEOS_HI } from './data/oshoVideos.js';
+import { installFocusAutoScroll, isTvDevice } from './lib/a11y.js';
 import { supabase, supabaseEnabled } from './lib/supabaseClient.js';
 
 const AccountScreen = lazy(() => import('./components/AccountScreen.jsx').then(m => ({default: m.AccountScreen})));
@@ -224,6 +225,18 @@ function App() {
     return () => clearTimeout(t);
   }, []);
 
+  // Fire TV/Silk and other TV browsers are D-pad-only (no mouse/touch) — flag it so
+  // CSS can widen focus rings for 10-foot viewing, and so the media keyboard shortcuts
+  // below know not to hijack arrow-key spatial navigation between cards.
+  useEffect(() => {
+    if (isTvDevice()) document.documentElement.classList.add('tv-mode');
+  }, []);
+
+  // Keep whatever's focused (via D-pad/keyboard) scrolled into view inside the nested
+  // .screen scroll containers — see installFocusAutoScroll for why this can't be left
+  // to the browser's default behavior.
+  useEffect(() => installFocusAutoScroll(), []);
+
   // Reset genre/format filter and search when discourse language or content type changes
   useEffect(() => { setPill('all'); setSearch(''); setMobSearchOpen(false); }, [discLang, contentType]);
 
@@ -405,18 +418,27 @@ function App() {
     setSleepEndAt(opt === 'off' || opt === 'end' ? null : Date.now() + opt * 60000);
   }, []);
 
-  // Keyboard shortcuts: Space play/pause, Left/Right seek 30s
+  // Keyboard shortcuts: Space play/pause, Left/Right seek 30s. On TV browsers these
+  // keys double as the D-pad's spatial-navigation input, so there they're only treated
+  // as playback shortcuts while the full player is open and focus isn't on a control
+  // that should handle Space/Enter/Left/Right itself (buttons, cards, etc.) — otherwise
+  // they'd hijack the remote and make it impossible to navigate between cards.
   useEffect(() => {
     const handler = e => {
       const tag = (e.target.tagName || '').toLowerCase();
       if (tag === 'input' || tag === 'textarea' || !nowPlaying) return;
+      const isTv = document.documentElement.classList.contains('tv-mode');
+      if (isTv) {
+        const isControl = tag === 'button' || tag === 'a' || e.target.closest?.('[role="button"], [tabindex]');
+        if (!playerOpen || isControl) return;
+      }
       if (e.code === 'Space') { e.preventDefault(); onTogglePlay(); }
       else if (e.code === 'ArrowRight') { e.preventDefault(); onSeekSeconds(30); }
       else if (e.code === 'ArrowLeft') { e.preventDefault(); onSeekSeconds(-30); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [nowPlaying, onTogglePlay, onSeekSeconds]);
+  }, [nowPlaying, onTogglePlay, onSeekSeconds, playerOpen]);
 
   const episodeIndex = nowPlaying ? nowPlaying.series.e.findIndex(e => e.u === nowPlaying.episode.u) : -1;
   const nextEpisode = nowPlaying && episodeIndex >= 0 && episodeIndex < nowPlaying.series.e.length - 1

@@ -1,3 +1,4 @@
+import { onActivateKey } from '../lib/a11y.js';
 import { IcoHeart, IcoSearch, IcoShare, IcoX } from './Icons.jsx';
 import { ProfileMenu } from './ProfileMenu.jsx';
 
@@ -15,7 +16,7 @@ export function Header({t, contentType, onSelectContentType, search, setSearch, 
   return (
     <>
       <div className="global-header">
-        <div className="gh-logo" onClick={onLogoClick}>Osho<em>·</em></div>
+        <div className="gh-logo" onClick={onLogoClick} role="button" tabIndex={0} onKeyDown={onActivateKey(onLogoClick)}>Osho<em>·</em></div>
         <div className="gh-spacer"/>
         <nav className="gh-nav">
           {CT_DEFS.map(c => (

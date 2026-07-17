@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { GENRE_COLORS, GENRE_LIST } from '../config.js';
 import { OSHO_BOOKS } from '../data/oshoBooks.js';
+import { onActivateKey } from '../lib/a11y.js';
 import { BookCard } from './BookCard.jsx';
 import { IcoX } from './Icons.jsx';
 import { SeriesCard } from './SeriesCard.jsx';
@@ -54,7 +55,8 @@ export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setAc
       {!isBooks && nowPlaying && (
         <div style={{marginBottom:4, marginTop:16}}>
           <div className="sec-lbl">{t.continueListening}</div>
-          <div className="cl-card" onClick={onResume}>
+          <div className="cl-card" onClick={onResume}
+            role="button" tabIndex={0} onKeyDown={onActivateKey(onResume)}>
             <SeriesImg series={nowPlaying.series} className="cl-art" style={{width:60,height:60,borderRadius:12,border:'1px solid var(--border)',overflow:'hidden',flexShrink:0}}/>
             <div className="cl-info">
               <div className="cl-title-row">
@@ -77,7 +79,8 @@ export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setAc
           <div className="sec-lbl">{t.exploreTopic}</div>
           <div className="genre-scroll">
             {genres.map(g => (
-              <div key={g} className="genre-tile" onClick={() => setActivePill(g)}>
+              <div key={g} className="genre-tile" onClick={() => setActivePill(g)}
+                role="button" tabIndex={0} onKeyDown={onActivateKey(() => setActivePill(g))}>
                 <div className={`genre-sq ${activePill===g?'active-genre':''}`} style={{background: GENRE_COLORS[g] || '#C0B8B0'}}>
                   <svg width="72" height="72" viewBox="0 0 80 80" style={{display:'block'}}>
                     <circle cx="40" cy="32" r="14" fill="rgba(32,19,23,0.16)"/>

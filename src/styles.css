@@ -1,4 +1,24 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+
+/* ── D-pad / TV-remote focus ── these elements are plain divs made keyboard-focusable
+   (role="button" + tabIndex, see src/lib/a11y.js) so a Fire TV/Silk remote's spatial
+   navigation can reach and select them; the browser auto-scrolls a focused element
+   into view within its nearest scrollable ancestor, which is what actually fixes
+   scrolling on TV. scroll-margin keeps a focused item from hugging the edge. */
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, [tabindex]:focus-visible{
+  outline:3px solid var(--accent);outline-offset:2px;border-radius:8px;
+}
+.series-card:focus-visible, .book-card:focus-visible, .ep-row:focus-visible, .cl-card:focus-visible,
+.sb-genre-item:focus-visible, .gh-logo:focus-visible, .lang-opt:focus-visible{
+  outline:3px solid var(--accent);outline-offset:2px;border-radius:inherit;
+}
+.genre-tile:focus-visible .genre-sq{outline:3px solid var(--accent);outline-offset:2px;}
+.series-card, .book-card, .ep-row, .cl-card, .genre-tile, .sb-genre-item, .sb-nav-item, .mnav-item,
+.gh-nav-tab, .filter-pill, .ct-tab-btn, .sb-disc-btn, .gh-lang-btn, .saved-tab-btn, .player-seg-btn{
+  scroll-margin:24px;
+}
+html.tv-mode :focus-visible{outline-width:4px;outline-offset:4px;}
+.main, .screen{scroll-behavior:smooth;}
 @font-face{font-family:'Instrument Sans';src:url('/fonts/InstrumentSans-Variable.woff2') format('woff2'),url('/fonts/InstrumentSans-Variable.ttf') format('truetype');font-weight:400 700;font-style:normal;font-display:swap;}
 @font-face{font-family:'Instrument Sans';src:url('/fonts/InstrumentSans-Italic-Variable.woff2') format('woff2'),url('/fonts/InstrumentSans-Italic-Variable.ttf') format('truetype');font-weight:400 700;font-style:italic;font-display:swap;}
 @font-face{font-family:'Martel';src:url('/fonts/Martel-Regular.woff2') format('woff2'),url('/fonts/Martel-Regular.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap;}

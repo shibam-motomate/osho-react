@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { onActivateKey } from '../lib/a11y.js';
 import { IcoUser } from './Icons.jsx';
 
 /* ── Top-right profile icon + dropdown: All Discourses / My Profile / Log Out ── */
@@ -31,9 +32,9 @@ export function ProfileMenu({size = 32, user, onSelectBrowse, onSelectProfile, o
 
   const dd = rect && createPortal(
     <div ref={ddRef} className={`lang-dd${open?' open':''}`} style={{top:rect.top, right:rect.right, left:'auto'}}>
-      <div className="lang-opt" onClick={pick(onSelectBrowse)}>All Discourses</div>
-      <div className="lang-opt" onClick={pick(onSelectProfile)}>My Profile</div>
-      {user && <div className="lang-opt" onClick={pick(onSelectLogout)}>Log Out</div>}
+      <div className="lang-opt" onClick={pick(onSelectBrowse)} role="button" tabIndex={0} onKeyDown={onActivateKey(pick(onSelectBrowse))}>All Discourses</div>
+      <div className="lang-opt" onClick={pick(onSelectProfile)} role="button" tabIndex={0} onKeyDown={onActivateKey(pick(onSelectProfile))}>My Profile</div>
+      {user && <div className="lang-opt" onClick={pick(onSelectLogout)} role="button" tabIndex={0} onKeyDown={onActivateKey(pick(onSelectLogout))}>Log Out</div>}
     </div>,
     document.body
   );

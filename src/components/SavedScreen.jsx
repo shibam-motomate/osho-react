@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { isVideoId } from '../config.js';
+import { onActivateKey } from '../lib/a11y.js';
 import { BookCard } from './BookCard.jsx';
 import { IcoBack, IcoHeart } from './Icons.jsx';
 import { SeriesCard } from './SeriesCard.jsx';
@@ -54,7 +55,8 @@ export function SavedScreen({onBack, discourseSeries, videoSeries, books, savedS
               {savedEps.length === 0 ? (
                 <div className="empty-state">No saved discourses yet — tap the heart next to any episode to save it here.</div>
               ) : savedEps.map(e => (
-                <div key={e.episodeUrl} className="ep-row" onClick={() => onPlayEpisode(e)}>
+                <div key={e.episodeUrl} className="ep-row" onClick={() => onPlayEpisode(e)}
+                  role="button" tabIndex={0} onKeyDown={onActivateKey(() => onPlayEpisode(e))}>
                   <div className="ep-info">
                     <div className="ep-name">{e.episodeTitle}</div>
                     <div style={{fontSize:11.5,color:'var(--muted)',marginTop:2}}>{e.seriesName}</div>
