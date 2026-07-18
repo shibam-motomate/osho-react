@@ -22,16 +22,26 @@ export function HistoryScreen({onBack, history, onPlayEntry, onRemove, onClearAl
     return history.filter(h => isVideoId(h.seriesId) === (typeFilter === 'videos'));
   }, [history, typeFilter]);
 
+  const countLabel = `${filtered.length} episode${filtered.length===1?'':'s'}`;
+
   return (
     <div>
       <div className="back-bar">
         <button className="back-btn" onClick={onBack}><IcoBack/>Home</button>
       </div>
-      <div className="page-h1-row">
-        <h1 className="page-h1">History</h1>
-        {history.length > 0 && <button className="clear-all-btn" onClick={onClearAll}>Clear All</button>}
+      <div className="page-card-wrap">
+        <div className="page-card">
+      <div className="page-card-title-row" style={{padding:'20px 4px 2px'}}>
+        <div>
+          <div className="page-eyebrow">Activity</div>
+          <div className="page-card-heading">
+            <h1>History</h1>
+            <span className="page-card-count">{countLabel}</span>
+          </div>
+        </div>
+        {history.length > 0 && <button className="clear-all-pill" onClick={onClearAll}>Clear All</button>}
       </div>
-      <div className="ct-tabs">
+      <div className="ct-tabs" style={{margin:'18px 4px 4px'}}>
         <button className={`ct-tab-btn${typeFilter==='all'?' active':''}`} onClick={() => setTypeFilter('all')}>All</button>
         <button className={`ct-tab-btn${typeFilter==='discourses'?' active':''}`} onClick={() => setTypeFilter('discourses')}>Discourses</button>
         <button className={`ct-tab-btn${typeFilter==='videos'?' active':''}`} onClick={() => setTypeFilter('videos')}>Videos</button>
@@ -56,7 +66,8 @@ export function HistoryScreen({onBack, history, onPlayEntry, onRemove, onClearAl
           </div>
         ))}
       </div>
-      <div style={{height:24}}/>
+        </div>
+      </div>
     </div>
   );
 }

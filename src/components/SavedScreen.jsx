@@ -14,15 +14,25 @@ export function SavedScreen({onBack, discourseSeries, videoSeries, books, savedS
   const saved = useMemo(() => poolSeries.filter(s => savedSeries.has(s.i)), [poolSeries, savedSeries]);
   const savedEps = useMemo(() => savedEpisodes.filter(e => isVideoId(e.seriesId) === (ct === 'videos')), [savedEpisodes, ct]);
   const savedBookList = useMemo(() => books.filter(b => savedBooks.has(b.i)), [books, savedBooks]);
+  const count = ct === 'books' ? savedBookList.length : tab === 'episodes' ? savedEps.length : saved.length;
+  const countLabel = ct === 'books' ? `${count} book${count===1?'':'s'}` : tab === 'episodes' ? `${count} discourse${count===1?'':'s'}` : `${count} series`;
 
   return (
     <div>
       <div className="back-bar">
         <button className="back-btn" onClick={onBack}><IcoBack/>Home</button>
       </div>
-      <h1 className="page-h1">Saved</h1>
+      <div className="page-card-wrap">
+        <div className="page-card">
+      <div style={{padding:'18px 4px 2px'}}>
+        <div className="page-eyebrow">Your Library</div>
+        <div className="page-card-heading">
+          <h1>Saved</h1>
+          <span className="page-card-count">{countLabel}</span>
+        </div>
+      </div>
       {/* Books tab hidden for now — see Header.jsx */}
-      <div className="ct-tabs">
+      <div className="ct-tabs" style={{margin:'16px 4px 4px'}}>
         <button className={`ct-tab-btn${ct==='discourses'?' active':''}`} onClick={() => setCt('discourses')}>{t.discoursesTab}</button>
         <button className={`ct-tab-btn${ct==='videos'?' active':''}`} onClick={() => setCt('videos')}>{t.videosTab}</button>
       </div>
@@ -72,7 +82,8 @@ export function SavedScreen({onBack, discourseSeries, videoSeries, books, savedS
           )}
         </>
       )}
-      <div style={{height:24}}/>
+        </div>
+      </div>
     </div>
   );
 }
