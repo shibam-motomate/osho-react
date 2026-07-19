@@ -67,7 +67,12 @@ export function AccountScreen({onBack, onOpenHistory, lang, setLang, onAccountDe
       <div className="back-bar">
         <button className="back-btn" onClick={onBack}><IcoBack/>Home</button>
       </div>
-      <h1 className="page-h1">Account</h1>
+      <div className="page-card-wrap">
+        <div className="page-card">
+      <div style={{padding:'18px 4px 2px'}}>
+        <div className="page-eyebrow">Your Profile</div>
+        <h1 style={{fontSize:26,fontWeight:700,color:'var(--ink)',letterSpacing:'-0.4px'}}>Account</h1>
+      </div>
 
       <div className="acct-wrap">
         <div className="acct-group-lbl">Profile</div>
@@ -136,6 +141,8 @@ export function AccountScreen({onBack, onOpenHistory, lang, setLang, onAccountDe
           ) : (
             <button className="acct-delete-btn" onClick={() => setConfirmingDelete(true)}>Delete Account</button>
           )}
+        </div>
+      </div>
         </div>
       </div>
     </div>
