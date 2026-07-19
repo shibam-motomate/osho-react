@@ -1,16 +1,19 @@
-import { useMemo } from 'react';
-import { GENRE_COLORS, GENRE_LIST } from '../config.js';
+import { useMemo, useState } from 'react';
+import { GENRE_LIST } from '../config.js';
 import { OSHO_BOOKS } from '../data/oshoBooks.js';
+import { OSHO_QUOTES } from '../data/quotes.js';
 import { onActivateKey } from '../lib/a11y.js';
 import { BookCard } from './BookCard.jsx';
-import { IcoX } from './Icons.jsx';
+import { IcoPlay, IcoX } from './Icons.jsx';
 import { SeriesCard } from './SeriesCard.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
 
 /* ── Home Screen ── */
-export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setActivePill, discLang, contentType, search, nowPlaying, audioPct, onResume, onDismissCL, savedSeries, onToggleSave, savedBooks, onToggleSaveBook, onReadBook, t, isDesktop}) {
+export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, activePill, setActivePill, discLang, contentType, search, nowPlaying, audioPct, onResume, onDismissCL, savedSeries, onToggleSave, savedBooks, onToggleSaveBook, onReadBook, t, isDesktop}) {
   const isBooks = contentType === 'books';
   const isVideos = contentType === 'videos';
+  const [quote] = useState(() => OSHO_QUOTES[Math.floor(Math.random() * OSHO_QUOTES.length)]);
+  const [quoteDismissed, setQuoteDismissed] = useState(false);
 
   const filtered = useMemo(() => {
     if (isBooks) return [];
@@ -41,8 +44,14 @@ export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setAc
 
   const formats = useMemo(() => Array.from(new Set(OSHO_BOOKS.map(b => b.tag))), []);
 
+  const popular = useMemo(() => (isBooks || search.trim() ? [] : filtered.slice(0, 14)), [isBooks, search, filtered]);
+
   const pageTitle = isBooks ? t.allBooks : isVideos ? t.videosTab : t.allSeries;
   const itemCount = isBooks ? filteredBooks.length : filtered.length;
+
+  const pillDefs = isBooks
+    ? [{key: 'all', label: t.all}, ...formats.map(f => ({key: f, label: f}))]
+    : [{key: 'all', label: t.all}, ...genres.map(g => ({key: g, label: t.genres[g] || g}))];
 
   return (
     <>
@@ -51,9 +60,22 @@ export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setAc
       </div>
 
       <div className="screen-body">
+      {/* Daily Wisdom quote strip */}
+      {!quoteDismissed && (
+        <div className="quote-strip-wrap">
+          <div className="quote-strip-border">
+            <div className="quote-strip-inner">
+              <span className="quote-strip-eyebrow">Daily Wisdom</span>
+              <span className="quote-strip-text">&ldquo;{quote}&rdquo; <span className="quote-strip-attr">— Osho</span></span>
+              <button className="quote-strip-close" aria-label="Dismiss quote" onClick={() => setQuoteDismissed(true)}><IcoX/></button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Continue Listening */}
       {!isBooks && nowPlaying && (
-        <div style={{marginBottom:4, marginTop:16}}>
+        <div style={{marginBottom:4, marginTop:4}}>
           <div className="sec-lbl">{t.continueListening}</div>
           <div className="cl-card" onClick={onResume}
             role="button" tabIndex={0} onKeyDown={onActivateKey(onResume)}>
@@ -73,22 +95,34 @@ export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setAc
         </div>
       )}
 
-      {/* Genre tiles — mobile only, discourses/videos */}
-      {!isBooks && !search && (
-        <div className="genre-section" style={{marginBottom:24, marginTop:16}}>
-          <div className="sec-lbl">{t.exploreTopic}</div>
-          <div className="genre-scroll">
-            {genres.map(g => (
-              <div key={g} className="genre-tile" onClick={() => setActivePill(g)}
-                role="button" tabIndex={0} onKeyDown={onActivateKey(() => setActivePill(g))}>
-                <div className={`genre-sq ${activePill===g?'active-genre':''}`} style={{background: GENRE_COLORS[g] || '#C0B8B0'}}>
-                  <svg width="72" height="72" viewBox="0 0 80 80" style={{display:'block'}}>
-                    <circle cx="40" cy="32" r="14" fill="rgba(32,19,23,0.16)"/>
-                    <circle cx="40" cy="32" r="7" fill="rgba(32,19,23,0.30)"/>
-                    <rect x="18" y="54" width="44" height="3" rx="1.5" fill="rgba(32,19,23,0.20)"/>
-                  </svg>
+      {/* Select Categories — desktop only */}
+      {!isBooks && pillDefs.length > 1 && (
+        <div className="cat-section">
+          <div className="cat-heading">Select Categories</div>
+          <div className="cat-scroll">
+            {pillDefs.map(p => (
+              <button key={p.key} className={`filter-pill ${activePill===p.key?'active':''}`} onClick={() => setActivePill(p.key)}>{p.label}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Popular series */}
+      {popular.length > 0 && (
+        <div className="popular-section">
+          <div className="popular-heading">Popular series</div>
+          <div className="popular-scroll">
+            {popular.map(s => (
+              <div key={s.i} className="popular-card" onClick={() => onSeries(s)}
+                role="button" tabIndex={0} onKeyDown={onActivateKey(() => onSeries(s))}>
+                <div className="popular-art">
+                  <SeriesImg series={s} className="popular-img"/>
+                  <button className="popular-play" aria-label="Play" onClick={e => { e.stopPropagation(); onPlayFirst?.(s); }}>
+                    <IcoPlay s={17}/>
+                  </button>
                 </div>
-                <div className="genre-lbl">{t.genres[g] || g}</div>
+                <div className="popular-title">{s.n}</div>
+                <div className="popular-artist">{t.genres[s.g] || s.g}</div>
               </div>
             ))}
           </div>
@@ -97,20 +131,14 @@ export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setAc
 
       {/* Filter pills — mobile only: genres for discourses/videos, format for books */}
       <div className="filter-scroll">
-        <button className={`filter-pill ${activePill==='all'?'active':''}`} onClick={() => setActivePill('all')}>{t.all}</button>
-        {isBooks
-          ? formats.map(f => (
-              <button key={f} className={`filter-pill ${activePill===f?'active':''}`} onClick={() => setActivePill(f)}>{f}</button>
-            ))
-          : genres.map(g => (
-              <button key={g} className={`filter-pill ${activePill===g?'active':''}`} onClick={() => setActivePill(g)}>
-                {t.genres[g] || g}
-              </button>
-            ))}
+        {pillDefs.map(p => (
+          <button key={p.key} className={`filter-pill ${activePill===p.key?'active':''}`} onClick={() => setActivePill(p.key)}>{p.label}</button>
+        ))}
       </div>
 
       {/* Grid */}
       {!isDesktop && <div className="sec-lbl">{pageTitle}</div>}
+      {isDesktop && !isBooks && <div className="all-series-heading">All series</div>}
       {isBooks ? (
         <div className="series-grid book-grid">
           {filteredBooks.length === 0 ? (
@@ -133,9 +161,11 @@ export function HomeScreen({seriesList, dataLoading, onSeries, activePill, setAc
       </div>
 
       <div className="footer-band">
-        <div className="footer-wm">Osho<em>·</em></div>
-        <div className="footer-attr">{t.footerAttribution}</div>
-        <div className="footer-note">{t.footerNote}</div>
+        <div className="footer-inner">
+          <div className="footer-wm">Osho<em>·</em></div>
+          <div className="footer-text">{t.footerAttribution} {t.footerNote}</div>
+          <div className="footer-year">© {new Date().getFullYear()} Osho Discourses</div>
+        </div>
       </div>
     </>
   );

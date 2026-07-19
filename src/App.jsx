@@ -670,7 +670,9 @@ function App() {
         onOpenAccount={() => navigate('account')} onOpenSaved={() => navigate('saved')} onOpenHistory={() => navigate('history')}/>
       <div className="main">
         <div className={homeClass}>
-          <HomeScreen seriesList={seriesList} dataLoading={listLoading} onSeries={s => navigate('series', s)} activePill={activePill} setActivePill={setPill} discLang={discLang} contentType={contentType} search={search} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} savedBooks={savedBooks} onToggleSaveBook={toggleSaveBook} onReadBook={onReadBook} t={t} isDesktop={isDesktop}/>
+          <HomeScreen seriesList={seriesList} dataLoading={listLoading} onSeries={s => navigate('series', s)}
+            onPlayFirst={s => { if (s.e && s.e.length) { playEp(s, s.e[0]); setPO(true); } }}
+            activePill={activePill} setActivePill={setPill} discLang={discLang} contentType={contentType} search={search} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} savedBooks={savedBooks} onToggleSaveBook={toggleSaveBook} onReadBook={onReadBook} t={t} isDesktop={isDesktop}/>
         </div>
         <div className={serClass}>
           {selSeries && <SeriesScreen series={selSeries} onBack={() => navigate('home')} onEpisode={ep => { playEp(selSeries, ep); setPO(true); }} currentEp={nowPlaying?.series?.i === selSeries?.i ? nowPlaying?.episode : null} savedEpisodeUrls={savedEpisodeUrls} onToggleSaveEpisode={toggleSaveEpisode} t={t}/>}

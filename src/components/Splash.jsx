@@ -1,19 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-
-const QUOTES = [
-  'Life begins where fear ends.',
-  "Be — don't try to become.",
-  'The moment you accept yourself, you become beautiful.',
-  'Love and awareness are two aspects of the same phenomenon.',
-  'Drop the idea of becoming someone, because you are already a masterpiece.',
-  'Silence is the language of god, all else is poor translation.',
-  'Meditation is not control. Meditation is enjoying your freedom, the freedom to be.',
-  'Truth is not found through logic; it is a wild flower that needs deep sensitivity, not certainty.',
-];
+import { OSHO_QUOTES } from '../data/quotes.js';
 
 /* ── First-open welcome splash ── */
 export function Splash({onDone}) {
-  const [quote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)]);
+  const [quote] = useState(() => OSHO_QUOTES[Math.floor(Math.random() * OSHO_QUOTES.length)]);
   const [mounted, setMounted] = useState(false);
   const [fading, setFading] = useState(false);
   const dismissedRef = useRef(false);
