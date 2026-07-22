@@ -1,21 +1,27 @@
-import { IcoHeadphones, IcoUser, IcoVideo } from './Icons.jsx';
+import { IcoClock, IcoHeadphones, IcoHeart, IcoUser, IcoVideo } from './Icons.jsx';
 
-/* ── Mobile bottom tab bar — content-type switcher + Account; Saved/History are
-   reached via the header heart icon and the Account screen respectively.
-   Books is temporarily hidden — see also Header.jsx and App.jsx's routing. ── */
-export function MobileNav({screen, contentType, onSelectContentType, onAccount, t}) {
+/* ── Mobile bottom tab bar — Discourses, Videos, Saved, History, Account.
+   Active tab tints maroon with a rounded pill behind the icon. ── */
+export function MobileNav({screen, contentType, onSelectContentType, onOpenSaved, onOpenHistory, onAccount, t}) {
   const isHome = screen === 'home' || screen === 'series';
+  const items = [
+    {key: 'discourses', label: t.discoursesTab, icon: IcoHeadphones, active: isHome && contentType === 'discourses', onClick: () => onSelectContentType('discourses')},
+    {key: 'videos', label: t.videosTab, icon: IcoVideo, active: isHome && contentType === 'videos', onClick: () => onSelectContentType('videos')},
+    {key: 'saved', label: 'Saved', icon: IcoHeart, active: screen === 'saved', onClick: onOpenSaved},
+    {key: 'history', label: 'History', icon: IcoClock, active: screen === 'history', onClick: onOpenHistory},
+    {key: 'account', label: 'Account', icon: IcoUser, active: screen === 'account', onClick: onAccount},
+  ];
   return (
     <nav className="mnav">
-      <button className={`mnav-item${isHome && contentType==='discourses'?' active':''}`} onClick={() => onSelectContentType('discourses')}>
-        <IcoHeadphones s={20}/><span>{t.discoursesTab}</span>
-      </button>
-      <button className={`mnav-item${isHome && contentType==='videos'?' active':''}`} onClick={() => onSelectContentType('videos')}>
-        <IcoVideo s={20}/><span>{t.videosTab}</span>
-      </button>
-      <button className={`mnav-item${screen==='account'?' active':''}`} onClick={onAccount}>
-        <IcoUser s={20}/><span>Account</span>
-      </button>
+      {items.map(it => {
+        const Icon = it.icon;
+        return (
+          <button key={it.key} className={`mnav-item${it.active?' active':''}`} onClick={it.onClick}>
+            <span className="mnav-ic"><Icon s={19}/></span>
+            <span className="mnav-lbl">{it.label}</span>
+          </button>
+        );
+      })}
     </nav>
   );
 }

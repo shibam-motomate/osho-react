@@ -16,7 +16,9 @@ export function Header({t, contentType, onSelectContentType, search, setSearch, 
   return (
     <>
       <div className="global-header">
-        <div className="gh-logo" onClick={onLogoClick} role="button" tabIndex={0} onKeyDown={onActivateKey(onLogoClick)}>Osho<em>·</em></div>
+        <div className="gh-logo" onClick={onLogoClick} role="button" tabIndex={0} onKeyDown={onActivateKey(onLogoClick)} aria-label="Osho — Home">
+          <img src="/osho-signature.webp" alt="Osho" className="gh-logo-img"/>
+        </div>
         <div className="gh-spacer"/>
         <nav className="gh-nav">
           {CT_DEFS.map(c => (
