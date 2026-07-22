@@ -453,6 +453,13 @@ function App() {
     if (media) media.play().catch(() => {});
   };
 
+  const closeMini = useCallback(() => {
+    if (audioRef.current) audioRef.current.pause();
+    if (videoRef.current) videoRef.current.pause();
+    setNP(null); setPlay(false); setPO(false);
+    try { localStorage.removeItem('osho_np'); localStorage.removeItem('osho_time'); } catch(e) {}
+  }, []);
+
   const showToast = useCallback(msg => {
     setToast(msg);
     clearTimeout(toastTimer.current);
@@ -689,18 +696,28 @@ function App() {
         <div className={acctClass}>
           {(screen === 'account' || visitedAccount.current) && (visitedAccount.current = true) && (
             <Suspense fallback={null}>
-              <AccountScreen onBack={() => navigate('home')} onOpenHistory={() => navigate('history')} lang={lang} setLang={setLang} onAccountDeleted={() => { navigate('home'); showToast('Account deleted'); }}/>
+              <AccountScreen onBack={() => navigate('home')} onOpenSaved={() => navigate('saved')} onOpenHistory={() => navigate('history')} lang={lang} setLang={setLang}
+                savedSeriesCount={savedSeries.size} savedEpisodesCount={savedEpisodes.length} historyCount={history.length}
+                onAccountDeleted={() => { navigate('home'); showToast('Account deleted'); }}/>
             </Suspense>
           )}
         </div>
       </div>
-      <MiniPlayer nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} onPrev={onPrev} onNext={onNext} onOpen={() => setPO(true)} audioRef={audioRef} videoRef={videoRef}/>
+      <MiniPlayer nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} onPrev={onPrev} onNext={onNext} onOpen={() => setPO(true)}
+        onClose={closeMini} onOpenSeries={() => { if (nowPlaying) navigate('series', nowPlaying.series); }}
+        liked={nowPlaying ? savedEpisodeUrls.has(nowPlaying.episode.u) : false}
+        onToggleLike={() => { if (nowPlaying) toggleSaveEpisode(nowPlaying.series, nowPlaying.episode); }}
+        audioRef={audioRef} videoRef={videoRef} isDesktop={isDesktop}/>
       <MobileNav screen={screen} contentType={contentType} onSelectContentType={selectContentType} t={t}
+        onOpenSaved={() => navigate('saved')} onOpenHistory={() => navigate('history')}
         onAccount={() => user ? navigate('account') : setShowAuth(true)}/>
       <FullPlayer open={playerOpen} onClose={() => setPO(false)} nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} audioRef={audioRef} videoRef={videoRef} onPrev={onPrev} onNext={onNext} onSeekSeconds={onSeekSeconds} t={t} isDesktop={isDesktop}
         playbackSpeed={playbackSpeed} setPlaybackSpeed={setPlaybackSpeed}
         sleepOption={sleepOption} setSleepOption={setSleepOption} sleepRemaining={sleepRemaining}
-        episodeIndex={episodeIndex} totalEpisodes={nowPlaying?.series?.e?.length || 0} nextEpisode={nextEpisode}/>
+        episodeIndex={episodeIndex} totalEpisodes={nowPlaying?.series?.e?.length || 0}
+        onOpenSeries={() => { if (nowPlaying) { navigate('series', nowPlaying.series); setPO(false); } }}
+        onPlayEpisode={ep => { if (nowPlaying) playEp(nowPlaying.series, ep); }}
+        onShare={shareApp}/>
       <div className={`toast${toast?' show':''}`}>{toast}</div>
       {showSplash && <Splash onDone={dismissSplash}/>}
       {showAuth && <Suspense fallback={null}><AuthScreen onClose={() => setShowAuth(false)}/></Suspense>}
