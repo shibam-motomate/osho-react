@@ -73,28 +73,6 @@ export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, acti
         </div>
       )}
 
-      {/* Continue Listening */}
-      {!isBooks && nowPlaying && (
-        <div style={{marginBottom:4, marginTop:4}}>
-          <div className="sec-lbl">{t.continueListening}</div>
-          <div className="cl-card" onClick={onResume}
-            role="button" tabIndex={0} onKeyDown={onActivateKey(onResume)}>
-            <SeriesImg series={nowPlaying.series} className="cl-art" style={{width:60,height:60,borderRadius:12,border:'1px solid var(--border)',overflow:'hidden',flexShrink:0}}/>
-            <div className="cl-info">
-              <div className="cl-title-row">
-                <span className="cl-title">{nowPlaying.series.n}</span>
-                <span className="cl-pct-pill">{Math.round(audioPct)}% listened</span>
-              </div>
-              <div className="cl-ep">{nowPlaying.episode.t}</div>
-              <div className="cl-prog"><div className="cl-prog-fill" style={{width:`${audioPct}%`}}/></div>
-            </div>
-            <div className="cl-actions">
-              <button className="cl-close" onClick={e => { e.stopPropagation(); onDismissCL(); }}><IcoX/></button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Select Categories — desktop only */}
       {!isBooks && pillDefs.length > 1 && (
         <div className="cat-section">
