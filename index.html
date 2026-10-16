@@ -18,6 +18,26 @@
         if (ts === 'large' || ts === 'xlarge') document.documentElement.setAttribute('data-textsize', ts);
       } catch (e) {}
     </script>
+    <script>
+      // iOS 26 home-screen web apps lay the viewport out short by the status-bar height (WebKit
+      // regression, fixed in Safari 26.1), leaving a band under the tab bar. Measure the shortfall
+      // and expose it as --vgap (see styles.css). iOS standalone only; everywhere else it stays 0.
+      (function () {
+        var ua = navigator.userAgent;
+        var isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        var standalone = navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+        if (!isIOS || !standalone) return;
+        var apply = function () {
+          var portrait = innerHeight >= innerWidth;
+          var expected = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+          var gap = Math.round(expected - innerHeight);
+          document.documentElement.style.setProperty('--vgap', (gap >= 20 && gap <= 80 ? gap : 0) + 'px');
+        };
+        apply();
+        addEventListener('resize', apply);
+        addEventListener('orientationchange', function () { setTimeout(apply, 300); });
+      })();
+    </script>
     <link rel="preload" href="/fonts/InstrumentSans-Variable.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
