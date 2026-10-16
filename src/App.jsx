@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { T, isVideoId } from './config.js';
+import { T, isVideoId, photoFor } from './config.js';
 import { FullPlayer } from './components/FullPlayer.jsx';
 import { Header } from './components/Header.jsx';
 import { HistoryScreen } from './components/HistoryScreen.jsx';
@@ -9,11 +9,14 @@ import { MobileNav } from './components/MobileNav.jsx';
 import { SavedScreen } from './components/SavedScreen.jsx';
 import { SeriesScreen } from './components/SeriesScreen.jsx';
 import { Sidebar } from './components/Sidebar.jsx';
-import { Splash } from './components/Splash.jsx';
+import { LoadScreen } from './components/LoadScreen.jsx';
 import { useAuth } from './contexts/AuthContext.jsx';
 import { OSHO_BOOKS } from './data/oshoBooks.js';
 import { OSHO_VIDEOS_EN, OSHO_VIDEOS_HI } from './data/oshoVideos.js';
 import { installFocusAutoScroll, isTvDevice } from './lib/a11y.js';
+import { getProgress, loadProgress, saveProgress } from './lib/progress.js';
+import { applyTheme, readTheme } from './lib/theme.js';
+import { applyTextSize, readTextSize } from './lib/textsize.js';
 import { supabase, supabaseEnabled } from './lib/supabaseClient.js';
 
 const AccountScreen = lazy(() => import('./components/AccountScreen.jsx').then(m => ({default: m.AccountScreen})));
@@ -53,13 +56,24 @@ function App() {
   const [audioPct,    setAudioPct]  = useState(0);
   const [isDesktop,   setIsDesktop] = useState(() => window.innerWidth >= 900);
   const [toast,       setToast]     = useState(null);
+  const [theme,       setThemeState] = useState(readTheme); // 'dark' | 'light' — Account → Appearance
+  const setTheme = useCallback(next => setThemeState(applyTheme(next)), []);
+  const [textSize,    setTextSizeState] = useState(readTextSize); // 'normal' | 'large' | 'xlarge' — Account → Appearance
+  const setTextSize = useCallback(next => setTextSizeState(applyTextSize(next)), []);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [sleepOption, setSleepOptionState] = useState('off'); // 'off' | 15 | 30 | 60 | 'end'
   const [sleepEndAt,  setSleepEndAt] = useState(null);
   const [sleepRemaining, setSleepRemaining] = useState(0);
-  const [showSplash, setShowSplash] = useState(() => {
-    try { return !localStorage.getItem('osho_seen_intro'); } catch(e) { return false; }
-  });
+  // First-load screen: shown until fonts and the first catalogue have arrived (see LoadScreen).
+  const [booting, setBooting] = useState(true);
+  const [fontsReady, setFontsReady] = useState(false);
+  useEffect(() => {
+    let on = true;
+    const done = () => { if (on) setFontsReady(true); };
+    if (document.fonts?.ready) document.fonts.ready.then(done); else done();
+    const guard = setTimeout(done, 2500); // never block on a slow font server
+    return () => { on = false; clearTimeout(guard); };
+  }, []);
   const [contentType, setContentType] = useState('discourses'); // 'discourses' | 'videos' | 'books'
   const [search, setSearch] = useState('');
   const [mobSearchOpen, setMobSearchOpen] = useState(false);
@@ -75,10 +89,14 @@ function App() {
   const [savedEpisodes, setSavedEpisodes] = useState(() => {
     try { return JSON.parse(localStorage.getItem('osho_saved_episodes') || '[]'); } catch(e) { return []; }
   });
+  // Saved position of every talk ever started ({episodeUrl: {t, d, done}}, see lib/progress.js).
+  // 'osho_np' / 'osho_time' below still track only the talk in the player for the Home hero.
+  const [progress, setProgress] = useState(loadProgress);
   const [dataLoading, setDataLoading] = useState(true);
   const [seriesVersion, setSeriesVersion] = useState(0);
   const audioRef = useRef(null);
   const videoRef = useRef(null);
+  const npRef = useRef(null); // nowPlaying, readable from timers and media-event handlers
   const toastTimer = useRef(null);
   const sleepOptionRef = useRef('off');
   const seriesCacheRef = useRef({});
@@ -88,6 +106,16 @@ function App() {
   // from the very first render (FullPlayer never unmounts its <video>) so a ref is always
   // valid the instant playback starts, even before FullPlayer has ever been opened.
   const mediaRefFor = useCallback(seriesId => (isVideoId(seriesId) ? videoRef : audioRef), []);
+  useEffect(() => { npRef.current = nowPlaying; }, [nowPlaying]);
+
+  // Write the position of the talk loaded in `el` to the per-talk progress map. Skipped while
+  // metadata is still loading (readyState 0): currentTime is a meaningless 0 then, and the
+  // resume seek in playEp has not been applied yet.
+  const recordProgress = useCallback((el, url) => {
+    if (!el || !url || el.readyState < 1) return;
+    const next = saveProgress(url, el.currentTime, el.duration);
+    if (next) setProgress(next);
+  }, []);
 
   const sidebarMode = PROFILE_SCREENS.includes(screen) ? 'profile' : 'browse';
   // Which tab screen Series was pushed from, so only that one dims/parallax-shifts
@@ -182,7 +210,10 @@ function App() {
     if (audio.readyState >= 1) {
       audio.currentTime = time;
     } else {
-      audio.addEventListener('loadedmetadata', () => { audio.currentTime = time; }, { once: true });
+      // Only seek if the same talk is still loaded — a quick switch to another talk must
+      // not inherit this one's position.
+      const src = audio.src;
+      audio.addEventListener('loadedmetadata', () => { if (audio.src === src) audio.currentTime = time; }, { once: true });
     }
   }, []);
 
@@ -288,20 +319,42 @@ function App() {
     } catch(e) {}
   }, [seekWhenReady, mediaRefFor]);
 
-  // Persist position every 5s — whichever of audio/video is actually playing
+  // Persist position every 5s — whichever of audio/video is actually playing. Both the
+  // current-talk slot ('osho_time') and the per-talk progress map are written here.
   useEffect(() => {
     const iv = setInterval(() => {
       const el = audioRef.current && !audioRef.current.paused ? audioRef.current
         : videoRef.current && !videoRef.current.paused ? videoRef.current : null;
-      if (el) localStorage.setItem('osho_time', String(el.currentTime));
+      if (!el || el.readyState < 1) return;
+      localStorage.setItem('osho_time', String(el.currentTime));
+      const np = npRef.current;
+      if (np && el === mediaRefFor(np.series.i).current) recordProgress(el, np.episode.u);
     }, 5000);
     return () => clearInterval(iv);
-  }, []);
+  }, [mediaRefFor, recordProgress]);
+
+  // Leaving the page (tab closed, app backgrounded on a phone) — don't lose up to 5 s.
+  useEffect(() => {
+    const flush = () => {
+      const np = npRef.current;
+      if (np) recordProgress(mediaRefFor(np.series.i).current, np.episode.u);
+    };
+    window.addEventListener('pagehide', flush);
+    return () => window.removeEventListener('pagehide', flush);
+  }, [mediaRefFor, recordProgress]);
 
   // Mini player / continue-listening progress — both elements stay mounted, so listen on
-  // both; only the one actually playing will ever fire timeupdate.
+  // both; only the one actually playing will ever fire timeupdate. The lock-screen scrubber
+  // (Media Session position state) is fed from the same event.
   useEffect(() => {
-    const onTime = e => { if (e.target.duration > 0) setAudioPct((e.target.currentTime / e.target.duration) * 100); };
+    const onTime = e => {
+      const {currentTime, duration, playbackRate} = e.target;
+      if (duration > 0) setAudioPct((currentTime / duration) * 100);
+      const ms = 'mediaSession' in navigator ? navigator.mediaSession : null;
+      if (ms?.setPositionState && Number.isFinite(duration) && duration > 0) {
+        try { ms.setPositionState({duration, playbackRate, position: Math.min(Math.max(0, currentTime), duration)}); } catch (err) {}
+      }
+    };
     const els = [audioRef.current, videoRef.current].filter(Boolean);
     els.forEach(el => el.addEventListener('timeupdate', onTime));
     return () => els.forEach(el => el.removeEventListener('timeupdate', onTime));
@@ -316,9 +369,20 @@ function App() {
   }, [nowPlaying]);
 
   useEffect(() => {
-    const onPlay  = () => setPlay(true);
-    const onPause = () => setPlay(false);
-    const onEnded = () => {
+    const ms = 'mediaSession' in navigator ? navigator.mediaSession : null;
+    const setMsState = state => { if (ms) { try { ms.playbackState = state; } catch (err) {} } };
+    // Save the paused/finished talk's position — but only for the element that holds the
+    // current talk (the other element is paused whenever playback switches between them).
+    const saveFrom = el => {
+      const np = npRef.current;
+      if (!np || el !== mediaRefFor(np.series.i).current) return;
+      recordProgress(el, np.episode.u);
+      if (el.readyState >= 1) localStorage.setItem('osho_time', String(el.currentTime)); // Home hero resumes exactly here
+    };
+    const onPlay  = () => { setPlay(true); setMsState('playing'); };
+    const onPause = e => { setPlay(false); setMsState('paused'); saveFrom(e.target); };
+    const onEnded = e => {
+      saveFrom(e.target);
       if (sleepOptionRef.current === 'end') {
         setSleepOptionState('off');
         setSleepEndAt(null);
@@ -337,20 +401,27 @@ function App() {
       el.removeEventListener('pause', onPause);
       el.removeEventListener('ended', onEnded);
     });
-  }, [onNext]);
+  }, [onNext, mediaRefFor, recordProgress]);
 
   const playEp = useCallback((series, episode) => {
+    // Bank the outgoing talk's position first: swapping src does not reliably fire 'pause'.
+    const prev = npRef.current;
+    if (prev) recordProgress(mediaRefFor(prev.series.i).current, prev.episode.u);
     const np = {series, episode};
     setNP(np);
     setCLD(false);
+    // A talk with a saved position picks up where it was left; a finished one starts over.
+    const saved = getProgress(episode.u);
+    const resumeAt = saved && !saved.done && saved.t > 0 ? saved.t : 0;
     localStorage.setItem('osho_np', JSON.stringify(np));
-    localStorage.setItem('osho_time', '0');
+    localStorage.setItem('osho_time', String(resumeAt));
     const media = mediaRefFor(series.i).current;
     const other = media === videoRef.current ? audioRef.current : videoRef.current;
     if (other) other.pause();
     if (media) {
       media.src = episode.u;
       media.currentTime = 0;
+      if (resumeAt) seekWhenReady(media, resumeAt);
       media.play().catch(() => {});
     }
     setHistory(prev => {
@@ -365,7 +436,7 @@ function App() {
       }
       return next;
     });
-  }, [discLang, user, mediaRefFor]);
+  }, [discLang, user, mediaRefFor, recordProgress, seekWhenReady]);
 
   // Shared resolver for anything stored as {seriesId, episodeUrl, discLang} —
   // history entries and saved episodes both use this shape.
@@ -412,6 +483,44 @@ function App() {
     const media = mediaRefFor(nowPlaying.series.i).current;
     if (media) media.currentTime = Math.max(0, media.currentTime + delta);
   }, [nowPlaying, mediaRefFor]);
+
+  // Lock-screen / headphone / car controls via the Media Session API. Everything is
+  // feature-checked, so browsers without it (or without a given action) are unaffected.
+  useEffect(() => {
+    const ms = 'mediaSession' in navigator ? navigator.mediaSession : null;
+    if (!ms) return;
+    if (!nowPlaying) {
+      try { ms.metadata = null; ms.playbackState = 'none'; } catch (err) {}
+      return;
+    }
+    const {series, episode} = nowPlaying;
+    const art = isVideoId(series.i) ? (episode.img || series.img || photoFor(series)) : photoFor(series);
+    try {
+      ms.metadata = new window.MediaMetadata({title: episode.t, artist: 'Osho', album: series.n, artwork: art ? [{src: art}] : []});
+    } catch (err) {}
+  }, [nowPlaying]);
+
+  useEffect(() => {
+    const ms = 'mediaSession' in navigator ? navigator.mediaSession : null;
+    if (!ms || typeof ms.setActionHandler !== 'function') return;
+    const media = () => (nowPlaying ? mediaRefFor(nowPlaying.series.i).current : null);
+    const handlers = {
+      play: () => { const el = media(); if (el) el.play().catch(() => {}); },
+      pause: () => { const el = media(); if (el) el.pause(); },
+      previoustrack: () => onPrev(),
+      nexttrack: () => onNext(),
+      seekbackward: d => onSeekSeconds(-(d?.seekOffset || 30)),
+      seekforward: d => onSeekSeconds(d?.seekOffset || 30),
+      seekto: d => {
+        const el = media();
+        if (!el || !(d?.seekTime >= 0)) return;
+        if (d.fastSeek && typeof el.fastSeek === 'function') el.fastSeek(d.seekTime); else el.currentTime = d.seekTime;
+      },
+    };
+    const actions = Object.keys(handlers);
+    actions.forEach(a => { try { ms.setActionHandler(a, nowPlaying ? handlers[a] : null); } catch (err) {} });
+    return () => actions.forEach(a => { try { ms.setActionHandler(a, null); } catch (err) {} });
+  }, [nowPlaying, onPrev, onNext, onSeekSeconds, mediaRefFor]);
 
   const setSleepOption = useCallback(opt => {
     setSleepOptionState(opt);
@@ -485,10 +594,8 @@ function App() {
     }
   }, [t, showToast]);
 
-  const dismissSplash = useCallback(() => {
-    try { localStorage.setItem('osho_seen_intro', '1'); } catch(e) {}
-    setShowSplash(false);
-  }, []);
+  const bootProgress = 15 + (fontsReady ? 35 : 0) + (!dataLoading ? 50 : 0);
+  const finishBoot = useCallback(() => setBooting(false), []);
 
   const toggleSaveSeries = useCallback(id => {
     setSavedSeries(prev => {
@@ -620,12 +727,10 @@ function App() {
     return () => { cancelled = true; };
   }, [user]);
 
-  // Kick back to Home if signed out while on the account page (Saved/History stay guest-usable).
-  // Waits for authLoading to settle first so a logged-in session restoring from storage
-  // isn't mistaken for a logged-out user on direct/deep-link loads.
-  useEffect(() => {
-    if (!authLoading && screen === 'account' && !user) navigate('home');
-  }, [authLoading, screen, user, navigate]);
+  // The Account screen is usable without logging in (Appearance, Saved, History live there);
+  // it just offers a Sign in button instead of account details. Apply the saved theme on mount.
+  useEffect(() => { applyTheme(theme); }, [theme]);
+  useEffect(() => { applyTextSize(textSize); }, [textSize]);
 
   const removeHistoryEntry = useCallback(episodeUrl => {
     setHistory(prev => {
@@ -666,12 +771,12 @@ function App() {
   const serClass   = `screen${!isDesktop ? (screen !== 'series' ? ' hidden' : '') : ''} ${isDesktop && screen === 'series' ? 'desk-show' : ''}`;
 
   return (
-    <div id="app" className={playerOpen ? 'player-open' : ''} style={{fontFamily:appFont,height:'100vh'}}>
+    <div id="app" className={`${playerOpen ? 'player-open' : ''}${nowPlaying ? ' has-np' : ''}`} style={{fontFamily:appFont}}>
       <audio ref={audioRef} preload="none" style={{display:'none'}}/>
       <Header t={t} contentType={contentType} onSelectContentType={selectContentType} search={search} setSearch={setSearch} discLang={discLang} setDiscLang={setDiscLang}
-        onShareApp={shareApp} onOpenSaved={() => navigate('saved')} onLogoClick={() => navigate('home')}
-        user={user} onSelectBrowse={() => navigate('home')} onSelectProfile={() => user ? navigate('account') : setShowAuth(true)} onSelectLogout={signOut}
-        mobSearchOpen={mobSearchOpen} onToggleMobSearch={() => setMobSearchOpen(v => !v)}/>
+        onOpenSaved={() => navigate('saved')} onLogoClick={() => navigate('home')}
+        user={user} onSelectBrowse={() => navigate('home')} onSelectProfile={() => navigate('account')} onSelectLogout={signOut}
+/>
       <Sidebar mode={sidebarMode} screen={screen} discLang={discLang} setDiscLang={setDiscLang} activePill={activePill} setActivePill={setPill} t={t} seriesList={seriesList} contentType={contentType}
         user={user} onSignOut={signOut}
         onOpenAccount={() => navigate('account')} onOpenSaved={() => navigate('saved')} onOpenHistory={() => navigate('history')}/>
@@ -679,24 +784,29 @@ function App() {
         <div className={homeClass}>
           <HomeScreen seriesList={seriesList} dataLoading={listLoading} onSeries={s => navigate('series', s)}
             onPlayFirst={s => { if (s.e && s.e.length) { playEp(s, s.e[0]); setPO(true); } }}
-            activePill={activePill} setActivePill={setPill} discLang={discLang} contentType={contentType} search={search} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} savedBooks={savedBooks} onToggleSaveBook={toggleSaveBook} onReadBook={onReadBook} t={t} isDesktop={isDesktop}/>
+            activePill={activePill} setActivePill={setPill} discLang={discLang} setDiscLang={setDiscLang} contentType={contentType} search={search} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} setSearch={setSearch} searchOpen={mobSearchOpen} setSearchOpen={setMobSearchOpen} t={t} isDesktop={isDesktop}/>
         </div>
         <div className={serClass}>
-          {selSeries && <SeriesScreen series={selSeries} onBack={() => navigate('home')} onEpisode={ep => { playEp(selSeries, ep); setPO(true); }} currentEp={nowPlaying?.series?.i === selSeries?.i ? nowPlaying?.episode : null} savedEpisodeUrls={savedEpisodeUrls} onToggleSaveEpisode={toggleSaveEpisode} t={t}/>}
+          {selSeries && <SeriesScreen series={selSeries} onBack={() => navigate('home')} onEpisode={ep => { playEp(selSeries, ep); setPO(true); }} onOpenPlayer={() => setPO(true)}
+            currentEp={nowPlaying?.series?.i === selSeries?.i ? nowPlaying?.episode : null} isPlaying={isPlaying} audioPct={audioPct}
+            saved={savedSeries.has(selSeries.i)} onToggleSave={toggleSaveSeries} onShare={shareApp}
+            savedEpisodeUrls={savedEpisodeUrls} onToggleSaveEpisode={toggleSaveEpisode} progress={progress} t={t}/>}
         </div>
         <div className={savedClass}>
           <SavedScreen onBack={() => navigate('home')} discourseSeries={allDiscourseSeries} videoSeries={allVideoSeries} books={OSHO_BOOKS} savedSeries={savedSeries} onToggleSave={toggleSaveSeries}
             savedEpisodes={savedEpisodes} onToggleSaveEpisode={toggleSaveEpisode} onPlayEpisode={playEntry}
+            history={history} onRemoveHistory={removeHistoryEntry} onClearHistory={clearHistory}
             savedBooks={savedBooks} onToggleSaveBook={toggleSaveBook} onReadBook={onReadBook}
             onSeries={s => navigate('series', s)} t={t}/>
         </div>
         <div className={histClass}>
-          <HistoryScreen onBack={() => navigate('home')} history={history} onPlayEntry={playEntry} onRemove={removeHistoryEntry} onClearAll={clearHistory}/>
+          <HistoryScreen onBack={() => navigate('home')} history={history} onPlayEntry={playEntry} onRemove={removeHistoryEntry} onClearAll={clearHistory} t={t}/>
         </div>
         <div className={acctClass}>
           {(screen === 'account' || visitedAccount.current) && (visitedAccount.current = true) && (
             <Suspense fallback={null}>
               <AccountScreen onBack={() => navigate('home')} onOpenSaved={() => navigate('saved')} onOpenHistory={() => navigate('history')} lang={lang} setLang={setLang}
+                theme={theme} setTheme={setTheme} textSize={textSize} setTextSize={setTextSize} onSignIn={() => setShowAuth(true)} t={t}
                 savedSeriesCount={savedSeries.size} savedEpisodesCount={savedEpisodes.length} historyCount={history.length}
                 onAccountDeleted={() => { navigate('home'); showToast('Account deleted'); }}/>
             </Suspense>
@@ -710,16 +820,18 @@ function App() {
         audioRef={audioRef} videoRef={videoRef} isDesktop={isDesktop}/>
       <MobileNav screen={screen} contentType={contentType} onSelectContentType={selectContentType} t={t}
         onOpenSaved={() => navigate('saved')} onOpenHistory={() => navigate('history')}
-        onAccount={() => user ? navigate('account') : setShowAuth(true)}/>
+        onAccount={() => navigate('account')}/>
       <FullPlayer open={playerOpen} onClose={() => setPO(false)} nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} audioRef={audioRef} videoRef={videoRef} onPrev={onPrev} onNext={onNext} onSeekSeconds={onSeekSeconds} t={t} isDesktop={isDesktop}
         playbackSpeed={playbackSpeed} setPlaybackSpeed={setPlaybackSpeed}
         sleepOption={sleepOption} setSleepOption={setSleepOption} sleepRemaining={sleepRemaining}
         episodeIndex={episodeIndex} totalEpisodes={nowPlaying?.series?.e?.length || 0}
         onOpenSeries={() => { if (nowPlaying) { navigate('series', nowPlaying.series); setPO(false); } }}
         onPlayEpisode={ep => { if (nowPlaying) playEp(nowPlaying.series, ep); }}
-        onShare={shareApp}/>
+        onShare={shareApp}
+        liked={nowPlaying ? savedEpisodeUrls.has(nowPlaying.episode.u) : false}
+        onToggleLike={() => { if (nowPlaying) toggleSaveEpisode(nowPlaying.series, nowPlaying.episode); }}/>
       <div className={`toast${toast?' show':''}`}>{toast}</div>
-      {showSplash && <Splash onDone={dismissSplash}/>}
+      {booting && <LoadScreen progress={bootProgress} onDone={finishBoot}/>}
       {showAuth && <Suspense fallback={null}><AuthScreen onClose={() => setShowAuth(false)}/></Suspense>}
     </div>
   );

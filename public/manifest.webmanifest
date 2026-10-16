@@ -4,9 +4,13 @@
   "description": "Free Osho audio discourses",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#F4F4F1",
-  "theme_color": "#7A1F2E",
+  "background_color": "#141010",
+  "theme_color": "#141010",
   "icons": [
-    {"src": "https://syxvczeaohszykjbqwts.supabase.co/storage/v1/object/public/Assets/osho-dp.webp", "sizes": "any", "type": "image/webp"}
+    {
+      "src": "https://syxvczeaohszykjbqwts.supabase.co/storage/v1/object/public/Assets/osho-dp.webp",
+      "sizes": "any",
+      "type": "image/webp"
+    }
   ]
 }
