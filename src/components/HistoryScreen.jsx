@@ -6,15 +6,15 @@ import { IcoBack, IcoPlay, IcoX } from './Icons.jsx';
 const timeAgo = ts => {
   const mins = Math.floor((Date.now() - ts) / 60000);
   if (mins < 1) return 'Just now';
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 60) return `${mins} min ago`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24) return `${hrs} h ago`;
   const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
+  return days === 1 ? 'Yesterday' : `${days} days ago`;
 };
 
-/* ── Listening history (recent plays, reached from the My Profile menu) ── */
-export function HistoryScreen({onBack, history, onPlayEntry, onRemove, onClearAll}) {
+/* ── History: recently played talks ── */
+export function HistoryScreen({onBack, history, onPlayEntry, onRemove, onClearAll, t}) {
   const [typeFilter, setTypeFilter] = useState('all'); // 'all' | 'discourses' | 'videos'
 
   const filtered = useMemo(() => {
@@ -22,50 +22,43 @@ export function HistoryScreen({onBack, history, onPlayEntry, onRemove, onClearAl
     return history.filter(h => isVideoId(h.seriesId) === (typeFilter === 'videos'));
   }, [history, typeFilter]);
 
-  const countLabel = `${filtered.length} episode${filtered.length===1?'':'s'}`;
-
   return (
     <div>
       <div className="back-bar">
-        <button className="back-btn" onClick={onBack}><IcoBack/>Home</button>
+        <button className="back-btn" onClick={onBack}><IcoBack/>{t.home}</button>
+        {history.length > 0 && <button className="clear-all-pill" onClick={onClearAll}>Clear all</button>}
       </div>
       <div className="page-card-wrap">
-        <div className="page-card">
-      <div className="page-card-title-row" style={{padding:'20px 4px 2px'}}>
-        <div>
-          <div className="page-eyebrow">Activity</div>
-          <div className="page-card-heading">
-            <h1>History</h1>
-            <span className="page-card-count">{countLabel}</span>
+        <div className="page-card-title-row">
+          <div>
+            <div className="page-eyebrow">{t.library}</div>
+            <div className="page-card-heading">
+              <h1>{t.historyTab}</h1>
+              <span className="page-card-count">{t.talks(filtered.length)}</span>
+            </div>
           </div>
         </div>
-        {history.length > 0 && <button className="clear-all-pill" onClick={onClearAll}>Clear All</button>}
-      </div>
-      <div className="ct-tabs" style={{margin:'18px 4px 4px'}}>
-        <button className={`ct-tab-btn${typeFilter==='all'?' active':''}`} onClick={() => setTypeFilter('all')}>All</button>
-        <button className={`ct-tab-btn${typeFilter==='discourses'?' active':''}`} onClick={() => setTypeFilter('discourses')}>Discourses</button>
-        <button className={`ct-tab-btn${typeFilter==='videos'?' active':''}`} onClick={() => setTypeFilter('videos')}>Videos</button>
-      </div>
-      <div className="ep-list">
-        {filtered.length === 0 ? (
-          <div className="empty-state">Nothing played yet — your recent episodes will show up here.</div>
-        ) : filtered.map(h => (
-          <div key={h.episodeUrl + h.playedAt} className="ep-row" onClick={() => onPlayEntry(h)}
-            role="button" tabIndex={0} onKeyDown={onActivateKey(() => onPlayEntry(h))}>
-            <div className="ep-num"><IcoPlay s={14}/></div>
-            <div className="ep-info">
-              <div className="ep-name">{h.episodeTitle}</div>
-              <div style={{fontSize:11.5,color:'var(--muted)',marginTop:2}}>{h.seriesName}</div>
+        <div className="ct-tabs">
+          <button className={`ct-tab-btn${typeFilter==='all'?' active':''}`} onClick={() => setTypeFilter('all')}>{t.all}</button>
+          <button className={`ct-tab-btn${typeFilter==='discourses'?' active':''}`} onClick={() => setTypeFilter('discourses')}>{t.discoursesTab}</button>
+          <button className={`ct-tab-btn${typeFilter==='videos'?' active':''}`} onClick={() => setTypeFilter('videos')}>{t.videosTab}</button>
+        </div>
+        <div className="ep-list">
+          {filtered.length === 0 ? (
+            <div className="empty-state">Nothing played yet. Talks you listen to will show up here.</div>
+          ) : filtered.map(h => (
+            <div key={h.episodeUrl + h.playedAt} className="ep-row" onClick={() => onPlayEntry(h)}
+              role="button" tabIndex={0} onKeyDown={onActivateKey(() => onPlayEntry(h))}>
+              <span className="ep-play" aria-hidden="true"><IcoPlay s={24}/></span>
+              <div className="ep-info">
+                <div className="ep-name">{h.episodeTitle}</div>
+                <div className="ep-sub">{h.seriesName} · {timeAgo(h.playedAt)}</div>
+              </div>
+              <button className="ep-save-btn" aria-label="Remove from history" onClick={ev => { ev.stopPropagation(); onRemove(h.episodeUrl); }}>
+                <IcoX s={20}/>
+              </button>
             </div>
-            <span className="stat-pill" style={{flexShrink:0}}>{isVideoId(h.seriesId) ? 'Video' : 'Audio'}</span>
-            <div className="ep-dur">{timeAgo(h.playedAt)}</div>
-            <button className="ep-save-btn" aria-label="Remove from history"
-              onClick={ev => { ev.stopPropagation(); onRemove(h.episodeUrl); }}>
-              <IcoX/>
-            </button>
-          </div>
-        ))}
-      </div>
+          ))}
         </div>
       </div>
     </div>

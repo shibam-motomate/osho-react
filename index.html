@@ -1,12 +1,27 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Osho</title>
-    <meta name="theme-color" content="#7A1F2E" />
+    <meta name="theme-color" content="#141010" />
     <meta name="description" content="Free Osho audio discourses" />
+    <script>
+      // Apply the saved appearance before the first paint (see src/lib/theme.js).
+      try {
+        var t = localStorage.getItem('osho_theme');
+        if (t === 'light') {
+          document.documentElement.setAttribute('data-theme', 'light');
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#F7F4EF');
+        }
+        var ts = localStorage.getItem('osho_textsize');
+        if (ts === 'large' || ts === 'xlarge') document.documentElement.setAttribute('data-textsize', ts);
+      } catch (e) {}
+    </script>
     <link rel="preload" href="/fonts/InstrumentSans-Variable.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500;1,9..144,600&display=swap" rel="stylesheet" />
     <link rel="icon" type="image/webp" href="https://syxvczeaohszykjbqwts.supabase.co/storage/v1/object/public/Assets/osho-dp.webp" />
     <link rel="apple-touch-icon" href="https://syxvczeaohszykjbqwts.supabase.co/storage/v1/object/public/Assets/osho-dp.webp" />
     <link rel="manifest" href="/manifest.webmanifest" />
@@ -16,11 +31,7 @@
   </head>
   <body>
     <div id="root"></div>
-    <div id="loader">
-      <div class="loader-wm">Osho<em>·</em></div>
-      <div class="loader-sub">Discourses</div>
-      <div class="loader-ring"></div>
-    </div>
+    <div id="loader" aria-hidden="true"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
