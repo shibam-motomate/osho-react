@@ -24,6 +24,7 @@ import { applyTextSize, readTextSize } from './lib/textsize.js';
 import { supabase, supabaseEnabled } from './lib/supabaseClient.js';
 
 const AccountScreen = lazy(() => import('./components/AccountScreen.jsx').then(m => ({default: m.AccountScreen})));
+import { AiScreen } from './components/AiScreen.jsx';
 const AuthScreen = lazy(() => import('./components/AuthScreen.jsx').then(m => ({default: m.AuthScreen})));
 
 const HISTORY_LIMIT = 60;
@@ -233,7 +234,7 @@ function App() {
         } else {
           setScreen('home');
         }
-      } else if (path === '/saved' || path === '/history' || path === '/account') {
+      } else if (path === '/saved' || path === '/history' || path === '/account' || path === '/ai') {
         setScreen(path.slice(1));
       } else if (path === '/videos') {
         setContentType('videos');
@@ -889,16 +890,17 @@ function App() {
   const savedClass = tabClass('saved');
   const histClass  = tabClass('history');
   const acctClass  = tabClass('account');
+  const aiClass    = tabClass('ai');
   const serClass   = `screen${!isDesktop ? (screen !== 'series' ? ' hidden' : '') : ''} ${isDesktop && screen === 'series' ? 'desk-show' : ''}`;
 
   return (
     <div id="app" className={`${playerOpen ? 'player-open' : ''}${nowPlaying ? ' has-np' : ''}`} style={{fontFamily:appFont}}>
       <audio ref={audioRef} preload="none" style={{display:'none'}}/>
-      <Header t={t} contentType={contentType} onSelectContentType={selectContentType} search={search} setSearch={setSearch} discLang={discLang} setDiscLang={setDiscLang}
-        onOpenSaved={() => navigate('saved')} onLogoClick={() => navigate('home')}
+      <Header t={t} contentType={contentType} onSelectContentType={selectContentType} search={search} setSearch={v => { setSearch(v); if (screen === 'ai') navigate('home'); }} discLang={discLang} setDiscLang={setDiscLang}
+        onOpenSaved={() => navigate('saved')} onLogoClick={() => navigate('home')} screen={screen} onOpenAi={() => navigate('ai')}
         user={user} onSelectBrowse={() => navigate('home')} onSelectProfile={() => navigate('account')} onSelectLogout={signOut}
 />
-      <Sidebar mode={sidebarMode} screen={screen} discLang={discLang} setDiscLang={setDiscLang} activePill={activePill} setActivePill={setPill} t={t} seriesList={seriesList} contentType={contentType}
+      <Sidebar mode={sidebarMode} screen={screen} discLang={discLang} setDiscLang={setDiscLang} activePill={activePill} setActivePill={g => { setPill(g); if (screen === 'ai') navigate('home'); }} t={t} seriesList={seriesList} contentType={contentType}
         user={user} onSignOut={signOut}
         onOpenAccount={() => navigate('account')} onOpenSaved={() => navigate('saved')} onOpenHistory={() => navigate('history')}/>
       <div className="main">
@@ -933,6 +935,9 @@ function App() {
             </Suspense>
           )}
         </div>
+        <div className={aiClass}>
+          <AiScreen onBrowse={() => navigate('home')} t={t}/>
+        </div>
       </div>
       <MiniPlayer nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} onPrev={onPrev} onNext={onNext} onSeekSeconds={onSeekSeconds} onOpen={() => setPO(true)}
         onClose={closeMini} onOpenSeries={() => { if (nowPlaying) navigate('series', nowPlaying.series); }}
@@ -941,7 +946,7 @@ function App() {
         audioRef={audioRef} videoRef={videoRef} isDesktop={isDesktop} mediaError={mediaError} onRetry={retryPlay}/>
       <MobileNav screen={screen} contentType={contentType} onSelectContentType={selectContentType} t={t}
         onOpenSaved={() => navigate('saved')} onOpenHistory={() => navigate('history')}
-        onAccount={() => navigate('account')}/>
+        onAccount={() => navigate('account')} onAi={() => navigate('ai')}/>
       <FullPlayer open={playerOpen} onClose={() => setPO(false)} nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} audioRef={audioRef} videoRef={videoRef} onPrev={onPrev} onNext={onNext} onSeekSeconds={onSeekSeconds} t={t} isDesktop={isDesktop}
         playbackSpeed={playbackSpeed} setPlaybackSpeed={setPlaybackSpeed}
         sleepOption={sleepOption} setSleepOption={setSleepOption} sleepRemaining={sleepRemaining}

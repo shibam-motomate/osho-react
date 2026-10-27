@@ -637,8 +637,24 @@ img{display:block;}
 /* ── Account: profile card + grouped settings rows (iOS-style inset groups) ── */
 .set-wrap{max-width:640px;}
 /* Account and Library are tabs with no back bar, so they carry their own top spacing. */
-.set-wrap,.lib-wrap{padding-top:calc(28px + env(safe-area-inset-top));}
-@media(min-width:900px){.set-wrap,.lib-wrap{padding-top:32px;}}
+.set-wrap,.lib-wrap,.ai-wrap{padding-top:calc(28px + env(safe-area-inset-top));}
+@media(min-width:900px){.set-wrap,.lib-wrap,.ai-wrap{padding-top:32px;}}
+/* Ask AI (coming soon): eyebrow, title, lead, a non-working preview of the box with example
+   feelings, three short points and a way back to browsing. */
+.ai-wrap{max-width:640px;}
+.ai-eyebrow{display:inline-flex;align-items:center;gap:7px;margin:0 4px 10px;padding:6px 12px 6px 10px;border-radius:999px;background:var(--accent-dim);color:var(--accent-text);font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;}
+.ai-lead{margin:0 4px 20px;font-size:calc(16px*var(--ts));line-height:1.55;color:var(--text2);}
+.ai-card{background:var(--surface);border:1px solid var(--border);border-radius:22px;padding:14px;display:flex;flex-direction:column;gap:14px;}
+.ai-input{display:flex;align-items:center;gap:10px;min-height:56px;padding:0 8px 0 18px;border-radius:16px;background:var(--bg);border:1px solid var(--border);}
+.ai-input-ph{flex:1;min-width:0;color:var(--muted);font-size:calc(16px*var(--ts));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ai-send{width:40px;height:40px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:var(--accent);color:var(--on-accent);opacity:0.45;flex-shrink:0;}
+.ai-chips{display:flex;flex-wrap:wrap;gap:8px;}
+.ai-chip{padding:8px 14px;border-radius:999px;border:1px solid var(--border);color:var(--text2);font-size:calc(14px*var(--ts));}
+.ai-points{list-style:none;margin:22px 4px 0;padding:0;display:flex;flex-direction:column;gap:10px;}
+.ai-points li{position:relative;padding-left:20px;font-size:calc(15px*var(--ts));line-height:1.5;color:var(--text2);}
+.ai-points li::before{content:'';position:absolute;left:2px;top:0.62em;width:7px;height:7px;border-radius:50%;background:var(--gold);}
+.ai-browse{margin-top:26px;width:100%;max-width:320px;}
+.gh-nav-ai{display:inline-flex;align-items:center;gap:6px;}
 /* Library: sliding Recent · Series · Talks switch, then a one-line hint (with Clear for recent). */
 .lib-wrap .segs{background:var(--surface);max-width:480px;}
 .segs-count{margin-left:6px;font-weight:500;opacity:0.75;}
