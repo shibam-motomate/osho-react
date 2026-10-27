@@ -8,7 +8,6 @@ import { LoadRing } from './LoadRing.jsx';
 import { Scrubber } from './Scrubber.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
 import { fmtDur } from './SeriesScreen.jsx';
-import './player.css';
 
 const sleepName = o => o === 'off' ? 'Off' : o === 'end' ? 'End of this talk' : `${o} minutes`;
 
