@@ -8,6 +8,7 @@ import {
 } from './Icons.jsx';
 import { HomeScreenGuide } from './HomeScreenGuide.jsx';
 import { SegSlider } from './SegSlider.jsx';
+import { Portal } from './Portal.jsx';
 
 const TEXT_SIZE_NAMES = {normal: 'Normal', large: 'Large', xlarge: 'Extra large'};
 
@@ -36,7 +37,7 @@ function Group({title, children}) {
 /* Bottom sheet on phones, centred dialog on desktop. Keeps the last content while it slides away. */
 function SettingsSheet({open, title, onClose, children}) {
   return (
-    <>
+    <Portal>
       <div className={`sheet-scrim${open ? ' open' : ''}`} onClick={onClose}/>
       <div className={`sheet set-sheet${open ? ' open' : ''}`} role="dialog" aria-modal="true" aria-label={title} aria-hidden={!open}>
         <div className="sheet-handle"/>
@@ -46,7 +47,7 @@ function SettingsSheet({open, title, onClose, children}) {
         </div>
         <div className="set-sheet-body">{children}</div>
       </div>
-    </>
+    </Portal>
   );
 }
 

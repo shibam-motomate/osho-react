@@ -8,6 +8,7 @@ import { InstallBanner } from './HomeScreenGuide.jsx';
 import { warmTalk } from '../lib/warmTalk.js';
 import { SeriesCard } from './SeriesCard.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
+import { Portal } from './Portal.jsx';
 
 const VIDEO_COUNTS = {
   en: OSHO_VIDEOS_EN.reduce((a, s) => a + s.e.length, 0),
@@ -260,6 +261,7 @@ export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, acti
         </div>
       </div>
 
+      <Portal>
       <div className={`sheet-scrim${topicOpen ? ' open' : ''}`} onClick={() => setTopicOpen(false)}/>
       <div className={`sheet${topicOpen ? ' open' : ''}`} role="dialog" aria-modal="true" aria-label={t.topics} aria-hidden={!topicOpen}>
         <div className="sheet-handle"/>
@@ -278,6 +280,9 @@ export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, acti
         </div>
       </div>
 
+      </Portal>
+
+      <Portal>
       <div className={`sheet-scrim${sortOpen ? ' open' : ''}`} onClick={() => setSortOpen(false)}/>
       <div className={`sheet set-sheet${sortOpen ? ' open' : ''}`} role="dialog" aria-modal="true" aria-label="Sort series" aria-hidden={!sortOpen}>
         <div className="sheet-handle"/>
@@ -295,6 +300,7 @@ export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, acti
           ))}
         </div>
       </div>
+      </Portal>
 
       <div className="footer-band">
         <div className="footer-quote">&ldquo;{quote}&rdquo; &mdash; Osho</div>
