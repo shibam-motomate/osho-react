@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { IcoX } from './Icons.jsx';
 
 /* ── Login / signup overlay ── */
 export function AuthScreen({onClose}) {
-  const {signIn, signUp} = useAuth();
+  const {signIn, signUp, prepare} = useAuth();
+  // Start downloading the login library while the form is being filled in.
+  useEffect(() => { prepare(); }, [prepare]);
   const [mode, setMode] = useState('login'); // 'login' | 'signup'
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { randomQuote } from '../data/quotes.js';
 
-const MIN_SHOW_MS = 1800;   // long enough to read the quote
+const MIN_SHOW_MS = 1200;   // first visit only (see App) — long enough to take in the quote
 const FADE_MS = 550;
 
 /* ── First-load screen: wordmark, a random Osho quote and a progress bar.
@@ -31,7 +31,7 @@ export function LoadScreen({progress, onDone}) {
 
   useEffect(() => {
     if (progress < 100 || doneRef.current) return;
-    const wait = Math.max(0, MIN_SHOW_MS - (Date.now() - startedAt.current)) + 350;
+    const wait = Math.max(0, MIN_SHOW_MS - (Date.now() - startedAt.current)) + 150;
     const t1 = setTimeout(() => {
       setFading(true);
       setTimeout(() => { doneRef.current = true; onDone(); }, FADE_MS);

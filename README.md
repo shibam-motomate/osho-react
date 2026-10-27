@@ -17,6 +17,21 @@ pnpm build
 
 The production output is generated in `dist/`.
 
+## Speed and offline
+
+- **Artwork** is self-hosted in `public/art/` as small (`NN-sm.webp`, list rows) and large
+  (`NN-lg.webp`, hero, cover, player) copies of the oshoworld.com photos. The originals are
+  1–11 MB each, so never point the app back at them. `scripts/art/` has the source list and
+  the resize script.
+- **Service worker** (`vite-plugin-pwa`, configured in `vite.config.js`) keeps the code, both
+  catalogues and the small artwork on the device, so the app opens instantly and works on a
+  weak connection. After a deploy, an open app picks up the new version on its next launch.
+- **Caching headers** in `netlify.toml` let browsers keep hashed assets, fonts and artwork for
+  a year. If an artwork file ever changes, give it a new name.
+- **Supabase** is loaded only when needed (a saved session, or opening the login screen), so
+  guests never wait for it. See `src/lib/supabaseClient.js`.
+- The first-visit load screen (quote + progress) shows once; later launches go straight to Home.
+
 ## Login & saved series (Supabase)
 
 Login uses [Supabase](https://supabase.com) for auth, and saved series sync to a
