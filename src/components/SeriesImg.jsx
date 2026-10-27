@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { GENRE_COLORS, photoFor } from '../config.js';
 
 /* Series artwork. `plain` renders a bare <img> (for full-bleed heroes and covers, where the
-   CSS positions it); otherwise a wrapper box with the photo filling it. On load error, a
-   genre-coloured placeholder keeps the layout. */
+   CSS positions it) using the large photo; otherwise a wrapper box with the small photo
+   filling it. On load error, a genre-coloured placeholder keeps the layout. */
 export function SeriesImg({series, img, style, className, plain}) {
   const [err, setErr] = useState(false);
   const c = GENRE_COLORS[series.g] || '#C0B8B0';
-  const photo = img || series.img || photoFor(series);
+  const photo = img || series.img || photoFor(series, plain ? 'lg' : 'sm');
   if (err) return (
     <div className={className} style={{...style, background:c, display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', position: plain ? undefined : 'relative'}} aria-hidden="true">
       <svg width="40%" viewBox="0 0 80 80" style={{display:'block'}}>

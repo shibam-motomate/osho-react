@@ -26,6 +26,9 @@ const HISTORY_LIMIT = 60;
 
 const PROFILE_SCREENS = ['saved', 'history', 'account'];
 
+// Set once the first-visit load screen has been seen; later launches skip it.
+const SEEN_KEY = 'osho_seen';
+
 // The video library is Hindi-only for now (see src/data/oshoVideos.js) — if the
 // discourse-language toggle is still on English when Videos is opened, there'd be
 // nothing to show, so fall back to a language that actually has video content.
@@ -64,14 +67,18 @@ function App() {
   const [sleepOption, setSleepOptionState] = useState('off'); // 'off' | 15 | 30 | 60 | 'end'
   const [sleepEndAt,  setSleepEndAt] = useState(null);
   const [sleepRemaining, setSleepRemaining] = useState(0);
-  // First-load screen: shown until fonts and the first catalogue have arrived (see LoadScreen).
-  const [booting, setBooting] = useState(true);
+  // First-load screen (wordmark + quote + progress, see LoadScreen): only on the very first
+  // visit, until fonts and the first catalogue have arrived. Returning visitors go straight to
+  // Home — its list shows its own loading state, and the catalogue is preloaded and cached.
+  const [booting, setBooting] = useState(() => {
+    try { return !localStorage.getItem(SEEN_KEY); } catch (e) { return false; }
+  });
   const [fontsReady, setFontsReady] = useState(false);
   useEffect(() => {
     let on = true;
     const done = () => { if (on) setFontsReady(true); };
     if (document.fonts?.ready) document.fonts.ready.then(done); else done();
-    const guard = setTimeout(done, 2500); // never block on a slow font server
+    const guard = setTimeout(done, 1200); // never block on a slow font download
     return () => { on = false; clearTimeout(guard); };
   }, []);
   const [contentType, setContentType] = useState('discourses'); // 'discourses' | 'videos' | 'books'
@@ -252,7 +259,7 @@ function App() {
     const el = document.getElementById('loader');
     if (!el) return;
     el.classList.add('fade');
-    const t = setTimeout(() => el.remove(), 650);
+    const t = setTimeout(() => el.remove(), 300);
     return () => clearTimeout(t);
   }, []);
 
@@ -494,7 +501,7 @@ function App() {
       return;
     }
     const {series, episode} = nowPlaying;
-    const art = isVideoId(series.i) ? (episode.img || series.img || photoFor(series)) : photoFor(series);
+    const art = isVideoId(series.i) ? (episode.img || series.img || photoFor(series, 'lg')) : photoFor(series, 'lg');
     try {
       ms.metadata = new window.MediaMetadata({title: episode.t, artist: 'Osho', album: series.n, artwork: art ? [{src: art}] : []});
     } catch (err) {}
@@ -595,7 +602,10 @@ function App() {
   }, [t, showToast]);
 
   const bootProgress = 15 + (fontsReady ? 35 : 0) + (!dataLoading ? 50 : 0);
-  const finishBoot = useCallback(() => setBooting(false), []);
+  const finishBoot = useCallback(() => {
+    setBooting(false);
+    try { localStorage.setItem(SEEN_KEY, '1'); } catch (e) {}
+  }, []);
 
   const toggleSaveSeries = useCallback(id => {
     setSavedSeries(prev => {
