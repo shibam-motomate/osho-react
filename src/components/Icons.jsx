@@ -6,7 +6,7 @@
    box. To keep every button and row looking the same size as before, the view is cropped to
    the inner 20 units (VIEW) and the stroke set so lines weigh what they did (STROKE). ── */
 import {
-  ALargeSmall, ArrowDownAZ, ArrowDownZA, BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, Clock,
+  ALargeSmall, ArrowDownAZ, ArrowDownZA, ArrowUp, BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, Clock,
   EllipsisVertical, Flame, Gauge, HeartCrack, Headphones, Heart, History, Languages, List, ListFilter, ListMusic, ListOrdered,
   LogOut, Maximize, MessageSquareText, Mic, Moon, Pause, PenLine, Play, Search, Share2, Shuffle, SkipBack, Sparkles,
   SkipForward, Smartphone, SquarePlus, Sun, SunMoon, Trash2, UserRound, Video, Volume1, Volume2, VolumeX, Wind, X,
@@ -63,6 +63,7 @@ export const IcoSortCount = icon(ListOrdered, 20);
 // Ask AI
 export const IcoSparkles = icon(Sparkles, 22);
 export const IcoMic = icon(Mic, 18);
+export const IcoArrowUp = icon(ArrowUp, 18);
 export const IcoHeartCrack = icon(HeartCrack, 18);
 export const IcoWind = icon(Wind, 18);
 export const IcoFlame = icon(Flame, 18);

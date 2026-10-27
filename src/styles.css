@@ -648,31 +648,47 @@ img{display:block;}
              radial-gradient(90% 60% at 0% 30%,color-mix(in srgb,var(--gold) 18%,transparent) 0%,transparent 65%),
              linear-gradient(180deg,color-mix(in srgb,var(--accent) 22%,var(--bg)) 0%,var(--bg) 70%);}
 :root[data-theme="light"] .ai-glow{opacity:0.75;}
-.ai-wrap{flex:1;width:100%;max-width:640px;margin:0 auto;display:flex;flex-direction:column;padding:calc(18px + env(safe-area-inset-top)) 20px 14px;}
+.ai-wrap{flex:1;width:100%;max-width:640px;margin:0 auto;display:flex;flex-direction:column;padding:calc(14px + env(safe-area-inset-top)) 20px 10px;}
 @media(min-width:900px){.ai-wrap{padding:28px 32px 20px;}}
-.ai-top{display:flex;justify-content:flex-end;}
-.ai-badge{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px 0 11px;border-radius:999px;color:#FFFFFF;font-size:13px;font-weight:700;letter-spacing:0.3px;
+/* Badge and greeting sit centred in whatever space the cards and bar leave, so the page fits the
+   screen without scrolling (it still scrolls on very short screens). */
+.ai-head{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:12px 0 20px;}
+.ai-badge{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 14px 0 11px;border-radius:999px;color:#FFFFFF;font-size:13px;font-weight:700;letter-spacing:0.3px;
   background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 55%,var(--gold)));box-shadow:0 6px 18px color-mix(in srgb,var(--accent) 35%,transparent);}
 .ai-badge.pulse{animation:ai-pulse 0.6s ease;}
 @keyframes ai-pulse{0%{transform:scale(1)}35%{transform:scale(1.1)}100%{transform:scale(1)}}
-.ai-hello{margin:auto 0 28px;padding-top:40px;font-family:var(--font);font-weight:600;font-size:calc(34px*var(--ts));line-height:1.15;letter-spacing:-0.8px;color:var(--ink);}
+.ai-hello{margin:0;font-family:var(--font);font-weight:600;font-size:calc(30px*var(--ts));line-height:1.18;letter-spacing:-0.6px;color:var(--ink);}
 .ai-hello-name{display:block;font-family:var(--font-serif);font-style:italic;font-weight:500;letter-spacing:-0.5px;color:var(--accent-text);}
-@media(min-width:900px){.ai-hello{font-size:44px;}}
-.ai-bottom{display:flex;flex-direction:column;gap:12px;}
-.ai-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.ai-card{min-height:104px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;gap:14px;padding:14px;border-radius:20px;text-align:left;cursor:pointer;
+/* Two lines' room so the page doesn't jump as questions of different lengths swap in. */
+.ai-q{display:block;min-height:2.36em;animation:ai-q-in 0.6s ease both;}
+.ai-q:lang(hi){letter-spacing:0;}
+@keyframes ai-q-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media(min-width:900px){.ai-hello{font-size:42px;}}
+@media(max-height:700px){.ai-hello{font-size:calc(26px*var(--ts));}.ai-head{gap:12px;padding:6px 0 14px;}}
+.ai-bottom{display:flex;flex-direction:column;gap:10px;}
+.ai-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.ai-card{min-height:88px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:20px;text-align:left;cursor:pointer;
   background:color-mix(in srgb,var(--surface) 82%,transparent);border:1px solid var(--border);color:var(--ink);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:transform 0.12s,background 0.15s;}
+@media(max-height:700px){.ai-card{min-height:76px;}}
 .ai-card:active{transform:scale(0.97);}
 @media(hover:hover){.ai-card:hover{background:var(--surface);}}
-.ai-card-ic{width:34px;height:34px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:var(--accent-dim);color:var(--accent-text);}
+.ai-card-ic{width:32px;height:32px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:var(--accent-dim);color:var(--accent-text);}
 .ai-card-lbl{font-size:calc(15px*var(--ts));font-weight:600;}
-.ai-bar{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:0 8px 0 10px;border-radius:999px;cursor:text;text-align:left;
-  background:color-mix(in srgb,var(--surface) 88%,transparent);border:1px solid var(--border-strong);color:var(--ink);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
-.ai-orb{width:30px;height:30px;border-radius:50%;flex-shrink:0;background:radial-gradient(circle at 32% 30%,#FFFFFF 0%,var(--gold) 28%,var(--accent) 62%,color-mix(in srgb,var(--accent) 60%,#000) 100%);box-shadow:0 0 14px color-mix(in srgb,var(--accent) 55%,transparent);}
-.ai-bar-ph{flex:1;min-width:0;color:var(--muted);font-size:calc(16px*var(--ts));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.ai-mic{width:40px;height:40px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:var(--accent);color:var(--on-accent);flex-shrink:0;}
-.ai-note{margin:2px 0 0;text-align:center;font-size:13px;color:var(--muted);transition:color 0.2s;}
+.ai-bar{display:flex;align-items:center;gap:8px;width:100%;min-height:56px;padding:0 7px 0 10px;border-radius:999px;
+  background:color-mix(in srgb,var(--surface) 88%,transparent);border:1px solid var(--border-strong);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:border-color 0.2s;}
+.ai-bar:focus-within{border-color:var(--accent);}
+.ai-orb{width:28px;height:28px;border-radius:50%;flex-shrink:0;background:radial-gradient(circle at 32% 30%,#FFFFFF 0%,var(--gold) 28%,var(--accent) 62%,color-mix(in srgb,var(--accent) 60%,#000) 100%);box-shadow:0 0 14px color-mix(in srgb,var(--accent) 55%,transparent);}
+/* 16 px stops iPhone Safari zooming into the field. */
+.ai-input{flex:1;min-width:0;height:44px;border:none;background:transparent;color:var(--ink);font-size:16px;outline:none;padding:0 2px;}
+.ai-input::placeholder{color:var(--muted);}
+.ai-input:focus-visible{outline:none;}
+.ai-mic,.ai-send{width:40px;height:40px;border-radius:999px;border:none;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;}
+.ai-mic{background:transparent;color:var(--text2);}
+.ai-send{background:color-mix(in srgb,var(--ink) 12%,transparent);color:var(--muted);transition:background 0.15s,color 0.15s;}
+.ai-send.ready{background:var(--accent);color:var(--on-accent);}
+.ai-note{margin:0;text-align:center;font-size:13px;color:var(--muted);transition:color 0.2s;}
 .ai-note.show{color:var(--accent-text);font-weight:600;}
+@media(prefers-reduced-motion:reduce){.ai-q{animation:none;}}
 @media(prefers-reduced-motion:reduce){.ai-badge.pulse{animation:none;}}
 /* Library: sliding Recent · Series · Talks switch, then a one-line hint (with Clear for recent). */
 .lib-wrap .segs{background:var(--surface);max-width:480px;}
