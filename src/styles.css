@@ -39,6 +39,7 @@ html.tv-mode :focus-visible{outline-width:4px;outline-offset:4px;}
   --gold:#D9B66E;--danger:#FF8A7E;
   --border:rgba(255,255,255,0.12);--border-strong:rgba(255,255,255,0.26);
   --scrim-rgb:20,16,16;
+  --bg-rgb:20,16,16; /* --bg as r,g,b, for fades into the page (Home hero) */
   --shadow:0 2px 12px rgba(0,0,0,0.35);--shadow-lg:0 12px 36px rgba(0,0,0,0.5);
   --mini-bg:#F6EEE8;--mini-ink:#1E1418;--mini-sub:#5A4A4F;
   --tab-bg:#1F1818;--toast-bg:#F6EEE8;--toast-ink:#1E1418;
@@ -66,6 +67,7 @@ html.tv-mode :focus-visible{outline-width:4px;outline-offset:4px;}
   --gold:#8E6E3A;--danger:#B3261E;
   --border:rgba(30,20,24,0.12);--border-strong:rgba(30,20,24,0.24);
   --scrim-rgb:30,20,24;
+  --bg-rgb:247,244,239;
   --shadow:0 2px 12px rgba(30,20,24,0.08);--shadow-lg:0 12px 36px rgba(30,20,24,0.16);
   --mini-bg:#1E1418;--mini-ink:#F6EEE8;--mini-sub:rgba(246,238,232,0.75);
   --tab-bg:#FFFFFF;--toast-bg:#1E1418;--toast-ink:#F6EEE8;
@@ -193,11 +195,19 @@ img{display:block;}
 .page{width:100%;max-width:1100px;margin:0 auto;}
 
 /* ── Hero (Home): the continue-listening photo card ── */
-.hero{position:relative;display:block;height:340px;overflow:hidden;text-decoration:none;color:#FFFFFF;cursor:pointer;background:var(--surface);}
+.hero{position:relative;display:block;height:340px;overflow:hidden;text-decoration:none;color:#FFFFFF;cursor:pointer;background:var(--bg);} /* page colour, so the faded bottom edge has no seam */
 @media(min-width:900px){.hero{height:360px;border-radius:24px;margin:24px 32px 0;}}
-.hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 22%;}
-.hero-shade{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(var(--scrim-rgb),0.55) 0%,rgba(var(--scrim-rgb),0) 35%,rgba(var(--scrim-rgb),0.92) 100%);}
-:root[data-theme="light"] .hero-shade{background:linear-gradient(to bottom,rgba(30,20,24,0.45) 0%,rgba(30,20,24,0) 35%,rgba(30,20,24,0.88) 100%);}
+.hero-img{position:absolute;inset:0;width:100%;height:calc(100% - 2px);object-fit:cover;object-position:center 22%;} /* stops short so no photo edge bleeds past the fade */
+.hero-shade{position:absolute;inset:0 0 -1px;background:
+  /* top: a little shade so the logo, language switch and search read over the photo */
+  linear-gradient(to bottom,rgba(var(--scrim-rgb),0.55) 0%,rgba(var(--scrim-rgb),0.18) 18%,rgba(var(--scrim-rgb),0) 34%),
+  /* bottom: the photo melts into the page background (eased, several stops, no banding) */
+  linear-gradient(to bottom,rgba(var(--bg-rgb),0) 36%,rgba(var(--bg-rgb),0.22) 48%,rgba(var(--bg-rgb),0.55) 62%,rgba(var(--bg-rgb),0.84) 76%,rgba(var(--bg-rgb),0.97) 88%,rgb(var(--bg-rgb)) 94%);}
+/* Light theme: the photo fades into ivory, so the text at the bottom switches to dark ink. */
+:root[data-theme="light"] .hero-title{color:var(--ink);}
+:root[data-theme="light"] .hero-sub{color:var(--text2);}
+:root[data-theme="light"] .hero .eyebrow{color:var(--gold);}
+:root[data-theme="light"] .hero-prog{background:rgba(30,20,24,0.14);}
 .hero-top{position:absolute;top:calc(14px + env(safe-area-inset-top));left:20px;right:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
 @media(min-width:900px){.hero-top{display:none;}}
 .hero-top .wordmark{color:#E8E2DC;}
