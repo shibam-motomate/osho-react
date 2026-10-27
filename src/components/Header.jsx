@@ -1,5 +1,5 @@
 import { onActivateKey } from '../lib/a11y.js';
-import { IcoBook, IcoSearch, IcoX } from './Icons.jsx';
+import { IcoBook, IcoSearch, IcoSparkles, IcoX } from './Icons.jsx';
 import { ProfileMenu } from './ProfileMenu.jsx';
 
 const CT_DEFS = [
@@ -10,7 +10,7 @@ const CT_DEFS = [
 /* ── Desktop top bar. On phones the bar is hidden: the Home hero carries the wordmark,
    language toggle and search button, and sub-screens carry their own back bars. The
    phone search field lives in the Home hero and slides open to the left. ── */
-export function Header({t, contentType, onSelectContentType, search, setSearch, discLang, setDiscLang, onOpenSaved, onLogoClick, user, onSelectBrowse, onSelectProfile, onSelectLogout}) {
+export function Header({t, contentType, onSelectContentType, search, setSearch, discLang, setDiscLang, onOpenSaved, onLogoClick, user, onSelectBrowse, onSelectProfile, onSelectLogout, screen, onOpenAi}) {
   const searchPlaceholder = contentType === 'videos' ? t.searchVideos : t.search;
 
   return (
@@ -21,8 +21,9 @@ export function Header({t, contentType, onSelectContentType, search, setSearch, 
         </a>
         <nav className="gh-nav" aria-label="Content">
           {CT_DEFS.map(c => (
-            <button key={c.key} className={`gh-nav-tab${contentType===c.key?' active':''}`} onClick={() => onSelectContentType(c.key)}>{t[c.labelKey]}</button>
+            <button key={c.key} className={`gh-nav-tab${screen !== 'ai' && contentType===c.key?' active':''}`} onClick={() => onSelectContentType(c.key)}>{t[c.labelKey]}</button>
           ))}
+          <button className={`gh-nav-tab gh-nav-ai${screen === 'ai' ? ' active' : ''}`} onClick={onOpenAi}><IcoSparkles s={16}/>{t.aiTab}</button>
         </nav>
         <div className="gh-spacer"/>
         <label className="gh-search">
