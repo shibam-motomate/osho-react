@@ -48,6 +48,7 @@ export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, acti
   const isVideos = contentType === 'videos';
   const [quote] = useState(() => OSHO_QUOTES[Math.floor(Math.random() * OSHO_QUOTES.length)]);
   const inputRef = useRef(null);
+  const secRef = useRef(null);
   const [topicOpen, setTopicOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [sort, setSort] = useState(readSort);
@@ -68,18 +69,26 @@ export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, acti
     return () => window.removeEventListener('keydown', onKey);
   }, [topicOpen, sortOpen]);
 
-  // Focus the field only once the slide-open has finished, and without letting the browser
-  // scroll the screen sideways to "reveal" a field that is still mid-animation.
+  // Bring the search row to the top so results show below it, above the keyboard. The field is
+  // focused in the tap itself (openSearch) — iPhones only raise the keyboard from a direct tap.
   useEffect(() => {
     if (!searchOpen) return;
+    const row = secRef.current, box = row?.closest('.screen');
+    // +1: the row pins at -1px so the edge of the topic button above can't peek through.
+    const offset = () => row.getBoundingClientRect().top - box.getBoundingClientRect().top + 1;
+    if (row && box) box.scrollTo({top: box.scrollTop + offset(), behavior: 'smooth'});
     const id = setTimeout(() => {
-      const el = inputRef.current;
-      if (!el) return;
-      el.focus({preventScroll: true});
-      for (let p = el.parentElement; p; p = p.parentElement) if (p.scrollLeft) p.scrollLeft = 0;
-    }, 420);
+      // A list re-render can cut the smooth scroll short; finish it if so.
+      if (row && box && Math.abs(offset()) > 2) box.scrollTo({top: box.scrollTop + offset(), behavior: 'instant'});
+      // Undo any sideways scroll a browser makes to "reveal" the field while it is still widening.
+      for (let p = inputRef.current?.parentElement; p; p = p.parentElement) if (p.scrollLeft) p.scrollLeft = 0;
+    }, 520);
     return () => clearTimeout(id);
   }, [searchOpen]);
+  const openSearch = () => {
+    setSearchOpen(true);
+    inputRef.current?.focus({preventScroll: true});
+  };
 
   const filtered = useMemo(() => {
     let list = activePill === 'all' ? seriesList : seriesList.filter(s => s.g === activePill);
@@ -141,7 +150,8 @@ export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, acti
     if (heroIsContinue) onResume();
     else if (heroSeries) onPlayFirst(heroSeries);
   };
-  const closeSearch = () => { setSearch(''); setSearchOpen(false); };
+  // Blur too, so the phone keyboard goes away with the field.
+  const closeSearch = () => { inputRef.current?.blur(); setSearch(''); setSearchOpen(false); };
 
   const pageTitle = isVideos ? t.videosTab : t.allSeries;
 
@@ -149,33 +159,24 @@ export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, acti
     <>
       <div className="screen-body">
         {heroSeries && (
-          <div className={`hero${searchOpen ? ' searching' : ''}`} role="button" tabIndex={0} onClick={() => !searchOpen && onSeries(heroSeries)} onKeyDown={onActivateKey(() => !searchOpen && onSeries(heroSeries))} aria-label={heroTitle}>
+          <div className="hero" role="button" tabIndex={0} onClick={() => onSeries(heroSeries)} onKeyDown={onActivateKey(() => onSeries(heroSeries))} aria-label={heroTitle}>
             <SeriesImg series={heroSeries} img={heroIsContinue ? nowPlaying.episode.img : undefined} className="hero-img" plain priority/>
             <div className="hero-shade"/>
-            {/* Phone-only top row: wordmark + a search button that slides open to the left */}
+            {/* Phone-only top row: signature + language switch (search sits by the list title) */}
             <div className="hero-top" onClick={e => e.stopPropagation()}>
               <span className="sig-shadow" role="img" aria-label="Osho"><span className="sig"/></span>
               <div className="hero-top-right">
                 <div className="seg on-photo" role="group" aria-label={isVideos ? t.videosIn : t.discourseLang}>
-                  <button className={`seg-btn${discLang==='en'?' active':''}`} onClick={() => setDiscLang('en')} aria-pressed={discLang==='en'} tabIndex={searchOpen ? -1 : 0}>
+                  <button className={`seg-btn${discLang==='en'?' active':''}`} onClick={() => setDiscLang('en')} aria-pressed={discLang==='en'}>
                     EN<small>{fmtN(counts.en)}</small>
                   </button>
-                  <button className={`seg-btn${discLang==='hi'?' active':''}`} onClick={() => setDiscLang('hi')} aria-pressed={discLang==='hi'} tabIndex={searchOpen ? -1 : 0}>
+                  <button className={`seg-btn${discLang==='hi'?' active':''}`} onClick={() => setDiscLang('hi')} aria-pressed={discLang==='hi'}>
                     HI<small>{fmtN(counts.hi)}</small>
                   </button>
                 </div>
               </div>
-              <div className={`hsearch${searchOpen ? ' open' : ''}`}>
-                <input ref={inputRef} value={search} onChange={e => setSearch(e.target.value)} placeholder={isVideos ? t.searchVideos : t.search}
-                  aria-label={t.search} tabIndex={searchOpen ? 0 : -1}
-                  onKeyDown={e => { if (e.key === 'Escape') closeSearch(); }}/>
-                <button className="hsearch-btn" aria-label={searchOpen ? 'Close search' : 'Search'} aria-expanded={searchOpen}
-                  onClick={() => searchOpen ? closeSearch() : setSearchOpen(true)}>
-                  {searchOpen ? <IcoX s={22}/> : <IcoSearch s={22}/>}
-                </button>
-              </div>
             </div>
-            {heroIsContinue && !searchOpen && (
+            {heroIsContinue && (
               <button className="hero-icon hero-dismiss" aria-label="Dismiss" onClick={e => { e.stopPropagation(); onDismissCL(); }}><IcoX s={18}/></button>
             )}
             <div className="hero-bottom">
@@ -185,7 +186,7 @@ export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, acti
                 <div className="hero-sub">{heroSub}</div>
                 {heroIsContinue && <div className="hero-prog"><div className="hero-prog-fill" style={{width:`${audioPct}%`}}/></div>}
               </div>
-              <button className="hero-play" aria-label={heroIsContinue ? t.continueBtn : t.playFromStart} onClick={e => { e.stopPropagation(); heroAction(); }} tabIndex={searchOpen ? -1 : 0}>
+              <button className="hero-play" aria-label={heroIsContinue ? t.continueBtn : t.playFromStart} onClick={e => { e.stopPropagation(); heroAction(); }}>
                 <IcoPlay s={30}/>
               </button>
             </div>
@@ -209,14 +210,32 @@ export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, acti
           </div>
         )}
 
-        <div className="sec-head">
-          <h1 className="sec-title">
-            {search.trim() ? `“${search.trim()}”` : activePill === 'all' ? pageTitle : (t.genres[activePill] || activePill)}
-            <span className="sec-count">{filtered.length} series · {t.talks(filtered.reduce((a, s) => a + talkCount(s), 0))}</span>
-          </h1>
-          <button className="sort-btn" onClick={() => setSortOpen(true)} aria-haspopup="dialog" aria-expanded={sortOpen} aria-label={`Sort: ${sortInfo.label}`}>
-            <IcoFilter s={18}/><span>{sortInfo.label}</span>
-          </button>
+        {/* Title, sort and (phones) a search button that slides open to the left over the row.
+            While searching, the row stays pinned to the top of the screen. */}
+        <div className={`sec-head${searchOpen ? ' searching' : ''}`} ref={secRef}>
+          <div className="sec-row">
+            <h1 className="sec-title" aria-hidden={searchOpen || undefined}>
+              {search.trim() ? `“${search.trim()}”` : activePill === 'all' ? pageTitle : (t.genres[activePill] || activePill)}
+              <span className="sec-count">{filtered.length} series · {t.talks(filtered.reduce((a, s) => a + talkCount(s), 0))}</span>
+            </h1>
+            <button className="sort-btn" onClick={() => setSortOpen(true)} aria-haspopup="dialog" aria-expanded={sortOpen} aria-label={`Sort: ${sortInfo.label}`} tabIndex={searchOpen ? -1 : 0}>
+              <IcoFilter s={18}/><span>{sortInfo.label}</span>
+            </button>
+            <span className="lsearch-spot" aria-hidden="true"/>
+            <div className={`lsearch${searchOpen ? ' open' : ''}`}>
+              <span className="lsearch-ic"><IcoSearch s={20}/></span>
+              <input ref={inputRef} type="search" enterKeyHint="search" value={search} onChange={e => setSearch(e.target.value)} placeholder={isVideos ? t.searchVideos : t.search}
+                aria-label={t.search} tabIndex={searchOpen ? 0 : -1}
+                onKeyDown={e => { if (e.key === 'Escape') closeSearch(); if (e.key === 'Enter') e.currentTarget.blur(); }}/>
+              <button className="lsearch-btn" aria-label={searchOpen ? 'Close search' : 'Search'} aria-expanded={searchOpen}
+                onClick={() => searchOpen ? closeSearch() : openSearch()}>
+                {searchOpen ? <IcoX s={20}/> : <IcoSearch s={20}/>}
+              </button>
+            </div>
+          </div>
+          {searchOpen && search.trim() && (
+            <div className="sec-found">{filtered.length} series · {t.talks(filtered.reduce((a, s) => a + talkCount(s), 0))}</div>
+          )}
         </div>
 
         <div className="slist">

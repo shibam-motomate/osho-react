@@ -217,24 +217,11 @@ img{display:block;}
 .hero-top .sig{background:#F2ECE6;height:42px;}
 /* The mask would cut a shadow on .sig itself, so the shadow sits on a wrapper. */
 .sig-shadow{display:block;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.55));}
-.hero-top-right{display:flex;align-items:center;gap:8px;margin-right:56px;}
+.hero-top-right{display:flex;align-items:center;gap:8px;}
 .hero-top .seg{padding:3px;}
 .hero-top .seg-btn{height:44px;padding:0 10px;font-size:13px;display:flex;align-items:center;gap:5px;}
 .hero-top .seg-btn small{font-size:12px;font-weight:500;opacity:0.85;}
-.hero.searching .hero-top-right{opacity:0;pointer-events:none;transition:opacity 0.2s;}
-.hero-top-right{transition:opacity 0.3s 0.15s;}
-.hsearch{position:absolute;right:0;top:0;height:44px;width:44px;border-radius:999px;background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.28);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;overflow:hidden;transition:width 0.38s cubic-bezier(.22,.61,.36,1),background 0.25s,border-color 0.25s;}
-.hsearch.open{width:100%;background:var(--surface);border-color:var(--border-strong);}
-.hsearch input{flex:1;min-width:0;width:0;height:100%;border:none;background:transparent;color:var(--ink);font-size:16px;padding:0;outline:none;opacity:0;transition:opacity 0.2s,padding 0.38s;align-self:stretch;}
-.hsearch.open input{padding-left:20px;}
-.hsearch.open input{opacity:1;transition-delay:0.15s;}
-.hsearch input::placeholder{color:var(--muted);}
-.hsearch-btn{width:44px;height:44px;flex-shrink:0;border:none;background:transparent;color:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-left:auto;}
-.hsearch.open .hsearch-btn{color:var(--ink);}
 .hero{transition:height 0.38s cubic-bezier(.22,.61,.36,1);}
-.hero.searching{height:calc(76px + env(safe-area-inset-top));}
-.hero.searching .hero-bottom,.hero.searching .hero-img,.hero.searching .hero-shade{opacity:0;transition:opacity 0.25s;}
-.hero.searching .hero-bottom,.hero.searching .hero-dismiss{pointer-events:none;visibility:hidden;transition:opacity 0.25s,visibility 0s 0.25s;}
 .hero-img,.hero-shade,.hero-bottom{transition:opacity 0.3s;}
 .hero-icon{width:44px;height:44px;border-radius:999px;background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.28);display:flex;align-items:center;justify-content:center;color:#FFFFFF;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
 .hero-bottom{position:absolute;left:20px;right:20px;bottom:22px;display:flex;align-items:flex-end;gap:14px;}
@@ -282,8 +269,31 @@ img{display:block;}
 @media(min-width:900px){.sec-head{padding:26px 32px 10px;}}
 .sec-title{font-family:var(--font-serif);font-size:calc(22px*var(--ts));font-weight:500;letter-spacing:-0.3px;color:var(--ink);}
 .sec-count{font-family:var(--font);font-size:14px;color:var(--muted);margin-left:8px;}
-.sec-head:has(.sort-btn){align-items:center;}
+.sec-head:has(.sort-btn){display:block;}
 .sec-head:has(.sort-btn) .sec-count{display:block;margin:4px 0 0;}
+.sec-row{position:relative;display:flex;align-items:center;gap:10px;}
+.sec-row .sec-title{flex:1;min-width:0;}
+.sec-row .sec-title,.sec-row .sort-btn{transition:opacity 0.2s 0.12s;}
+.sec-head.searching .sec-title,.sec-head.searching .sort-btn{opacity:0;pointer-events:none;transition:opacity 0.15s;}
+/* While searching the row pins to the top of the screen, clear of the notch. */
+.sec-head.searching{position:sticky;top:-1px;z-index:6;background:var(--bg);padding-top:calc(13px + env(safe-area-inset-top));padding-bottom:12px;}
+.sec-found{margin:10px 4px 0;font-size:14px;color:var(--muted);}
+/* Room below the pinned row, so it can reach the top even when only a few series match. */
+.sec-head.searching + .slist{min-height:100vh;min-height:100dvh;}
+/* Results change under the pinned row as you type; stop the browser re-anchoring the scroll. */
+.screen:has(.sec-head.searching){overflow-anchor:none;}
+/* Phone search: a round button beside Sort that widens to the left across the whole row. */
+.lsearch-spot{width:44px;height:44px;flex-shrink:0;}
+.lsearch{position:absolute;right:0;top:50%;transform:translateY(-50%);height:44px;width:44px;border-radius:999px;background:var(--surface);border:1px solid var(--border-strong);display:flex;align-items:center;overflow:hidden;transition:width 0.38s cubic-bezier(.22,.61,.36,1);}
+.lsearch.open{width:100%;}
+.lsearch-ic{display:flex;color:var(--muted);flex-shrink:0;width:0;opacity:0;overflow:hidden;transition:opacity 0.2s,width 0.38s,margin 0.38s;}
+.lsearch.open .lsearch-ic{width:20px;margin-left:16px;opacity:1;transition-delay:0.12s;}
+.lsearch input{flex:1;min-width:0;width:0;height:100%;border:none;background:transparent;color:var(--ink);font-size:16px;padding:0;outline:none;opacity:0;transition:opacity 0.2s,padding 0.38s;-webkit-appearance:none;appearance:none;}
+.lsearch input::-webkit-search-cancel-button{display:none;}
+.lsearch.open input{padding-left:10px;opacity:1;transition-delay:0.15s;}
+.lsearch input::placeholder{color:var(--muted);}
+.lsearch-btn{width:42px;height:42px;flex-shrink:0;border:none;background:transparent;color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;margin-left:auto;border-radius:999px;}
+@media(min-width:900px){.lsearch,.lsearch-spot{display:none;}}
 .sort-btn{flex-shrink:0;display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:0 16px 0 13px;border-radius:999px;background:var(--surface);border:1px solid var(--border-strong);color:var(--ink);font-size:calc(14px*var(--ts));font-weight:600;cursor:pointer;white-space:nowrap;}
 .sort-btn svg{color:var(--accent-text);}
 .sheet-row-ic{width:26px;display:flex;justify-content:center;color:var(--muted);}
