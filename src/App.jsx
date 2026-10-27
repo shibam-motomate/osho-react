@@ -18,6 +18,7 @@ import { installFocusAutoScroll, isTvDevice } from './lib/a11y.js';
 import { readSpeed, saveSpeed } from './lib/playback.js';
 import { getProgress, loadProgress, saveProgress } from './lib/progress.js';
 import { warmTalk } from './lib/warmTalk.js';
+import { attachVolume } from './lib/volume.js';
 import { applyTheme, readTheme } from './lib/theme.js';
 import { applyTextSize, readTextSize } from './lib/textsize.js';
 import { supabase, supabaseEnabled } from './lib/supabaseClient.js';
@@ -152,6 +153,8 @@ function App() {
   // valid the instant playback starts, even before FullPlayer has ever been opened.
   const mediaRefFor = useCallback(seriesId => (isVideoId(seriesId) ? videoRef : audioRef), []);
   useEffect(() => { npRef.current = nowPlaying; }, [nowPlaying]);
+  // Apply the remembered volume to both media elements (they stay mounted for the app's life).
+  useEffect(() => { attachVolume(audioRef, videoRef); }, []);
 
   // Write the position of the talk loaded in `el` to the per-talk progress map. Skipped while
   // metadata is still loading (readyState 0): currentTime is a meaningless 0 then, and the
