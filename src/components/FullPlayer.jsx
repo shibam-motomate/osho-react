@@ -7,6 +7,7 @@ import { IcoDown, IcoFullscreen, IcoHeart, IcoList, IcoMoon, IcoNext, IcoPause, 
 import { LoadRing } from './LoadRing.jsx';
 import { Scrubber } from './Scrubber.jsx';
 import { SegSlider } from './SegSlider.jsx';
+import { VolumeControl } from './VolumeControl.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
 import { fmtDur } from './SeriesScreen.jsx';
 
@@ -130,6 +131,9 @@ export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, 
           <button className="pl-tbtn" onClick={() => onSeekSeconds(SKIP)} aria-label={`Forward ${SKIP} seconds`}><IcoSkipFwd s={40} n={SKIP}/></button>
           <button className="pl-tbtn" onClick={onNext} aria-label="Next talk"><IcoNext s={28}/></button>
         </div>
+
+        {/* Volume: desktop only (phones use their own volume buttons). */}
+        {isDesktop && <VolumeControl className="pl-vol"/>}
 
         <div className="pl-tools">
           <button className={`pl-tool${playbackSpeed !== 1 ? ' on' : ''}`} onClick={() => setSheet('speed')} aria-haspopup="dialog" aria-label={`${t.speed}: ${speedLabel(playbackSpeed)}`}>

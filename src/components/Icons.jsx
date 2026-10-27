@@ -9,7 +9,7 @@ import {
   ALargeSmall, ArrowDownAZ, ArrowDownZA, BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, Clock,
   EllipsisVertical, Gauge, Headphones, Heart, History, Languages, List, ListFilter, ListMusic, ListOrdered,
   LogOut, Maximize, MessageSquareText, Moon, Pause, PenLine, Play, Search, Share2, Shuffle, SkipBack,
-  SkipForward, Smartphone, SquarePlus, Sun, SunMoon, Trash2, UserRound, Video, X,
+  SkipForward, Smartphone, SquarePlus, Sun, SunMoon, Trash2, UserRound, Video, Volume1, Volume2, VolumeX, X,
 } from 'lucide-react';
 
 const VIEW = '2 2 20 20';
@@ -60,6 +60,10 @@ export const IcoShuffle = icon(Shuffle, 20);
 export const IcoSortAZ = icon(ArrowDownAZ, 20);
 export const IcoSortZA = icon(ArrowDownZA, 20);
 export const IcoSortCount = icon(ListOrdered, 20);
+// Volume
+export const IcoVolume = icon(Volume2, 20);
+export const IcoVolumeLow = icon(Volume1, 20);
+export const IcoVolumeMute = icon(VolumeX, 20);
 
 // Transport: solid shapes. Lucide's play triangle already sits slightly right of centre
 // (about 6 % of its width), which is what makes it look centred inside a round button.
