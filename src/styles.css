@@ -687,7 +687,7 @@ img{display:block;}
 .ai-beam::before,.ai-beam::after{content:'';position:absolute;border-radius:999px;pointer-events:none;
   background:conic-gradient(from var(--beam),transparent 0deg,transparent 200deg,color-mix(in srgb,var(--gold) 85%,transparent) 270deg,var(--accent) 315deg,transparent 360deg);
   animation:ai-beam 4.5s linear infinite;}
-.ai-beam::before{inset:-6px;z-index:0;filter:blur(14px);opacity:0.55;}
+.ai-beam::before{inset:-3px;z-index:0;filter:blur(9px);opacity:0.4;}
 .ai-beam::after{inset:-1px;z-index:2;padding:1.5px;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);}
 @keyframes ai-beam{to{--beam:360deg;}}
 @media(prefers-reduced-motion:reduce){.ai-beam::before,.ai-beam::after{animation:none;--beam:300deg;}}
