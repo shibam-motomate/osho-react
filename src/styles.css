@@ -112,6 +112,9 @@ img{display:block;}
 .gh-logo{display:flex;align-items:center;flex-shrink:0;cursor:pointer;text-decoration:none;}
 .wordmark{font-family:var(--font-serif);font-style:italic;font-weight:500;font-size:26px;letter-spacing:-0.5px;color:var(--wordmark);line-height:1;}
 .wordmark.caps{font-family:var(--font);font-style:normal;font-weight:600;font-size:18px;letter-spacing:5px;}
+/* Osho's signature as the logo: the image is black ink on transparent, used as a mask so it
+   takes the theme's wordmark colour (light on the photo, ink on the light-theme header). */
+.sig{display:block;height:30px;aspect-ratio:500/162;flex-shrink:0;background:var(--wordmark);-webkit-mask:url(/osho-signature.webp) center/contain no-repeat;mask:url(/osho-signature.webp) center/contain no-repeat;}
 .gh-spacer{flex:1;}
 .gh-nav{display:flex;gap:26px;align-self:stretch;}
 .gh-nav-tab{display:flex;align-items:center;padding:0 2px;border:none;border-bottom:3px solid transparent;background:none;font-size:15px;font-weight:500;color:var(--text2);cursor:pointer;white-space:nowrap;transition:color 0.15s,border-color 0.15s;}
@@ -211,6 +214,9 @@ img{display:block;}
 .hero-top{position:absolute;top:calc(14px + env(safe-area-inset-top));left:20px;right:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
 @media(min-width:900px){.hero-top{display:none;}}
 .hero-top .wordmark{color:#E8E2DC;}
+.hero-top .sig{background:#F2ECE6;height:42px;}
+/* The mask would cut a shadow on .sig itself, so the shadow sits on a wrapper. */
+.sig-shadow{display:block;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.55));}
 .hero-top-right{display:flex;align-items:center;gap:8px;margin-right:56px;}
 .hero-top .seg{padding:3px;}
 .hero-top .seg-btn{height:44px;padding:0 10px;font-size:13px;display:flex;align-items:center;gap:5px;}
