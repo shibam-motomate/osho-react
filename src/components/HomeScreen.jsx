@@ -18,11 +18,11 @@ const fmtN = n => n.toLocaleString('en-IN');
 
 /* Ways to order the series list. Shuffle is the default, so every visit opens on a different mix. */
 const SORTS = [
-  {key: 'shuffle', label: 'Shuffle', icon: IcoShuffle},
-  {key: 'az', label: 'A to Z', icon: IcoSortAZ},
-  {key: 'za', label: 'Z to A', icon: IcoSortZA},
-  {key: 'time', label: 'Longest first', icon: IcoClock},
-  {key: 'count', label: 'Most talks', icon: IcoSortCount},
+  {key: 'shuffle', label: 'Shuffle', short: 'Shuffle', icon: IcoShuffle},
+  {key: 'az', label: 'A to Z', short: 'A–Z', icon: IcoSortAZ},
+  {key: 'za', label: 'Z to A', short: 'Z–A', icon: IcoSortZA},
+  {key: 'time', label: 'Longest first', short: 'Longest', icon: IcoClock},
+  {key: 'count', label: 'Most talks', short: 'Most talks', icon: IcoSortCount},
 ];
 const SORT_KEY = 'osho_sort';
 const readSort = () => {
@@ -182,7 +182,7 @@ export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, acti
                     EN<small>{fmtN(counts.en)}</small>
                   </button>
                   <button className={`seg-btn${discLang==='hi'?' active':''}`} onClick={() => setDiscLang('hi')} aria-pressed={discLang==='hi'}>
-                    HI<small>{fmtN(counts.hi)}</small>
+                    <span className="seg-hi" lang="hi">हि</span><small>{fmtN(counts.hi)}</small>
                   </button>
                 </div>
               </div>
@@ -231,7 +231,7 @@ export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, acti
               <span className="sec-count">{filtered.length} series · {t.talks(filtered.reduce((a, s) => a + talkCount(s), 0))}</span>
             </h1>
             <button className="sort-btn" onClick={() => setSortOpen(true)} aria-haspopup="dialog" aria-expanded={sortOpen} aria-label={`Sort: ${sortInfo.label}`} tabIndex={searchOpen ? -1 : 0}>
-              <IcoFilter s={18}/><span>{sortInfo.label}</span>
+              <IcoFilter s={18}/><span>{sortInfo.short}</span>
             </button>
             <span className="lsearch-spot" aria-hidden="true"/>
             <div className={`lsearch${searchOpen ? ' open' : ''}`}>
