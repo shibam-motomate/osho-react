@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { isVideoId, seriesTotalDuration } from '../config.js';
 import { onActivateKey } from '../lib/a11y.js';
 import { minutesLeft, percentDone } from '../lib/progress.js';
+import { warmTalk } from '../lib/warmTalk.js';
 import { IcoBack, IcoCheck, IcoHeart, IcoPlay, IcoSearch, IcoShare, Wave } from './Icons.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
 
@@ -35,6 +36,9 @@ export function SeriesScreen({series, onBack, onEpisode, onOpenPlayer, onToggleP
   // the first talk left part-way through; with neither, the series starts from talk 1.
   const resumeIdx = curIdx >= 0 ? curIdx : episodes.findIndex(unfinished);
   const resumeEp = resumeIdx >= 0 ? episodes[resumeIdx] : null;
+  // Warm up the talk the main button would play, so it starts faster (see lib/warmTalk.js).
+  const firstUp = (resumeEp || episodes[0])?.u;
+  useEffect(() => { if (!isVideoId(series.i)) warmTalk(firstUp); }, [series.i, firstUp]);
   const resumeLeft = resumeEp ? leftOf(resumeEp) : 0;
   const primaryLabel = resumeEp
     ? (resumeLeft > 0 ? `${t.continueTalk(resumeIdx + 1)} · ${t.minLeft(resumeLeft)}` : t.continueTalk(resumeIdx + 1))

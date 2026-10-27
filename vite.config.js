@@ -2,20 +2,49 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
-/* The English catalogue (src/data/oshoData.en.js) is a lazy chunk, so normally the browser
-   only asks for it after the main script has downloaded and run. Home opens on English, so
-   tell the browser about it in index.html and both download in parallel. */
-function preloadEnglishCatalogue() {
+import { statSync } from 'node:fs';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+/* Series index: the home list only needs each series' id, name, topic, talk count and total
+   length — not its ~20 talk titles and audio URLs. This plugin builds that small index from the
+   full catalogue at build time (so it can never go stale) and serves it as
+   `virtual:osho-index/en` / `virtual:osho-index/hi`. The English index ships in the main bundle,
+   so Home can draw the list and the hero photo on first paint; the full catalogue
+   (src/data/oshoData.*.js) loads quietly afterwards for talk-title search and series pages. */
+function seriesIndex() {
+  const PREFIX = 'virtual:osho-index/';
+  const RESOLVED = '\0' + PREFIX;
+  const files = {en: 'src/data/oshoData.en.js', hi: 'src/data/oshoData.hi.js'};
+  const secs = d => { const p = String(d || '0:00').split(':').map(Number); return p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p[0] * 60 + p[1]; };
   return {
-    name: 'preload-english-catalogue',
-    apply: 'build',
-    transformIndexHtml: {
-      order: 'post',
-      handler(html, {bundle}) {
-        const chunk = bundle && Object.values(bundle).find(c => c.type === 'chunk' && c.name === 'oshoData.en');
-        if (!chunk) return html;
-        return [{tag: 'link', attrs: {rel: 'modulepreload', crossorigin: true, href: `/${chunk.fileName}`}, injectTo: 'head'}];
-      },
+    name: 'osho-series-index',
+    resolveId(id) { return id.startsWith(PREFIX) ? RESOLVED + id.slice(PREFIX.length) : null; },
+    async load(id) {
+      if (!id.startsWith(RESOLVED)) return null;
+      const lang = id.slice(RESOLVED.length);
+      const file = fileURLToPath(new URL(files[lang], import.meta.url));
+      this.addWatchFile(file);
+      const mod = await import(pathToFileURL(file).href + '?v=' + statSync(file).mtimeMs);
+      const list = mod[lang === 'hi' ? 'OSHO_DATA_HI' : 'OSHO_DATA_EN'];
+      const index = list.map(s => ({i: s.i, n: s.n, g: s.g, c: s.e.length, td: s.e.reduce((a, e) => a + secs(e.d), 0)}));
+      return `export default ${JSON.stringify(index)};`;
+    },
+    // Start the Home hero photo download from the HTML, before any app code runs. The page picks
+    // the hero here — the Continue-listening series, or a random English series — and leaves the
+    // random seed in window.__heroSeed so HomeScreen picks the same one. The photo numbers mirror
+    // photoFor() in src/config.js (sum of the id's char codes % PHOTO_COUNT + 1).
+    async transformIndexHtml() {
+      const file = fileURLToPath(new URL(files.en, import.meta.url));
+      const list = (await import(pathToFileURL(file).href + '?v=' + statSync(file).mtimeMs)).OSHO_DATA_EN;
+      const PHOTO_COUNT = 34;
+      const photoNo = id => [...id].reduce((a, c) => a + c.charCodeAt(0), 0) % PHOTO_COUNT + 1;
+      const photos = list.map(s => photoNo(s.i));
+      const js = `(function(){try{if(location.pathname!=='/')return;var P=${JSON.stringify(photos)},N=${PHOTO_COUNT},r=Math.random(),n;window.__heroSeed=r;`
+        + `var np=JSON.parse(localStorage.getItem('osho_np')||'null');`
+        + `if(np&&np.series&&np.series.i){if(np.episode&&np.episode.img)return;var s=0,id=np.series.i;for(var i=0;i<id.length;i++)s+=id.charCodeAt(i);n=s%N+1;}`
+        + `else n=P[Math.floor(r*P.length)];`
+        + `var l=document.createElement('link');l.rel='preload';l.as='image';l.href='/art/'+(n<10?'0':'')+n+'-lg.webp';l.setAttribute('fetchpriority','high');document.head.appendChild(l);}catch(e){}})();`;
+      return [{tag: 'script', children: js, injectTo: 'head-prepend'}];
     },
   };
 }
@@ -55,5 +84,5 @@ const serviceWorker = VitePWA({
 });
 
 export default defineConfig({
-  plugins: [react(), preloadEnglishCatalogue(), serviceWorker],
+  plugins: [react(), seriesIndex(), serviceWorker],
 });

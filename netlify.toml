@@ -28,6 +28,12 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
+# App icons have fixed names, so a week (not a year): a new icon reaches everyone within days.
+[[headers]]
+  for = "/icons/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
 # The service worker and its loader must always be re-checked so new deploys get picked up.
 [[headers]]
   for = "/sw.js"

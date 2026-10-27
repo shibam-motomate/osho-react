@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { randomQuote } from '../data/quotes.js';
 
-const MIN_SHOW_MS = 1200;   // first visit only (see App) — long enough to take in the quote
-const FADE_MS = 550;
+const MIN_SHOW_MS = 700;    // first visit only (see App) — long enough to take in the quote
+const FADE_MS = 350;
 
 /* ── First-load screen: wordmark, a random Osho quote and a progress bar.
    `progress` is 0–100 from App (fonts, catalogue…); the bar glides towards it and

@@ -286,6 +286,9 @@ img{display:block;}
 }
 @media(min-width:1400px){.slist{grid-template-columns:repeat(3,minmax(0,1fr));}}
 .srow{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;text-decoration:none;color:inherit;transition:opacity 0.15s;min-height:72px;}
+/* Rows below the fold aren't laid out or painted until they're near the screen (137+ rows,
+   ~2,000 elements). The reserved size keeps the scrollbar and scrolling steady. */
+.srow,.ep-list .ep-row{content-visibility:auto;contain-intrinsic-size:auto 72px;}
 .srow:active{opacity:0.6;}
 .srow-art{width:56px;height:56px;border-radius:12px;overflow:hidden;flex-shrink:0;background:var(--surface2);position:relative;}
 .srow-art.video{width:96px;height:54px;border-radius:10px;}
@@ -638,7 +641,7 @@ button.set-profile{cursor:pointer;}
 @keyframes spin{to{transform:rotate(360deg);}}
 
 /* ── First-load screen: wordmark, random quote, progress bar ── */
-.load{position:fixed;inset:0;bottom:calc(0px - var(--vgap));z-index:600;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:calc(48px + env(safe-area-inset-top)) 28px calc(40px + var(--sab));text-align:center;transition:opacity 0.55s ease;}
+.load{position:fixed;inset:0;bottom:calc(0px - var(--vgap));z-index:600;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:calc(48px + env(safe-area-inset-top)) 28px calc(40px + var(--sab));text-align:center;transition:opacity 0.35s ease;}
 .load.fading{opacity:0;pointer-events:none;}
 .load-top{display:flex;flex-direction:column;align-items:center;gap:8px;}
 .load-sub{font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);}

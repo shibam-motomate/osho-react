@@ -1,4 +1,4 @@
-import { isVideoId, seriesTotalDuration } from '../config.js';
+import { isVideoId, seriesTotalDuration, talkCount } from '../config.js';
 import { onActivateKey } from '../lib/a11y.js';
 import { IcoChevronRight, IcoHeart } from './Icons.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
@@ -8,7 +8,7 @@ import { SeriesImg } from './SeriesImg.jsx';
 export function SeriesCard({s, discLang, saved, onOpen, onToggleSave, t}) {
   const isVideo = isVideoId(s.i);
   const genre = t.genres[s.g] || s.g;
-  const meta = [genre, t.talks(s.e.length), seriesTotalDuration(s).replace(/ \d+m$/, m => m)].join(' · ');
+  const meta = [genre, t.talks(talkCount(s)), seriesTotalDuration(s).replace(/ \d+m$/, m => m)].join(' · ');
   return (
     <div className="srow" onClick={() => onOpen(s)} role="button" tabIndex={0} onKeyDown={onActivateKey(() => onOpen(s))}>
       <SeriesImg series={s} className={`srow-art${isVideo ? ' video' : ''}`}/>

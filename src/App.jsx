@@ -11,11 +11,13 @@ import { SeriesScreen } from './components/SeriesScreen.jsx';
 import { Sidebar } from './components/Sidebar.jsx';
 import { LoadScreen } from './components/LoadScreen.jsx';
 import { useAuth } from './contexts/AuthContext.jsx';
+import EN_INDEX from 'virtual:osho-index/en';
 import { OSHO_BOOKS } from './data/oshoBooks.js';
 import { OSHO_VIDEOS_EN, OSHO_VIDEOS_HI } from './data/oshoVideos.js';
 import { installFocusAutoScroll, isTvDevice } from './lib/a11y.js';
 import { readSpeed, saveSpeed } from './lib/playback.js';
 import { getProgress, loadProgress, saveProgress } from './lib/progress.js';
+import { warmTalk } from './lib/warmTalk.js';
 import { applyTheme, readTheme } from './lib/theme.js';
 import { applyTextSize, readTextSize } from './lib/textsize.js';
 import { supabase, supabaseEnabled } from './lib/supabaseClient.js';
@@ -53,7 +55,9 @@ function App() {
   const [lang,        setLang]      = useState('en');
   const [discLang,    setDiscLang]  = useState('en');
   const [activePill,  setPill]      = useState('all');
-  const [nowPlaying,  setNP]        = useState(null);
+  // Read the saved talk before the first draw, so the Home hero starts on "Continue listening"
+  // (and its photo, preloaded by index.html) instead of flashing a random series first.
+  const [nowPlaying,  setNP]        = useState(() => { try { return JSON.parse(localStorage.getItem('osho_np') || 'null'); } catch (e) { return null; } });
   const [isPlaying,   setPlay]      = useState(false);
   const [playerOpen,  setPO]        = useState(false);
   const [clDismissed, setCLD]       = useState(false);
@@ -79,7 +83,7 @@ function App() {
     let on = true;
     const done = () => { if (on) setFontsReady(true); };
     if (document.fonts?.ready) document.fonts.ready.then(done); else done();
-    const guard = setTimeout(done, 1200); // never block on a slow font download
+    const guard = setTimeout(done, 800); // never block on a slow font download
     return () => { on = false; clearTimeout(guard); };
   }, []);
   const [contentType, setContentType] = useState('discourses'); // 'discourses' | 'videos' | 'books'
@@ -100,14 +104,40 @@ function App() {
   // Saved position of every talk ever started ({episodeUrl: {t, d, done}}, see lib/progress.js).
   // 'osho_np' / 'osho_time' below still track only the talk in the player for the Home hero.
   const [progress, setProgress] = useState(loadProgress);
-  const [dataLoading, setDataLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(false); // English index is in the bundle, so Home has its list at once
   const [seriesVersion, setSeriesVersion] = useState(0);
   const audioRef = useRef(null);
   const videoRef = useRef(null);
   const npRef = useRef(null); // nowPlaying, readable from timers and media-event handlers
   const toastTimer = useRef(null);
   const sleepOptionRef = useRef('off');
-  const seriesCacheRef = useRef({});
+  const seriesCacheRef = useRef({}); // full catalogue per language (with talks), once loaded
+  // Light series index per language (id, name, topic, talk count, length — see vite.config.js).
+  // English ships in the main bundle, so Home draws its list and hero photo on first paint.
+  const indexRef = useRef({en: EN_INDEX});
+  const fullLoads = useRef({});
+  const loadFull = useCallback(l => {
+    if (seriesCacheRef.current[l]) return Promise.resolve(seriesCacheRef.current[l]);
+    if (!fullLoads.current[l]) {
+      fullLoads.current[l] = (l === 'hi' ? import('./data/oshoData.hi.js') : import('./data/oshoData.en.js'))
+        .then(mod => {
+          const list = l === 'hi' ? mod.OSHO_DATA_HI : mod.OSHO_DATA_EN;
+          seriesCacheRef.current[l] = list;
+          setSeriesVersion(v => v + 1);
+          return list;
+        })
+        .catch(err => { delete fullLoads.current[l]; throw err; });
+    }
+    return fullLoads.current[l];
+  }, []);
+  const loadIndex = useCallback(l => {
+    if (indexRef.current[l]) return Promise.resolve(indexRef.current[l]);
+    return import('virtual:osho-index/hi').then(mod => {
+      indexRef.current[l] = mod.default;
+      setSeriesVersion(v => v + 1);
+      return mod.default;
+    });
+  }, []);
   const speedRef = useRef(playbackSpeed);
   // Full player and the browser Back button: opening the player adds a history entry, so
   // Back (Android, browser, iOS swipe) closes it instead of leaving the screen behind it.
@@ -178,17 +208,12 @@ function App() {
       return null;
     }
     for (const l of ['en', 'hi']) {
-      let list = seriesCacheRef.current[l];
-      if (!list) {
-        const mod = await (l === 'hi' ? import('./data/oshoData.hi.js') : import('./data/oshoData.en.js'));
-        list = l === 'hi' ? mod.OSHO_DATA_HI : mod.OSHO_DATA_EN;
-        seriesCacheRef.current[l] = list;
-      }
+      const list = await loadFull(l);
       const found = list.find(s => s.i === id);
       if (found) return {series: found, lang: l, pool: 'discourses'};
     }
     return null;
-  }, []);
+  }, [loadFull]);
 
   // Parse the current URL into screen state, both on first load and on
   // browser back/forward navigation.
@@ -245,26 +270,30 @@ function App() {
 
   const t = T[lang];
 
-  // Lazy-load each discourse language's dataset only when first needed, then cache it
+  // The list draws from the light index (instant for English, a tiny chunk for Hindi). The full
+  // catalogue (talk titles, audio links) is fetched once the first screen is drawn, so it never
+  // competes with the hero photo and fonts on a slow connection.
   useEffect(() => {
-    if (seriesCacheRef.current[discLang]) { setDataLoading(false); return; }
-    setDataLoading(true);
-    const loader = discLang === 'hi' ? import('./data/oshoData.hi.js') : import('./data/oshoData.en.js');
-    loader.then(mod => {
-      seriesCacheRef.current[discLang] = discLang === 'hi' ? mod.OSHO_DATA_HI : mod.OSHO_DATA_EN;
-      setSeriesVersion(v => v + 1);
-      setDataLoading(false);
-    });
-  }, [discLang]);
+    let on = true;
+    if (seriesCacheRef.current[discLang] || indexRef.current[discLang]) setDataLoading(false);
+    else {
+      setDataLoading(true);
+      loadIndex(discLang).then(() => on && setDataLoading(false)).catch(() => {});
+    }
+    const start = () => { loadFull(discLang).catch(() => {}); };
+    const idle = typeof window.requestIdleCallback === 'function'; // not in Safari
+    const handle = idle ? window.requestIdleCallback(start, {timeout: 2500}) : setTimeout(start, 700);
+    return () => { on = false; idle ? window.cancelIdleCallback(handle) : clearTimeout(handle); };
+  }, [discLang, loadFull, loadIndex]);
 
-  const discourseList = useMemo(() => seriesCacheRef.current[discLang] || [], [discLang, seriesVersion]);
+  const discourseList = useMemo(() => seriesCacheRef.current[discLang] || indexRef.current[discLang] || [], [discLang, seriesVersion]);
   const videoList = useMemo(() => (discLang === 'hi' ? OSHO_VIDEOS_HI : OSHO_VIDEOS_EN), [discLang]);
   // Tagged with the language each series belongs to, so the Saved screen (which combines
   // both languages into one list) can label each card correctly regardless of the current
   // discLang toggle.
   const allDiscourseSeries = useMemo(() => [
-    ...(seriesCacheRef.current.en || []).map(s => ({...s, _lang: 'en'})),
-    ...(seriesCacheRef.current.hi || []).map(s => ({...s, _lang: 'hi'})),
+    ...(seriesCacheRef.current.en || indexRef.current.en || []).map(s => ({...s, _lang: 'en'})),
+    ...(seriesCacheRef.current.hi || indexRef.current.hi || []).map(s => ({...s, _lang: 'hi'})),
   ], [seriesVersion]);
   const allVideoSeries = useMemo(() => [
     ...OSHO_VIDEOS_EN.map(s => ({...s, _lang: 'en'})),
@@ -510,13 +539,7 @@ function App() {
     if (pool === 'videos') {
       list = entry.discLang === 'hi' ? OSHO_VIDEOS_HI : OSHO_VIDEOS_EN;
     } else {
-      list = seriesCacheRef.current[entry.discLang];
-      if (!list) {
-        const mod = await (entry.discLang === 'hi' ? import('./data/oshoData.hi.js') : import('./data/oshoData.en.js'));
-        list = entry.discLang === 'hi' ? mod.OSHO_DATA_HI : mod.OSHO_DATA_EN;
-        seriesCacheRef.current[entry.discLang] = list;
-        setSeriesVersion(v => v + 1);
-      }
+      list = await loadFull(entry.discLang);
     }
     const series = list.find(s => s.i === entry.seriesId);
     const episode = series?.e.find(e => e.u === entry.episodeUrl);
@@ -526,7 +549,12 @@ function App() {
     playEp(series, episode);
     setPO(true);
     navigate('home');
-  }, [playEp, navigate]);
+  }, [playEp, navigate, loadFull]);
+
+  // Index entries have no talks yet: fetch the full series before opening or playing it.
+  const fullSeries = useCallback(async s => (s.e ? s : (await resolveSeriesById(s.i))?.series || null), [resolveSeriesById]);
+  const openSeries = useCallback(async s => { const full = await fullSeries(s); if (full) navigate('series', full); }, [fullSeries, navigate]);
+  const playFirst = useCallback(async s => { const full = await fullSeries(s); if (full?.e?.length) { playEp(full, full.e[0]); setPO(true); } }, [fullSeries, playEp]);
 
   const onTogglePlay = useCallback(() => {
     if (!nowPlaying) return;
@@ -632,6 +660,13 @@ function App() {
   const episodeIndex = nowPlaying ? nowPlaying.series.e.findIndex(e => e.u === nowPlaying.episode.u) : -1;
   const nextEpisode = nowPlaying && episodeIndex >= 0 && episodeIndex < nowPlaying.series.e.length - 1
     ? nowPlaying.series.e[episodeIndex + 1] : null;
+
+  // Warm up the next talk a little after this one starts, so Next and auto-play start faster.
+  useEffect(() => {
+    if (!nextEpisode || !isPlaying) return;
+    const id = setTimeout(() => warmTalk(nextEpisode.u), 20000);
+    return () => clearTimeout(id);
+  }, [nextEpisode, isPlaying]);
 
   const onResume = () => {
     if (!nowPlaying) return;
@@ -865,8 +900,8 @@ function App() {
         onOpenAccount={() => navigate('account')} onOpenSaved={() => navigate('saved')} onOpenHistory={() => navigate('history')}/>
       <div className="main">
         <div className={homeClass}>
-          <HomeScreen seriesList={seriesList} dataLoading={listLoading} onSeries={s => navigate('series', s)}
-            onPlayFirst={s => { if (s.e && s.e.length) { playEp(s, s.e[0]); setPO(true); } }}
+          <HomeScreen seriesList={seriesList} dataLoading={listLoading} onSeries={openSeries}
+            onPlayFirst={playFirst}
             activePill={activePill} setActivePill={setPill} discLang={discLang} setDiscLang={setDiscLang} contentType={contentType} search={search} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} setSearch={setSearch} searchOpen={mobSearchOpen} setSearchOpen={setMobSearchOpen} t={t} isDesktop={isDesktop}/>
         </div>
         <div className={serClass}>
@@ -880,7 +915,7 @@ function App() {
             savedEpisodes={savedEpisodes} onToggleSaveEpisode={toggleSaveEpisode} onPlayEpisode={playEntry}
             history={history} onRemoveHistory={removeHistoryEntry} onClearHistory={clearHistory}
             savedBooks={savedBooks} onToggleSaveBook={toggleSaveBook} onReadBook={onReadBook}
-            onSeries={s => navigate('series', s)} t={t}/>
+            onSeries={openSeries} t={t}/>
         </div>
         <div className={histClass}>
           <HistoryScreen onBack={() => navigate('home')} history={history} onPlayEntry={playEntry} onRemove={removeHistoryEntry} onClearAll={clearHistory} t={t}/>
