@@ -65,15 +65,15 @@ export function SeriesScreen({series, onBack, onEpisode, onOpenPlayer, currentEp
 
       <div className="series-actions">
         <button className="btn-primary" onClick={primaryAction}><IcoPlay s={22}/>{primaryLabel}</button>
-        <button className={`btn-pill${showSearch ? ' on' : ''}`} aria-label={t.findTalk} onClick={() => setShowSearch(v => !v)} style={{height:56}}><IcoSearch s={20}/></button>
+        <button className={`btn-pill${showSearch ? ' on' : ''}`} aria-label={t.findTalk} onClick={() => setShowSearch(v => !v)}><IcoSearch s={20}/></button>
       </div>
 
       {showSearch && (
         <div className="ep-search" style={{paddingTop:12}}>
-          <div className="sbar">
+          <label className="sbar">
             <span style={{color:'var(--muted)',display:'flex'}}><IcoSearch s={20}/></span>
-            <input value={epQ} onChange={e => setEpQ(e.target.value)} placeholder={t.searchEp} autoFocus/>
-          </div>
+            <input value={epQ} onChange={e => setEpQ(e.target.value)} placeholder={t.searchEp} aria-label={t.searchEp} autoFocus/>
+          </label>
         </div>
       )}
 
