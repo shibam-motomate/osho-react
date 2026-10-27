@@ -112,6 +112,9 @@ img{display:block;}
 .gh-logo{display:flex;align-items:center;flex-shrink:0;cursor:pointer;text-decoration:none;}
 .wordmark{font-family:var(--font-serif);font-style:italic;font-weight:500;font-size:26px;letter-spacing:-0.5px;color:var(--wordmark);line-height:1;}
 .wordmark.caps{font-family:var(--font);font-style:normal;font-weight:600;font-size:18px;letter-spacing:5px;}
+/* Osho's signature as the logo: the image is black ink on transparent, used as a mask so it
+   takes the theme's wordmark colour (light on the photo, ink on the light-theme header). */
+.sig{display:block;height:30px;aspect-ratio:500/162;flex-shrink:0;background:var(--wordmark);-webkit-mask:url(/osho-signature.webp) center/contain no-repeat;mask:url(/osho-signature.webp) center/contain no-repeat;}
 .gh-spacer{flex:1;}
 .gh-nav{display:flex;gap:26px;align-self:stretch;}
 .gh-nav-tab{display:flex;align-items:center;padding:0 2px;border:none;border-bottom:3px solid transparent;background:none;font-size:15px;font-weight:500;color:var(--text2);cursor:pointer;white-space:nowrap;transition:color 0.15s,border-color 0.15s;}
@@ -211,24 +214,21 @@ img{display:block;}
 .hero-top{position:absolute;top:calc(14px + env(safe-area-inset-top));left:20px;right:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
 @media(min-width:900px){.hero-top{display:none;}}
 .hero-top .wordmark{color:#E8E2DC;}
-.hero-top-right{display:flex;align-items:center;gap:8px;margin-right:56px;}
-.hero-top .seg{padding:3px;}
-.hero-top .seg-btn{height:44px;padding:0 10px;font-size:13px;display:flex;align-items:center;gap:5px;}
-.hero-top .seg-btn small{font-size:12px;font-weight:500;opacity:0.85;}
-.hero.searching .hero-top-right{opacity:0;pointer-events:none;transition:opacity 0.2s;}
-.hero-top-right{transition:opacity 0.3s 0.15s;}
-.hsearch{position:absolute;right:0;top:0;height:44px;width:44px;border-radius:999px;background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.28);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;overflow:hidden;transition:width 0.38s cubic-bezier(.22,.61,.36,1),background 0.25s,border-color 0.25s;}
-.hsearch.open{width:100%;background:var(--surface);border-color:var(--border-strong);}
-.hsearch input{flex:1;min-width:0;width:0;height:100%;border:none;background:transparent;color:var(--ink);font-size:16px;padding:0;outline:none;opacity:0;transition:opacity 0.2s,padding 0.38s;align-self:stretch;}
-.hsearch.open input{padding-left:20px;}
-.hsearch.open input{opacity:1;transition-delay:0.15s;}
-.hsearch input::placeholder{color:var(--muted);}
-.hsearch-btn{width:44px;height:44px;flex-shrink:0;border:none;background:transparent;color:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-left:auto;}
-.hsearch.open .hsearch-btn{color:var(--ink);}
+.hero-top .sig{background:#F2ECE6;height:42px;}
+/* The mask would cut a shadow on .sig itself, so the shadow sits on a wrapper. */
+.sig-shadow{display:block;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.55));}
+.hero-top-right{display:flex;align-items:center;gap:8px;}
+/* Language switch on the photo: slim dark glass (about 38 px tall). Each option still has a 44 px
+   tap area through an invisible ::after that reaches past the pill. */
+.hero-top .seg{padding:3px;gap:0;}
+.hero-top .seg.on-photo{background:rgba(20,16,16,0.32)!important;border-color:rgba(255,255,255,0.18)!important;}
+.hero-top .seg-btn{position:relative;height:30px;padding:0 11px;font-size:12.5px;font-weight:600;letter-spacing:0.3px;display:flex;align-items:center;gap:5px;}
+.hero-top .seg-btn::after{content:'';position:absolute;left:0;right:0;top:-7px;bottom:-7px;}
+.hero-top .seg-btn small{font-size:11px;font-weight:500;letter-spacing:0;opacity:0.7;font-variant-numeric:tabular-nums;}
+.hero-top .seg-btn.active small{opacity:0.85;}
+/* Hindi option labelled in Devanagari; it sets a touch larger to match the Latin EN. */
+.seg-hi{font-size:14px;font-weight:600;letter-spacing:0;line-height:1;}
 .hero{transition:height 0.38s cubic-bezier(.22,.61,.36,1);}
-.hero.searching{height:calc(76px + env(safe-area-inset-top));}
-.hero.searching .hero-bottom,.hero.searching .hero-img,.hero.searching .hero-shade{opacity:0;transition:opacity 0.25s;}
-.hero.searching .hero-bottom,.hero.searching .hero-dismiss{pointer-events:none;visibility:hidden;transition:opacity 0.25s,visibility 0s 0.25s;}
 .hero-img,.hero-shade,.hero-bottom{transition:opacity 0.3s;}
 .hero-icon{width:44px;height:44px;border-radius:999px;background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.28);display:flex;align-items:center;justify-content:center;color:#FFFFFF;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
 .hero-bottom{position:absolute;left:20px;right:20px;bottom:22px;display:flex;align-items:flex-end;gap:14px;}
@@ -249,7 +249,7 @@ img{display:block;}
 /* ── Topic picker (phone): one big button that opens a bottom sheet of topics ── */
 .topic-bar{padding:18px 20px 0;}
 @media(min-width:900px){.topic-bar{display:none;}}
-.topic-btn{width:100%;min-height:56px;display:flex;align-items:center;gap:14px;padding:8px 16px 8px 18px;border-radius:18px;background:var(--surface);border:1px solid var(--border-strong);color:var(--ink);cursor:pointer;text-align:left;}
+.topic-btn{width:100%;min-height:56px;display:flex;align-items:center;gap:14px;padding:8px 16px 8px 18px;border-radius:18px;background:var(--surface);border:1px solid var(--border);color:var(--ink);cursor:pointer;text-align:left;}
 .topic-btn-ic{display:flex;color:var(--accent-text);flex-shrink:0;}
 .topic-btn-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
 .topic-btn-lbl{font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
@@ -276,6 +276,47 @@ img{display:block;}
 @media(min-width:900px){.sec-head{padding:26px 32px 10px;}}
 .sec-title{font-family:var(--font-serif);font-size:calc(22px*var(--ts));font-weight:500;letter-spacing:-0.3px;color:var(--ink);}
 .sec-count{font-family:var(--font);font-size:14px;color:var(--muted);margin-left:8px;}
+/* Title row: a little more air above and below than other section heads. */
+.sec-head:has(.sort-btn){display:block;padding-top:28px;padding-bottom:14px;}
+@media(min-width:900px){.sec-head:has(.sort-btn){padding-top:30px;}}
+/* The title row (title, Sort, Search) sticks to the top while the list scrolls. 12 px of its top
+   padding scrolls away first, so it pins snugly; on notched phones it pins below the notch. */
+.sec-head:has(.sort-btn){position:sticky;top:calc(env(safe-area-inset-top) - 12px);z-index:6;background:var(--bg);}
+/* Once pinned (set from HomeScreen): a hairline under it, and the page colour filled up behind the notch. */
+.sec-head.stuck{box-shadow:0 calc(-1 * env(safe-area-inset-top)) 0 var(--bg);}
+.sec-head:has(.sort-btn)::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--border);opacity:0;transition:opacity 0.2s;}
+.sec-head.stuck::after{opacity:1;}
+.sec-head:has(.sort-btn) .sec-title{line-height:1.15;}
+.sec-head:has(.sort-btn) .sec-count{display:block;margin:3px 0 0;line-height:1.3;}
+.sec-row{position:relative;display:flex;align-items:center;gap:12px;}
+.sec-row .sec-title{flex:1;min-width:0;}
+.sec-row .sec-title,.sec-row .sort-btn{transition:opacity 0.2s 0.12s;}
+.sec-head.searching .sec-title,.sec-head.searching .sort-btn{opacity:0;pointer-events:none;transition:opacity 0.15s;}
+.sec-sentinel{height:1px;margin-bottom:-1px;}
+.sec-found{margin:10px 4px 0;font-size:14px;color:var(--muted);}
+/* Room below the pinned row, so it can reach the top even when only a few series match. */
+.sec-head.searching + .slist{min-height:100vh;min-height:100dvh;}
+/* Results change under the pinned row as you type; stop the browser re-anchoring the scroll. */
+.screen:has(.sec-head.searching){overflow-anchor:none;}
+/* Phone search: a round button beside Sort that widens to the left across the whole row. */
+.lsearch-spot{width:44px;height:44px;flex-shrink:0;}
+.lsearch{position:absolute;right:0;top:50%;transform:translateY(-50%);height:44px;width:44px;border-radius:999px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;overflow:hidden;transition:width 0.38s cubic-bezier(.22,.61,.36,1),border-color 0.2s;}
+.lsearch.open{width:100%;}
+.lsearch-ic{display:flex;color:var(--muted);flex-shrink:0;width:0;opacity:0;overflow:hidden;transition:opacity 0.2s,width 0.38s,margin 0.38s;}
+.lsearch.open .lsearch-ic{width:20px;margin-left:16px;opacity:1;transition-delay:0.12s;}
+.lsearch input{flex:1;min-width:0;width:0;height:100%;border:none;background:transparent;color:var(--ink);font-size:16px;padding:0;outline:none;opacity:0;transition:opacity 0.2s,padding 0.38s;-webkit-appearance:none;appearance:none;}
+.lsearch input::-webkit-search-cancel-button{display:none;}
+.lsearch.open input{padding-left:10px;opacity:1;transition-delay:0.15s;}
+.lsearch input::placeholder{color:var(--muted);}
+/* Focus shows on the whole pill (like the other text fields), not as a ring around the bare input. */
+.lsearch input:focus,.lsearch input:focus-visible{outline:none;}
+.lsearch.open:focus-within{border-color:var(--accent);}
+.lsearch-btn{width:42px;height:42px;flex-shrink:0;border:none;background:transparent;color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;margin-left:auto;border-radius:999px;}
+@media(min-width:900px){.lsearch,.lsearch-spot{display:none;}}
+.sort-btn{flex-shrink:0;display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:0 16px 0 13px;border-radius:999px;background:var(--surface);border:1px solid var(--border);color:var(--ink);font-size:calc(14px*var(--ts));font-weight:600;cursor:pointer;white-space:nowrap;}
+.sort-btn svg{color:var(--accent-text);}
+.sheet-row-ic{width:26px;display:flex;justify-content:center;color:var(--muted);}
+.sheet-row.active .sheet-row-ic{color:var(--accent-text);}
 .sec-lbl{font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:26px 20px 8px;}
 @media(min-width:900px){.sec-lbl{padding:26px 32px 8px;}}
 
@@ -567,6 +608,14 @@ img{display:block;}
 /* Account */
 /* ── Account: profile card + grouped settings rows (iOS-style inset groups) ── */
 .set-wrap{max-width:640px;}
+/* Account and Library are tabs with no back bar, so they carry their own top spacing. */
+.set-wrap,.lib-wrap{padding-top:calc(28px + env(safe-area-inset-top));}
+@media(min-width:900px){.set-wrap,.lib-wrap{padding-top:32px;}}
+/* Library: sliding Recent · Series · Talks switch, then a one-line hint (with Clear for recent). */
+.lib-wrap .segs{background:var(--surface);max-width:480px;}
+.segs-count{margin-left:6px;font-weight:500;opacity:0.75;}
+.lib-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;padding:14px 4px 4px;font-size:calc(14px*var(--ts));color:var(--muted);}
+.lib-clear{min-height:44px;padding:0 4px 0 14px;border:none;background:none;color:var(--accent-text);font-size:calc(14px*var(--ts));font-weight:600;cursor:pointer;flex-shrink:0;}
 .set-title{font-family:var(--font-serif);font-style:italic;font-weight:500;font-size:calc(30px*var(--ts));line-height:1.1;color:var(--ink);margin:4px 4px 18px;}
 .set-profile{width:100%;display:flex;align-items:center;gap:14px;padding:16px;border-radius:20px;background:var(--surface);border:1px solid var(--border);color:var(--ink);text-align:left;font:inherit;}
 button.set-profile{cursor:pointer;}
@@ -607,21 +656,8 @@ button.set-profile{cursor:pointer;}
 /* Option rows (Account: appearance, menu language) — one choice per big row, check on the active one */
 
 /* Library three-way switch */
-.lib-seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px;}
-@media(max-width:359px){.lib-seg-ic{display:none;}}
-.lib-seg-btn{min-height:48px;display:flex;align-items:center;justify-content:center;gap:6px;border-radius:999px;border:1px solid var(--border-strong);background:var(--surface);color:var(--text2);cursor:pointer;padding:0 8px;white-space:nowrap;transition:background 0.15s,color 0.15s,border-color 0.15s;}
-.lib-seg-btn.active{background:var(--accent);border-color:var(--accent);color:var(--on-accent);}
-.lib-seg-ic{display:flex;}
-.lib-seg-lbl{font-size:calc(14px*var(--ts));font-weight:600;}
-.lib-seg-count{font-size:calc(14px*var(--ts));font-weight:500;opacity:0.8;font-variant-numeric:tabular-nums;}
-.saved-sec-title svg{display:none;}
 
 /* Saved page sections */
-.saved-sec{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:26px 0 6px;}
-.saved-sec-title{font-family:var(--font-serif);font-size:22px;font-weight:500;color:var(--ink);display:flex;align-items:center;gap:10px;}
-.saved-sec-title svg{color:var(--accent-text);flex-shrink:0;}
-.saved-sec-hint{font-size:13px;color:var(--muted);margin-top:4px;}
-.saved-sec-count{font-size:14px;color:var(--muted);}
 .srow-badge,.ep-badge{font-size:12px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;color:var(--accent-text);background:var(--accent-dim);border-radius:999px;padding:3px 8px;flex-shrink:0;}
 
 /* ── Toast ── */
@@ -678,7 +714,6 @@ button.set-profile{cursor:pointer;}
 :root[data-textsize="large"]{--ts:1.12;}
 :root[data-textsize="xlarge"]{--ts:1.25;}
 /* Library switch: at the biggest size the three pills only fit their words on a phone */
-@media(max-width:479px){:root[data-textsize="xlarge"] .lib-seg-ic{display:none;}}
 
 /* ══════════════════════════════════════════════════════════════
    "ADD TO YOUR HOME SCREEN"  (Account card + one-time Home banner; src/lib/install.js)
@@ -716,7 +751,7 @@ button.set-profile{cursor:pointer;}
   .sb-genre-item,.sb-nav-item{min-height:40px;padding-top:8px;padding-bottom:8px;}.btn-primary,.btn-secondary,.btn-danger,.auth-submit{height:44px;}
   .series-actions .btn-pill{height:44px;min-width:44px;}
   .auth-form input,.ac-input,.sbar{height:44px;}.btn-pill,.back-btn,.clear-all-pill,.ct-tab-btn,.saved-tab-btn{height:36px;}
-  .lib-seg-btn{min-height:40px;}
+
 
   .srow{min-height:64px;}
   .srow-art{width:48px;height:48px;border-radius:10px;}

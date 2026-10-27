@@ -911,7 +911,7 @@ function App() {
             savedEpisodeUrls={savedEpisodeUrls} onToggleSaveEpisode={toggleSaveEpisode} progress={progress} t={t}/>}
         </div>
         <div className={savedClass}>
-          <SavedScreen onBack={() => navigate('home')} discourseSeries={allDiscourseSeries} videoSeries={allVideoSeries} books={OSHO_BOOKS} savedSeries={savedSeries} onToggleSave={toggleSaveSeries}
+          <SavedScreen discourseSeries={allDiscourseSeries} videoSeries={allVideoSeries} books={OSHO_BOOKS} savedSeries={savedSeries} onToggleSave={toggleSaveSeries}
             savedEpisodes={savedEpisodes} onToggleSaveEpisode={toggleSaveEpisode} onPlayEpisode={playEntry}
             history={history} onRemoveHistory={removeHistoryEntry} onClearHistory={clearHistory}
             savedBooks={savedBooks} onToggleSaveBook={toggleSaveBook} onReadBook={onReadBook}
@@ -923,7 +923,7 @@ function App() {
         <div className={acctClass}>
           {(screen === 'account' || visitedAccount.current) && (visitedAccount.current = true) && (
             <Suspense fallback={null}>
-              <AccountScreen onBack={() => navigate('home')} onOpenSaved={() => navigate('saved')} onOpenHistory={() => navigate('history')} lang={lang} setLang={setLang}
+              <AccountScreen onOpenSaved={() => navigate('saved')} onOpenHistory={() => navigate('history')} lang={lang} setLang={setLang}
                 theme={theme} setTheme={setTheme} textSize={textSize} setTextSize={setTextSize} onSignIn={() => setShowAuth(true)} t={t}
                 savedSeriesCount={savedSeries.size} savedEpisodesCount={savedEpisodes.length} historyCount={history.length}
                 onAccountDeleted={() => { navigate('home'); showToast('Account deleted'); }}/>

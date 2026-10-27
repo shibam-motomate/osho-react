@@ -6,10 +6,10 @@
    box. To keep every button and row looking the same size as before, the view is cropped to
    the inner 20 units (VIEW) and the stroke set so lines weigh what they did (STROKE). ── */
 import {
-  ALargeSmall, BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, EllipsisVertical, Gauge,
-  Heart, History, Languages, List, ListMusic, LogOut, Maximize, MessageSquareText, Mic, Moon, Pause,
-  PenLine, Play, Search, Share2, SkipBack, SkipForward, Smartphone, SquarePlus, Sun, SunMoon, Trash2,
-  UserRound, Video, X,
+  ALargeSmall, ArrowDownAZ, ArrowDownZA, BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, Clock,
+  EllipsisVertical, Gauge, Headphones, Heart, History, Languages, List, ListFilter, ListMusic, ListOrdered,
+  LogOut, Maximize, MessageSquareText, Moon, Pause, PenLine, Play, Search, Share2, Shuffle, SkipBack,
+  SkipForward, Smartphone, SquarePlus, Sun, SunMoon, Trash2, UserRound, Video, X,
 } from 'lucide-react';
 
 const VIEW = '2 2 20 20';
@@ -35,7 +35,7 @@ export const IcoUser = icon(UserRound, 15);
 export const IcoLogOut = icon(LogOut, 15);
 export const IcoClock = icon(Clock, 17);
 export const IcoVideo = icon(Video, 20);
-export const IcoHeadphones = icon(Mic, 20); // Discourses tab: the talks are spoken, so a microphone
+export const IcoHeadphones = icon(Headphones, 20); // Discourses tab and saved talks: something to listen to
 export const IcoBook = icon(BookOpen, 20);
 export const IcoFullscreen = icon(Maximize, 19);
 export const IcoSpeed = icon(Gauge, 16);
@@ -54,6 +54,12 @@ export const IcoLanguages = icon(Languages, 20);
 export const IcoMessage = icon(MessageSquareText, 20);
 export const IcoPencil = icon(PenLine, 20);
 export const IcoTrash = icon(Trash2, 20);
+// Sorting the series list
+export const IcoFilter = icon(ListFilter, 18);
+export const IcoShuffle = icon(Shuffle, 20);
+export const IcoSortAZ = icon(ArrowDownAZ, 20);
+export const IcoSortZA = icon(ArrowDownZA, 20);
+export const IcoSortCount = icon(ListOrdered, 20);
 
 // Transport: solid shapes. Lucide's play triangle already sits slightly right of centre
 // (about 6 % of its width), which is what makes it look centred inside a round button.

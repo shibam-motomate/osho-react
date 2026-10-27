@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { isVideoId } from '../config.js';
 import { onActivateKey } from '../lib/a11y.js';
-import { IcoBack, IcoHeadphones, IcoHeart, IcoHistory, IcoPlay, IcoPlaylist, IcoX } from './Icons.jsx';
+import { IcoHeart, IcoPlay, IcoX } from './Icons.jsx';
+import { SegSlider } from './SegSlider.jsx';
 import { SeriesCard } from './SeriesCard.jsx';
 import { fmtDur } from './SeriesScreen.jsx';
 
@@ -15,49 +16,34 @@ const timeAgo = ts => {
   return days === 1 ? 'Yesterday' : `${days} days ago`;
 };
 
-/* ── Library: one three-way switch at the top (Recent · Series · Talks), one section shown at a time. ── */
-export function SavedScreen({onBack, discourseSeries, videoSeries, savedSeries, onToggleSave, savedEpisodes, onToggleSaveEpisode, onPlayEpisode, onSeries,
+/* ── Library: a tab of its own (bottom bar on phones, sidebar on desktop), so no back button.
+   A sliding three-way switch (Recent · Series · Talks, each with its count) picks the one list shown;
+   a short hint under it says what the list is, with Clear for recent plays. ── */
+export function SavedScreen({discourseSeries, videoSeries, savedSeries, onToggleSave, savedEpisodes, onToggleSaveEpisode, onPlayEpisode, onSeries,
   history = [], onRemoveHistory, onClearHistory, t}) {
   const [tab, setTab] = useState('recent'); // 'recent' | 'series' | 'talks'
   const saved = useMemo(() => [...discourseSeries, ...videoSeries].filter(s => savedSeries.has(s.i)), [discourseSeries, videoSeries, savedSeries]);
 
   const tabs = [
-    {key: 'recent', label: 'Recent', icon: <IcoHistory s={22}/>, count: history.length},
-    {key: 'series', label: 'Series', icon: <IcoPlaylist s={22}/>, count: saved.length},
-    {key: 'talks',  label: 'Talks',  icon: <IcoHeadphones s={22}/>, count: savedEpisodes.length},
+    {key: 'recent', label: 'Recent', count: history.length},
+    {key: 'series', label: 'Series', count: saved.length},
+    {key: 'talks',  label: 'Talks',  count: savedEpisodes.length},
   ];
 
   return (
     <div>
-      <div className="back-bar">
-        <button className="back-btn" onClick={onBack}><IcoBack/>{t.home}</button>
-      </div>
-      <div className="page-card-wrap">
-        <div className="page-card-title-row">
-          <div>
-            <div className="page-eyebrow">{t.accountTab}</div>
-            <div className="page-card-heading"><h1>{t.savedTab}</h1></div>
-          </div>
-        </div>
+      <div className="page-card-wrap lib-wrap">
+        <h1 className="set-title">{t.savedTab}</h1>
 
-        <div className="lib-seg" role="tablist" aria-label={t.savedTab}>
-          {tabs.map(tb => (
-            <button key={tb.key} role="tab" aria-selected={tab === tb.key} className={`lib-seg-btn${tab === tb.key ? ' active' : ''}`} onClick={() => setTab(tb.key)}>
-              <span className="lib-seg-ic">{tb.icon}</span>
-              <span className="lib-seg-lbl">{tb.label}</span>
-              <span className="lib-seg-count">{tb.count}</span>
-            </button>
-          ))}
-        </div>
+        <SegSlider label={t.savedTab} value={tab} onChange={setTab}
+          options={tabs.map(tb => ({value: tb.key, aria: `${tb.label}, ${tb.count}`,
+            label: <>{tb.label}<span className="segs-count">{tb.count}</span></>}))}/>
 
         {tab === 'recent' && (
           <>
-            <div className="saved-sec">
-              <div>
-                <div className="saved-sec-title">{t.recentlyPlayed}</div>
-                <div className="saved-sec-hint">Talks you listened to lately</div>
-              </div>
-              {history.length > 0 && <button className="clear-all-pill" onClick={onClearHistory}>{t.clearHistory}</button>}
+            <div className="lib-bar">
+              <span>Talks you listened to lately</span>
+              {history.length > 0 && <button className="lib-clear" onClick={onClearHistory}>{t.clearHistory}</button>}
             </div>
             {history.length === 0 ? (
               <div className="empty-state">Nothing played yet. Talks you listen to will show up here.</div>
@@ -83,12 +69,7 @@ export function SavedScreen({onBack, discourseSeries, videoSeries, savedSeries, 
 
         {tab === 'series' && (
           <>
-            <div className="saved-sec">
-              <div>
-                <div className="saved-sec-title">Saved series</div>
-                <div className="saved-sec-hint">Series you kept with the heart button</div>
-              </div>
-            </div>
+            <div className="lib-bar"><span>Series you kept with the heart button</span></div>
             {saved.length === 0 ? (
               <div className="empty-state">No saved series yet. Tap the heart on any series to keep it here.</div>
             ) : (
@@ -103,12 +84,7 @@ export function SavedScreen({onBack, discourseSeries, videoSeries, savedSeries, 
 
         {tab === 'talks' && (
           <>
-            <div className="saved-sec">
-              <div>
-                <div className="saved-sec-title">Saved talks</div>
-                <div className="saved-sec-hint">Single talks you kept with the heart button</div>
-              </div>
-            </div>
+            <div className="lib-bar"><span>Single talks you kept with the heart button</span></div>
             {savedEpisodes.length === 0 ? (
               <div className="empty-state">No saved talks yet. Tap the heart next to any talk to keep it here.</div>
             ) : (
