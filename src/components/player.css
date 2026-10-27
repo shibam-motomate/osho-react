@@ -1,0 +1,49 @@
+/* ── Player additions: seek bar, pickers, error banner, mini-player progress line.
+   Kept in its own file (imported by FullPlayer.jsx) so styles.css stays untouched. ── */
+
+/* Seek bar (Scrubber.jsx). The outer box is the 32 px hit area; the 6 px track sits inside. */
+.scrub{position:relative;height:32px;display:flex;align-items:center;cursor:pointer;touch-action:none;-webkit-user-select:none;user-select:none;outline:none;}
+.scrub.idle{cursor:default;}
+.scrub-track{position:relative;flex:1;height:6px;border-radius:3px;background:var(--scrub-bg,rgba(255,255,255,0.28));transition:height 0.12s;}
+.scrub.dragging .scrub-track{height:8px;}
+.scrub-fill{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:3px;}
+.scrub-thumb{position:absolute;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;background:var(--scrub-thumb,#FFFFFF);box-shadow:0 2px 8px rgba(0,0,0,0.5);transition:transform 0.12s;}
+.scrub.dragging .scrub-thumb{transform:scale(1.2);}
+.scrub.idle .scrub-thumb{display:none;}
+.scrub:focus-visible .scrub-thumb{outline:3px solid var(--accent);outline-offset:2px;}
+.prog-times.previewing span:first-child{color:#FFFFFF;font-weight:700;}
+
+/* Desktop player bar variant: thinner, thumb shows on hover/drag/focus. */
+.np-scrub{flex:1;height:24px;--scrub-bg:var(--border-strong);--scrub-thumb:var(--ink);}
+.np-scrub .scrub-track{height:4px;}
+.np-scrub .scrub-thumb{width:14px;height:14px;margin:-7px 0 0 -7px;opacity:0;transition:opacity 0.12s;}
+.np-scrub:hover .scrub-thumb,.np-scrub.dragging .scrub-thumb,.np-scrub:focus-visible .scrub-thumb{opacity:1;}
+
+/* Phone mini player: thin progress line along the bottom of the pill. */
+:root{--mini-line:var(--accent);}
+:root[data-theme="light"]{--mini-line:#EE7F90;}
+.np-line{position:absolute;left:22px;right:22px;bottom:5px;height:3px;border-radius:2px;background:rgba(127,127,127,0.28);overflow:hidden;pointer-events:none;}
+.np-line-fill{height:100%;background:var(--mini-line);border-radius:2px;}
+@media(min-width:900px){.np-line{display:none;}}
+.np-err{color:var(--danger);}
+/* On phones the pill uses the opposite colours to the theme (light pill in Dark, dark in Light). */
+@media(max-width:899px){
+  :root:not([data-theme="light"]) .np-err{color:#B3261E;}
+  :root[data-theme="light"] .np-err{color:#FF8A7E;}
+}
+
+/* Full player: error banner above the controls. */
+.pl-error{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:rgba(179,38,30,0.92);color:#FFFFFF;font-size:calc(14px*var(--ts));line-height:1.35;}
+.pl-error span{flex:1;}
+.pl-error button{flex-shrink:0;height:40px;padding:0 16px;border-radius:999px;border:none;background:#FFFFFF;color:#1E1418;font-weight:700;font-size:calc(14px*var(--ts));cursor:pointer;}
+
+/* Picker sheets (speed, sleep timer) reuse .upnext for the sliding panel. */
+.psheet-scrim{position:absolute;inset:0;z-index:4;background:rgba(0,0,0,0.45);opacity:0;pointer-events:none;transition:opacity 0.25s;}
+.psheet-scrim.open{opacity:1;pointer-events:auto;}
+.psheet-list{display:flex;flex-direction:column;gap:8px;padding:4px 20px calc(20px + var(--sab));overflow-y:auto;}
+.psheet-list .opt-row{min-height:52px;font-size:calc(16px*var(--ts));}
+.psheet-note{font-size:calc(14px*var(--ts));color:var(--muted);padding:0 20px 8px;}
+
+/* The player is overflow:hidden, which still lets focus or scrollIntoView scroll it and drag the
+   sheets and photo out of place. clip forbids that. (div.player outranks styles.css's .player.) */
+div.player{overflow:clip;}

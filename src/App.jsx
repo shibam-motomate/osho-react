@@ -14,6 +14,7 @@ import { useAuth } from './contexts/AuthContext.jsx';
 import { OSHO_BOOKS } from './data/oshoBooks.js';
 import { OSHO_VIDEOS_EN, OSHO_VIDEOS_HI } from './data/oshoVideos.js';
 import { installFocusAutoScroll, isTvDevice } from './lib/a11y.js';
+import { readSpeed, saveSpeed } from './lib/playback.js';
 import { getProgress, loadProgress, saveProgress } from './lib/progress.js';
 import { applyTheme, readTheme } from './lib/theme.js';
 import { applyTextSize, readTextSize } from './lib/textsize.js';
@@ -60,7 +61,7 @@ function App() {
   const setTheme = useCallback(next => setThemeState(applyTheme(next)), []);
   const [textSize,    setTextSizeState] = useState(readTextSize); // 'normal' | 'large' | 'xlarge' — Account → Appearance
   const setTextSize = useCallback(next => setTextSizeState(applyTextSize(next)), []);
-  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [playbackSpeed, setPlaybackSpeed] = useState(readSpeed); // remembered across launches
   const [sleepOption, setSleepOptionState] = useState('off'); // 'off' | 15 | 30 | 60 | 'end'
   const [sleepEndAt,  setSleepEndAt] = useState(null);
   const [sleepRemaining, setSleepRemaining] = useState(0);
@@ -100,6 +101,13 @@ function App() {
   const toastTimer = useRef(null);
   const sleepOptionRef = useRef('off');
   const seriesCacheRef = useRef({});
+  const speedRef = useRef(playbackSpeed);
+  // Full player and the browser Back button: opening the player adds a history entry, so
+  // Back (Android, browser, iOS swipe) closes it instead of leaving the screen behind it.
+  const playerOpenRef = useRef(false);
+  const ignorePopRef = useRef(false); // set when we call history.back() ourselves
+  // Shown in the full and mini player when the current talk can't be loaded.
+  const [mediaError, setMediaError] = useState(null);
 
   // Video episodes play through the <video> element (rendered visibly inside FullPlayer),
   // audio discourses through the hidden <audio> element — both stay permanently mounted
@@ -118,12 +126,19 @@ function App() {
   }, []);
 
   const sidebarMode = PROFILE_SCREENS.includes(screen) ? 'profile' : 'browse';
+
+  const pushPath = path => {
+    if (window.history.state?.oshoPlayer) window.history.replaceState({}, '', path);
+    else window.history.pushState({}, '', path);
+  };
   // Which tab screen Series was pushed from, so only that one dims/parallax-shifts
   // behind it (iOS push-navigation feel) — the other tabs stay put, untouched.
   const [pushedFrom, setPushedFrom] = useState('home');
 
   // Real URL navigation — pushes browser history so back/forward and
   // shareable links work, instead of just swapping in-memory screen state.
+  // If the current entry is the full player's (see playerOpenRef), it's replaced rather than
+  // stacked on, so Back from the new screen doesn't land on a stale player entry.
   const navigate = useCallback((nextScreen, series = null) => {
     if (nextScreen === 'series' && screen !== 'series') setPushedFrom(screen);
     setScreen(nextScreen);
@@ -131,7 +146,7 @@ function App() {
     else if (nextScreen === 'home') setSelSeries(null);
     const path = nextScreen === 'series' ? `/series/${encodeURIComponent(series.i)}`
       : nextScreen === 'home' ? '/' : `/${nextScreen}`;
-    if (window.location.pathname !== path) window.history.pushState({}, '', path);
+    if (window.location.pathname !== path) pushPath(path);
   }, [screen]);
 
   // Switching Discourses/Videos is its own top-level route (#/, #/videos), distinct from
@@ -143,7 +158,7 @@ function App() {
     setScreen('home');
     setSelSeries(null);
     const path = ct === 'videos' ? '/videos' : '/';
-    if (window.location.pathname !== path) window.history.pushState({}, '', path);
+    if (window.location.pathname !== path) pushPath(path);
   }, []);
 
   const resolveSeriesById = useCallback(async id => {
@@ -198,7 +213,11 @@ function App() {
       }
     };
     applyPath(window.location.pathname);
-    const onPop = () => applyPath(window.location.pathname);
+    const onPop = () => {
+      if (ignorePopRef.current) { ignorePopRef.current = false; return; }
+      if (playerOpenRef.current) { setPO(false); return; } // Back closes the full player
+      applyPath(window.location.pathname);
+    };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, [resolveSeriesById]);
@@ -273,11 +292,29 @@ function App() {
 
   useEffect(() => { sleepOptionRef.current = sleepOption; }, [sleepOption]);
 
-  // Playback speed
+  // Playback speed. Browsers reset playbackRate to defaultPlaybackRate whenever a new talk
+  // loads, so set both — otherwise every talk after the first silently drops back to 1×.
   useEffect(() => {
-    if (audioRef.current) audioRef.current.playbackRate = playbackSpeed;
-    if (videoRef.current) videoRef.current.playbackRate = playbackSpeed;
+    speedRef.current = playbackSpeed;
+    [audioRef.current, videoRef.current].forEach(el => {
+      if (!el) return;
+      el.defaultPlaybackRate = playbackSpeed;
+      el.playbackRate = playbackSpeed;
+    });
+    saveSpeed(playbackSpeed);
   }, [playbackSpeed]);
+
+  // Full player ↔ browser history (see playerOpenRef).
+  useEffect(() => {
+    playerOpenRef.current = playerOpen;
+    const onPlayerEntry = window.history.state?.oshoPlayer;
+    if (playerOpen && !onPlayerEntry) {
+      window.history.pushState({oshoPlayer: true}, '', window.location.href);
+    } else if (!playerOpen && onPlayerEntry) {
+      ignorePopRef.current = true;
+      window.history.back();
+    }
+  }, [playerOpen]);
 
   // Sleep timer countdown
   useEffect(() => {
@@ -379,7 +416,21 @@ function App() {
       recordProgress(el, np.episode.u);
       if (el.readyState >= 1) localStorage.setItem('osho_time', String(el.currentTime)); // Home hero resumes exactly here
     };
-    const onPlay  = () => { setPlay(true); setMsState('playing'); };
+    const onPlay  = e => {
+      setPlay(true); setMsState('playing');
+      if (e.target.playbackRate !== speedRef.current) e.target.playbackRate = speedRef.current;
+    };
+    // A talk that can't load (offline, archive.org down, file gone) used to fail silently.
+    const onError = e => {
+      const el = e.target, np = npRef.current;
+      if (!np || el !== mediaRefFor(np.series.i).current || !el.getAttribute('src')) return;
+      if (el.error?.code === 1) return; // MEDIA_ERR_ABORTED: superseded by a newer talk
+      setPlay(false); setMsState('paused');
+      setMediaError(navigator.onLine === false
+        ? "You're offline. Connect to the internet and try again."
+        : "This talk couldn't be loaded. Please try again.");
+    };
+    const onLoadStart = () => setMediaError(null);
     const onPause = e => { setPlay(false); setMsState('paused'); saveFrom(e.target); };
     const onEnded = e => {
       saveFrom(e.target);
@@ -395,11 +446,17 @@ function App() {
       el.addEventListener('play', onPlay);
       el.addEventListener('pause', onPause);
       el.addEventListener('ended', onEnded);
+      el.addEventListener('error', onError);
+      el.addEventListener('loadstart', onLoadStart);
+      el.addEventListener('playing', onLoadStart);
     });
     return () => els.forEach(el => {
       el.removeEventListener('play', onPlay);
       el.removeEventListener('pause', onPause);
       el.removeEventListener('ended', onEnded);
+      el.removeEventListener('error', onError);
+      el.removeEventListener('loadstart', onLoadStart);
+      el.removeEventListener('playing', onLoadStart);
     });
   }, [onNext, mediaRefFor, recordProgress]);
 
@@ -471,12 +528,27 @@ function App() {
     isPlaying ? media.pause() : media.play().catch(() => {});
   }, [isPlaying, nowPlaying, mediaRefFor]);
 
+  // Previous works like every music/podcast app: more than a few seconds into a talk it goes
+  // back to the start of that talk; near the start (or on the first talk) it goes back a talk.
   const onPrev = useCallback(() => {
     if (!nowPlaying) return;
+    const media = mediaRefFor(nowPlaying.series.i).current;
     const eps = nowPlaying.series.e;
     const idx = eps.findIndex(e => e.u === nowPlaying.episode.u);
-    if (idx > 0) playEp(nowPlaying.series, eps[idx - 1]);
-  }, [nowPlaying, playEp]);
+    if (idx <= 0 || (media && media.currentTime > 5)) {
+      if (media) media.currentTime = 0;
+      return;
+    }
+    playEp(nowPlaying.series, eps[idx - 1]);
+  }, [nowPlaying, playEp, mediaRefFor]);
+
+  // "Try again" after a load error: reload the same talk from its saved position.
+  const retryPlay = useCallback(() => {
+    const np = npRef.current;
+    if (!np) return;
+    setMediaError(null);
+    playEp(np.series, np.episode);
+  }, [playEp]);
 
   const onSeekSeconds = useCallback(delta => {
     if (!nowPlaying) return;
@@ -787,7 +859,7 @@ function App() {
             activePill={activePill} setActivePill={setPill} discLang={discLang} setDiscLang={setDiscLang} contentType={contentType} search={search} nowPlaying={clDismissed ? null : nowPlaying} audioPct={audioPct} onResume={onResume} onDismissCL={() => setCLD(true)} savedSeries={savedSeries} onToggleSave={toggleSaveSeries} setSearch={setSearch} searchOpen={mobSearchOpen} setSearchOpen={setMobSearchOpen} t={t} isDesktop={isDesktop}/>
         </div>
         <div className={serClass}>
-          {selSeries && <SeriesScreen series={selSeries} onBack={() => navigate('home')} onEpisode={ep => { playEp(selSeries, ep); setPO(true); }} onOpenPlayer={() => setPO(true)}
+          {selSeries && <SeriesScreen series={selSeries} onBack={() => navigate('home')} onEpisode={ep => { playEp(selSeries, ep); setPO(true); }} onOpenPlayer={() => setPO(true)} onTogglePlay={onTogglePlay}
             currentEp={nowPlaying?.series?.i === selSeries?.i ? nowPlaying?.episode : null} isPlaying={isPlaying} audioPct={audioPct}
             saved={savedSeries.has(selSeries.i)} onToggleSave={toggleSaveSeries} onShare={shareApp}
             savedEpisodeUrls={savedEpisodeUrls} onToggleSaveEpisode={toggleSaveEpisode} progress={progress} t={t}/>}
@@ -817,13 +889,14 @@ function App() {
         onClose={closeMini} onOpenSeries={() => { if (nowPlaying) navigate('series', nowPlaying.series); }}
         liked={nowPlaying ? savedEpisodeUrls.has(nowPlaying.episode.u) : false}
         onToggleLike={() => { if (nowPlaying) toggleSaveEpisode(nowPlaying.series, nowPlaying.episode); }}
-        audioRef={audioRef} videoRef={videoRef} isDesktop={isDesktop}/>
+        audioRef={audioRef} videoRef={videoRef} isDesktop={isDesktop} mediaError={mediaError} onRetry={retryPlay}/>
       <MobileNav screen={screen} contentType={contentType} onSelectContentType={selectContentType} t={t}
         onOpenSaved={() => navigate('saved')} onOpenHistory={() => navigate('history')}
         onAccount={() => navigate('account')}/>
       <FullPlayer open={playerOpen} onClose={() => setPO(false)} nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} audioRef={audioRef} videoRef={videoRef} onPrev={onPrev} onNext={onNext} onSeekSeconds={onSeekSeconds} t={t} isDesktop={isDesktop}
         playbackSpeed={playbackSpeed} setPlaybackSpeed={setPlaybackSpeed}
         sleepOption={sleepOption} setSleepOption={setSleepOption} sleepRemaining={sleepRemaining}
+        mediaError={mediaError} onRetry={retryPlay}
         episodeIndex={episodeIndex} totalEpisodes={nowPlaying?.series?.e?.length || 0}
         onOpenSeries={() => { if (nowPlaying) { navigate('series', nowPlaying.series); setPO(false); } }}
         onPlayEpisode={ep => { if (nowPlaying) playEp(nowPlaying.series, ep); }}
