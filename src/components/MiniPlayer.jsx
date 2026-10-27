@@ -1,58 +1,33 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { isVideoId } from '../config.js';
-import { IcoDown, IcoHeart, IcoNext, IcoPause, IcoPlay, IcoPrev, IcoX } from './Icons.jsx';
+import { useMediaState } from '../lib/useMediaState.js';
+import { IcoDown, IcoHeart, IcoNext, IcoPause, IcoPlay, IcoPrev, IcoSkipBack, IcoSkipFwd, IcoX } from './Icons.jsx';
+import { LoadRing } from './LoadRing.jsx';
+import { Scrubber } from './Scrubber.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
 
 const fmt = s => { s = Math.floor(s || 0); const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60; return h > 0 ? `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}` : `${m}:${String(sec).padStart(2,'0')}`; };
 
-/* ── Mini player. Phone: a floating pill above the tab bar (art, title, play, close).
-   Desktop: a docked bar with transport and seek. Tapping it opens the full player. ── */
-export function MiniPlayer({nowPlaying, isPlaying, onTogglePlay, onPrev, onNext, onOpen, onClose, onOpenSeries, liked, onToggleLike, audioRef, videoRef, isDesktop}) {
-  const [pct, setPct] = useState(0);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [buffering, setBuffering] = useState(false);
+/* ── Mini player. Phone: a floating pill above the tab bar (art, title, play, close) with a
+   thin progress line (it shimmers while a talk is loading). Desktop: a docked bar with
+   previous · back 10 s · play · forward 10 s · next, and the seek bar. Tapping it opens the
+   full player. If the talk failed to load, the subtitle says so and play becomes "retry". ── */
+export function MiniPlayer({nowPlaying, isPlaying, onTogglePlay, onPrev, onNext, onSeekSeconds, onOpen, onClose, onOpenSeries, liked, onToggleLike, audioRef, videoRef, isDesktop,
+  mediaError, onRetry}) {
+  const {currentTime, duration, loading, bufferedEnd, loadPct} = useMediaState(audioRef, videoRef);
+  const [previewTime, setPreviewTime] = useState(null); // while dragging the desktop seek bar
 
   const isVideo = !!nowPlaying && isVideoId(nowPlaying.series.i);
   const activeRef = isVideo ? videoRef : audioRef;
 
-  useEffect(() => {
-    const onTime  = e => { setCurrentTime(e.target.currentTime); if (e.target.duration > 0) setPct((e.target.currentTime / e.target.duration) * 100); };
-    const onDur   = e => setDuration(e.target.duration || 0);
-    const onWait  = () => setBuffering(true);
-    const onReady = () => setBuffering(false);
-    const els = [audioRef.current, videoRef.current].filter(Boolean);
-    els.forEach(el => {
-      el.addEventListener('timeupdate', onTime);
-      el.addEventListener('durationchange', onDur);
-      el.addEventListener('loadedmetadata', onDur);
-      el.addEventListener('waiting', onWait);
-      el.addEventListener('canplay', onReady);
-      el.addEventListener('playing', onReady);
-    });
-    return () => els.forEach(el => {
-      el.removeEventListener('timeupdate', onTime);
-      el.removeEventListener('durationchange', onDur);
-      el.removeEventListener('loadedmetadata', onDur);
-      el.removeEventListener('waiting', onWait);
-      el.removeEventListener('canplay', onReady);
-      el.removeEventListener('playing', onReady);
-    });
-  }, [audioRef, videoRef]);
-
-  const handleSeek = e => {
-    e.stopPropagation();
-    if (!duration) return;
-    const r = e.currentTarget.getBoundingClientRect();
-    const newTime = Math.max(0, Math.min(duration, ((e.clientX - r.left) / r.width) * duration));
-    if (activeRef.current) activeRef.current.currentTime = newTime;
-    setCurrentTime(newTime);
-    setPct((newTime / duration) * 100);
-  };
+  const seekTo = time => { if (activeRef.current) activeRef.current.currentTime = time; };
+  const pct = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
+  const showLoading = !mediaError && !!nowPlaying && loading && isPlaying;
 
   const playBtn = cls => (
-    <button className={cls} onClick={e => { e.stopPropagation(); onTogglePlay(); }} aria-label={isPlaying ? 'Pause' : 'Play'}>
-      {buffering && isPlaying ? <div className="np-buf"/> : isPlaying ? <IcoPause s={22}/> : <IcoPlay s={24}/>}
+    <button className={cls} onClick={e => { e.stopPropagation(); mediaError ? onRetry?.() : onTogglePlay(); }}
+      aria-label={mediaError ? 'Try again' : isPlaying ? 'Pause' : 'Play'}>
+      {showLoading ? <LoadRing pct={loadPct} size={30}/> : isPlaying ? <IcoPause s={20}/> : <IcoPlay s={22}/>}
     </button>
   );
 
@@ -62,7 +37,9 @@ export function MiniPlayer({nowPlaying, isPlaying, onTogglePlay, onPrev, onNext,
         {nowPlaying && <SeriesImg series={nowPlaying.series} img={isVideo ? nowPlaying.episode.img : undefined} className="np-art"/>}
         <div className="np-info">
           <div className="np-ttl">{nowPlaying?.episode?.t}</div>
-          <div className="np-ser" onClick={e => { e.stopPropagation(); onOpenSeries?.(); }}>{nowPlaying?.series?.n}</div>
+          {mediaError
+            ? <div className="np-ser np-err" role="alert">Couldn't load · tap play to retry</div>
+            : <div className="np-ser" onClick={e => { e.stopPropagation(); onOpenSeries?.(); }}>{nowPlaying?.series?.n}</div>}
         </div>
         {!isDesktop && (
           <>
@@ -72,17 +49,24 @@ export function MiniPlayer({nowPlaying, isPlaying, onTogglePlay, onPrev, onNext,
         )}
       </div>
 
+      {!isDesktop && nowPlaying && (
+        <div className={`np-line${showLoading ? ' loading' : ''}`} aria-hidden="true"><div className="np-line-fill" style={{width:`${showLoading ? loadPct : pct}%`}}/></div>
+      )}
+
       {isDesktop && (
         <>
           <div className="np-center">
             <div className="np-center-transport">
-              <button className="np-btn" onClick={e => { e.stopPropagation(); onPrev(); }} aria-label="Previous talk"><IcoPrev s={26}/></button>
+              <button className="np-btn" onClick={e => { e.stopPropagation(); onPrev(); }} aria-label="Previous talk"><IcoPrev s={24}/></button>
+              <button className="np-btn" onClick={e => { e.stopPropagation(); onSeekSeconds?.(-10); }} aria-label="Back 10 seconds"><IcoSkipBack s={30}/></button>
               {playBtn('np-center-play')}
-              <button className="np-btn" onClick={e => { e.stopPropagation(); onNext(); }} aria-label="Next talk"><IcoNext s={26}/></button>
+              <button className="np-btn" onClick={e => { e.stopPropagation(); onSeekSeconds?.(10); }} aria-label="Forward 10 seconds"><IcoSkipFwd s={30}/></button>
+              <button className="np-btn" onClick={e => { e.stopPropagation(); onNext(); }} aria-label="Next talk"><IcoNext s={24}/></button>
             </div>
             <div className="np-center-seek">
-              <span className="np-time-sm">{fmt(currentTime)}</span>
-              <div className="np-seek" onClick={handleSeek}><div className="np-seek-fill" style={{width:`${pct}%`}}/></div>
+              <span className="np-time-sm">{showLoading && previewTime == null ? `Loading ${loadPct}%` : fmt(previewTime ?? currentTime)}</span>
+              <Scrubber className="np-scrub" currentTime={currentTime} duration={duration} bufferedEnd={bufferedEnd} loading={showLoading}
+                onSeek={seekTo} onPreview={setPreviewTime} label="Position in talk"/>
               <span className="np-time-sm">{fmt(duration)}</span>
             </div>
           </div>

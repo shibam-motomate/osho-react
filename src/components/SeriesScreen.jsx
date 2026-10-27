@@ -15,7 +15,7 @@ export const fmtDur = d => {
 
 /* ── Series: full-bleed cover with the title on it, one big Continue/Play button,
    then every talk as a row with its own play circle. ── */
-export function SeriesScreen({series, onBack, onEpisode, onOpenPlayer, currentEp, isPlaying, audioPct, saved, onToggleSave, onShare, savedEpisodeUrls, onToggleSaveEpisode, progress = {}, t}) {
+export function SeriesScreen({series, onBack, onEpisode, onOpenPlayer, onTogglePlay, currentEp, isPlaying, audioPct, saved, onToggleSave, onShare, savedEpisodeUrls, onToggleSaveEpisode, progress = {}, t}) {
   const [epQ, setEpQ] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const isVideo = isVideoId(series.i);
@@ -39,7 +39,12 @@ export function SeriesScreen({series, onBack, onEpisode, onOpenPlayer, currentEp
   const primaryLabel = resumeEp
     ? (resumeLeft > 0 ? `${t.continueTalk(resumeIdx + 1)} · ${t.minLeft(resumeLeft)}` : t.continueTalk(resumeIdx + 1))
     : t.playFromStart;
-  const primaryAction = () => { if (curIdx >= 0) onOpenPlayer(); else onEpisode(resumeEp || episodes[0]); };
+  // "Continue" on the talk already in the player resumes it (it used to only open the player, paused).
+  const primaryAction = () => {
+    if (curIdx < 0) { onEpisode(resumeEp || episodes[0]); return; }
+    onOpenPlayer();
+    if (!isPlaying) onTogglePlay?.();
+  };
 
   return (
     <div>
