@@ -49,6 +49,16 @@ export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, acti
   const [quote] = useState(() => OSHO_QUOTES[Math.floor(Math.random() * OSHO_QUOTES.length)]);
   const inputRef = useRef(null);
   const secRef = useRef(null);
+  const sentinelRef = useRef(null);
+  // Is the title row pinned to the top? A 1 px marker just above it leaves the screen when it is.
+  const [stuck, setStuck] = useState(false);
+  useEffect(() => {
+    const el = sentinelRef.current, root = el?.closest('.screen');
+    if (!el || !root || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(([e]) => setStuck(!e.isIntersecting && e.boundingClientRect.top < (e.rootBounds?.top ?? 0)), {root});
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   const [topicOpen, setTopicOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [sort, setSort] = useState(readSort);
@@ -74,8 +84,8 @@ export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, acti
   useEffect(() => {
     if (!searchOpen) return;
     const row = secRef.current, box = row?.closest('.screen');
-    // +1: the row pins at -1px so the edge of the topic button above can't peek through.
-    const offset = () => row.getBoundingClientRect().top - box.getBoundingClientRect().top + 1;
+    // Scroll until the row is pinned (its sticky top is slightly negative, see .sec-head).
+    const offset = () => row.getBoundingClientRect().top - box.getBoundingClientRect().top - (parseFloat(getComputedStyle(row).top) || 0);
     if (row && box) box.scrollTo({top: box.scrollTop + offset(), behavior: 'smooth'});
     const id = setTimeout(() => {
       // A list re-render can cut the smooth scroll short; finish it if so.
@@ -211,8 +221,9 @@ export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, acti
         )}
 
         {/* Title, sort and (phones) a search button that slides open to the left over the row.
-            While searching, the row stays pinned to the top of the screen. */}
-        <div className={`sec-head${searchOpen ? ' searching' : ''}`} ref={secRef}>
+            The row sticks to the top of the screen while the list scrolls. */}
+        <div className="sec-sentinel" ref={sentinelRef} aria-hidden="true"/>
+        <div className={`sec-head${searchOpen ? ' searching' : ''}${stuck ? ' stuck' : ''}`} ref={secRef}>
           <div className="sec-row">
             <h1 className="sec-title" aria-hidden={searchOpen || undefined}>
               {search.trim() ? `“${search.trim()}”` : activePill === 'all' ? pageTitle : (t.genres[activePill] || activePill)}
