@@ -448,23 +448,52 @@ function App() {
       }
       onNext();
     };
+
+    // End-of-talk safeguard. iPhone Safari sometimes never fires 'ended' on these MP3s: it
+    // reaches the talk's (estimated) last second and then sits there, retrying the download,
+    // so the next talk never starts. So a talk also counts as finished when it's playing in
+    // its last second and either stalls there or its time stops moving for two seconds.
+    // Each loaded talk is finished once, whichever of the real event or the safeguard is first.
     const els = [audioRef.current, videoRef.current].filter(Boolean);
+    const finishedSrc = new WeakMap();
+    const finish = el => {
+      if (finishedSrc.get(el) === el.src) return;
+      finishedSrc.set(el, el.src);
+      const src = el.src;
+      onEnded({target: el});
+      if (el.src === src && !el.paused) el.pause(); // nothing to move on to: stop the stalled tail
+    };
+    const atEnd = el => Number.isFinite(el.duration) && el.duration > 0 && el.currentTime >= el.duration - 1;
+    const onRealEnd = e => finish(e.target);
+    const onStallAtEnd = e => { if (!e.target.paused && atEnd(e.target)) finish(e.target); };
+    const lastSeen = new Map();
+    const watchdog = setInterval(() => els.forEach(el => {
+      if (el.paused || !el.getAttribute('src') || !atEnd(el)) { lastSeen.delete(el); return; }
+      const seen = lastSeen.get(el);
+      if (seen && Math.abs(el.currentTime - seen.t) < 0.05) { if (++seen.ticks >= 2) finish(el); }
+      else lastSeen.set(el, {t: el.currentTime, ticks: 0});
+    }), 1000);
+
     els.forEach(el => {
       el.addEventListener('play', onPlay);
       el.addEventListener('pause', onPause);
-      el.addEventListener('ended', onEnded);
+      el.addEventListener('ended', onRealEnd);
+      el.addEventListener('waiting', onStallAtEnd);
+      el.addEventListener('stalled', onStallAtEnd);
       el.addEventListener('error', onError);
       el.addEventListener('loadstart', onLoadStart);
       el.addEventListener('playing', onLoadStart);
     });
-    return () => els.forEach(el => {
+    return () => { clearInterval(watchdog); els.forEach(el => {
       el.removeEventListener('play', onPlay);
       el.removeEventListener('pause', onPause);
-      el.removeEventListener('ended', onEnded);
+      el.removeEventListener('ended', onRealEnd);
+      el.removeEventListener('waiting', onStallAtEnd);
+      el.removeEventListener('stalled', onStallAtEnd);
       el.removeEventListener('error', onError);
       el.removeEventListener('loadstart', onLoadStart);
       el.removeEventListener('playing', onLoadStart);
-    });
+    }); };
   }, [onNext, mediaRefFor, recordProgress]);
 
   const playEp = useCallback((series, episode) => {
