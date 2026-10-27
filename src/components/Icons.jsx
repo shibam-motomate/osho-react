@@ -4,14 +4,15 @@ const Svg = ({s, children, fillRule}) => <svg width={s} height={s} viewBox="0 0 
 
 export const IcoSearch = ({s=17}) => <Svg s={s}><path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" d="M6 11.5a5.5 5.5 0 1 0 0-11a5.5 5.5 0 0 0 0 11m7.5 2L10 10"/></Svg>;
 export const IcoBack = ({s=22}) => <Svg s={s}><path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" d="M10.15.5L4 6.65a.48.48 0 0 0 0 .7l6.15 6.15"/></Svg>;
-/* Play / pause, drawn for round buttons. The triangle is optically centred (its centroid,
-   not its bounding box, sits in the middle, so it's nudged right) with softened corners;
+/* Play / pause, drawn for round buttons. The triangle is nudged right of its box centre by
+   about a tenth of its width (like Apple's play symbol): fully centred on its bounding box it
+   looks left-heavy, centred on its centroid it looks pushed right on small phone buttons;
    the pause bars are slimmer than before so the two icons carry the same visual weight.
    The viewBox crops to the glyph area, so `s` stays roughly the glyph's size. */
 export const IcoPlay = ({s=24}) => (
   <svg width={s} height={s} viewBox="3 3 18 18" aria-hidden="true" focusable="false">
     <path fill="currentColor" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"
-      d="M8.6 5.6v12.8a.9.9 0 0 0 1.37.77l10.1-6.4a.9.9 0 0 0 0-1.54L9.97 4.83a.9.9 0 0 0-1.37.77z"/>
+      d="M7.55 5.6v12.8a.9.9 0 0 0 1.37.77l10.1-6.4a.9.9 0 0 0 0-1.54L8.92 4.83a.9.9 0 0 0-1.37.77z"/>
   </svg>
 );
 export const IcoPause = ({s=24}) => (

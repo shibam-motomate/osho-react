@@ -481,6 +481,18 @@ img{display:block;}
 .psheet-list .opt-row{min-height:52px;font-size:calc(16px*var(--ts));}
 .psheet-list .opt-row-txt{flex-direction:row;align-items:baseline;gap:8px;} /* "1× Normal" on one line */
 .psheet-note{font-size:calc(14px*var(--ts));color:var(--muted);padding:0 20px 8px;}
+/* Speed and Sleep sheets: big current value, a sliding pill (SegSlider.jsx), Done. */
+.psheet-body{display:flex;flex-direction:column;gap:14px;padding:4px 20px calc(20px + var(--sab));}
+.psheet-value{font-family:var(--font-serif);font-weight:500;font-size:calc(34px*var(--ts));line-height:1.1;color:var(--ink);text-align:center;font-variant-numeric:tabular-nums;}
+.psheet-value small{display:block;margin-top:6px;font-family:var(--font);font-size:calc(14px*var(--ts));font-weight:500;color:var(--muted);}
+.psheet-done{height:52px;border:none;border-radius:999px;background:var(--surface2);color:var(--ink);font-size:calc(16px*var(--ts));font-weight:600;cursor:pointer;}
+.segs{--n:6;--i:0;position:relative;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));padding:4px;border-radius:999px;background:var(--bg);border:1px solid var(--border);touch-action:none;-webkit-user-select:none;user-select:none;}
+.segs-thumb{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px) / var(--n));transform:translateX(calc(var(--i) * 100%));border-radius:999px;background:var(--accent);box-shadow:0 2px 10px rgba(0,0,0,0.3);transition:transform 0.22s cubic-bezier(.22,.61,.36,1);}
+.segs button{position:relative;z-index:1;min-width:0;height:44px;padding:0 2px;border:none;border-radius:999px;background:none;color:var(--text2);font-size:calc(15px*var(--ts));font-weight:600;font-variant-numeric:tabular-nums;cursor:pointer;transition:color 0.18s;}
+.segs button.on{color:var(--on-accent);}
+.segs button:focus-visible{outline:2px solid var(--accent-text);outline-offset:2px;}
+.segs-ends{display:flex;justify-content:space-between;margin-top:-6px;padding:0 10px;font-size:calc(12px*var(--ts));color:var(--muted);}
+@media(prefers-reduced-motion:reduce){.segs-thumb{transition:none;}}
 
 
 /* ── Transport row: previous · back 10 · play · forward 10 · next, on an even 5-column grid

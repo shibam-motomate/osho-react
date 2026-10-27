@@ -54,10 +54,10 @@ export function SeriesScreen({series, onBack, onEpisode, onOpenPlayer, onToggleP
         <div className="cover-top">
           <button className="back-btn on-photo" onClick={onBack}><IcoBack/>{t.back}</button>
           <div style={{display:'flex',gap:8}}>
+            <button className="icon-btn on-photo" aria-label="Share" onClick={onShare}><IcoShare s={20}/></button>
             <button className="btn-pill on-photo" aria-label={saved ? 'Remove from saved' : 'Save series'} onClick={() => onToggleSave(series.i)}>
               <IcoHeart s={20} filled={saved}/>{saved ? t.savedBtn : t.saveBtn}
             </button>
-            <button className="icon-btn on-photo" aria-label="Share" onClick={onShare}><IcoShare s={20}/></button>
           </div>
         </div>
         <div className="cover-bottom">

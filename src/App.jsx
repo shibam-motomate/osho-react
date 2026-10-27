@@ -604,6 +604,7 @@ function App() {
   const setSleepOption = useCallback(opt => {
     setSleepOptionState(opt);
     setSleepEndAt(opt === 'off' || opt === 'end' ? null : Date.now() + opt * 60000);
+    setSleepRemaining(opt === 'off' || opt === 'end' ? 0 : opt * 60); // show the full time at once, not 0:00 until the first tick
   }, []);
 
   // Keyboard shortcuts: Space play/pause, Left/Right seek 10s. On TV browsers these
