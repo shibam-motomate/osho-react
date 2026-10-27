@@ -642,21 +642,29 @@ img{display:block;}
 .gh-nav-ai{display:inline-flex;align-items:center;gap:6px;}
 /* ── Ask AI (coming soon), like a chat assistant's home: a rose glow over the page, a badge top
    right, a big greeting, then four feeling cards and the input bar at the bottom. ── */
-.ai-page{position:relative;flex:1;display:flex;flex-direction:column;min-height:100%;isolation:isolate;}
+/* .ai-fold is exactly one screen tall (100 % of the screen's content box), so the hint line
+   after it starts just below the bottom edge. */
+.ai-fold{position:relative;flex:0 0 auto;display:flex;flex-direction:column;min-height:100%;isolation:isolate;}
 .ai-glow{position:absolute;inset:0;z-index:-1;pointer-events:none;
   background:radial-gradient(120% 70% at 85% -5%,color-mix(in srgb,var(--accent) 55%,transparent) 0%,transparent 60%),
              radial-gradient(90% 60% at 0% 30%,color-mix(in srgb,var(--gold) 18%,transparent) 0%,transparent 65%),
              linear-gradient(180deg,color-mix(in srgb,var(--accent) 22%,var(--bg)) 0%,var(--bg) 70%);}
 :root[data-theme="light"] .ai-glow{opacity:0.75;}
-.ai-wrap{flex:1;width:100%;max-width:640px;margin:0 auto;display:flex;flex-direction:column;padding:calc(14px + env(safe-area-inset-top)) 20px 10px;}
+.ai-wrap{flex:1;width:100%;max-width:640px;margin:0 auto;display:flex;flex-direction:column;padding:8px 20px 10px;}
 @media(min-width:900px){.ai-wrap{padding:28px 32px 20px;}}
 /* Badge centred at the top; the greeting, large and left-aligned, sits just above the cards.
    Sized so the page fits the screen without scrolling (it still scrolls on very short screens). */
-.ai-top{display:flex;justify-content:center;padding-top:4px;}
-.ai-badge{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 14px 0 11px;border-radius:999px;color:#FFFFFF;font-size:13px;font-weight:700;letter-spacing:0.3px;
-  background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 55%,var(--gold)));box-shadow:0 6px 18px color-mix(in srgb,var(--accent) 35%,transparent);}
-.ai-badge.pulse{animation:ai-pulse 0.6s ease;}
-@keyframes ai-pulse{0%{transform:scale(1)}35%{transform:scale(1.1)}100%{transform:scale(1)}}
+/* Looping "coming soon" banner pinned to the top of the page (below the notch on phones). */
+.ai-ticker{position:sticky;top:0;z-index:6;overflow:hidden;padding-top:env(safe-area-inset-top);color:#FFFFFF;
+  background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 60%,var(--gold)) 50%,var(--accent));box-shadow:0 4px 18px color-mix(in srgb,var(--accent) 30%,transparent);}
+.ai-ticker-track{display:flex;width:max-content;animation:ai-ticker 28s linear infinite;}
+.ai-ticker-half{display:flex;flex-shrink:0;}
+.ai-tick{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 18px;font-size:13px;font-weight:700;letter-spacing:0.4px;white-space:nowrap;}
+.ai-tick:lang(hi){letter-spacing:0;font-size:14px;}
+.ai-tick svg{opacity:0.85;}
+@keyframes ai-ticker{to{transform:translateX(-50%);}}
+.ai-ticker.flash{animation:ai-flash 0.7s ease;}
+@keyframes ai-flash{0%{filter:brightness(1)}30%{filter:brightness(1.35) saturate(1.2)}100%{filter:brightness(1)}}
 /* "Namaste." keeps its size; the question under it is the big line. */
 .ai-hello{margin:auto 0 22px;padding-top:24px;font-family:var(--font);font-weight:600;font-size:calc(42px*var(--ts));line-height:1.1;letter-spacing:-1px;color:var(--ink);}
 .ai-hello-name{display:block;margin-bottom:4px;font-family:var(--font-serif);font-style:italic;font-weight:500;font-size:calc(34px*var(--ts));line-height:1.15;letter-spacing:-0.5px;color:var(--accent-text);}
@@ -682,7 +690,7 @@ img{display:block;}
    The ring is a conic gradient masked down to a 1.5 px border; --beam turns it. Still when the
    phone asks for reduced motion. */
 @property --beam{syntax:'<angle>';initial-value:0deg;inherits:false;}
-.ai-beam{position:relative;border-radius:999px;isolation:isolate;}
+.ai-beam{position:sticky;bottom:10px;z-index:4;border-radius:999px;isolation:isolate;}
 .ai-beam .ai-bar{position:relative;z-index:1;}
 .ai-beam::before,.ai-beam::after{content:'';position:absolute;border-radius:999px;pointer-events:none;
   background:conic-gradient(from var(--beam),transparent 0deg,transparent 200deg,color-mix(in srgb,var(--gold) 85%,transparent) 270deg,var(--accent) 315deg,transparent 360deg);
@@ -700,10 +708,20 @@ img{display:block;}
 .ai-mic{background:transparent;color:var(--text2);}
 .ai-send{background:color-mix(in srgb,var(--ink) 12%,transparent);color:var(--muted);transition:background 0.15s,color 0.15s;}
 .ai-send.ready{background:var(--accent);color:var(--on-accent);}
-.ai-note{margin:0;text-align:center;font-size:13px;color:var(--muted);transition:color 0.2s;}
-.ai-note.show{color:var(--accent-text);font-weight:600;}
+.ai-note{margin:0;padding:6px 20px 18px;text-align:center;font-size:13px;color:var(--muted);}
+/* The tab bar and mini player float over the bottom of the screen and are see-through, so the
+   hint starts below them too: it shows only when the page is scrolled to its end. */
+.ai-note{margin-top:calc(var(--mnav-h) + var(--sab));}
+#app.has-np .ai-note{margin-top:calc(var(--mnav-h) + var(--mini-h) + 24px + var(--sab));}
+@media(min-width:900px){.ai-note{margin-top:0;}#app.has-np .ai-note{margin-top:calc(var(--ph) + 36px);}}
+/* "Coming soon" bubble just above the chat box after a tap. */
+.ai-toast{position:absolute;left:50%;bottom:calc(100% + 10px);z-index:3;margin:0;padding:8px 14px;border-radius:999px;white-space:nowrap;max-width:calc(100vw - 40px);overflow:hidden;text-overflow:ellipsis;
+  background:var(--toast-bg);color:var(--toast-ink);font-size:13px;font-weight:600;box-shadow:var(--shadow-lg);pointer-events:none;
+  opacity:0;transform:translate(-50%,6px);transition:opacity 0.2s,transform 0.2s;}
+.ai-toast.show{opacity:1;transform:translate(-50%,0);}
+.ai-toast:empty{padding:0;}
 @media(prefers-reduced-motion:reduce){.ai-q{animation:none;}}
-@media(prefers-reduced-motion:reduce){.ai-badge.pulse{animation:none;}}
+@media(prefers-reduced-motion:reduce){.ai-ticker-track,.ai-ticker.flash{animation:none;}}
 /* Library: sliding Recent · Series · Talks switch, then a one-line hint (with Clear for recent). */
 .lib-wrap .segs{background:var(--surface);max-width:480px;}
 .segs-count{margin-left:6px;font-weight:500;opacity:0.75;}
