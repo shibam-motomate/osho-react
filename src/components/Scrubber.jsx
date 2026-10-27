@@ -16,8 +16,10 @@ const spoken = s => {
    track so it's easy to grab. While dragging, the position only previews (onPreview lets the
    parent show the time under the finger) and the seek happens on release, so audio doesn't
    stutter through every intermediate point. Keyboard: ←/→ 10 s, PgUp/PgDn 1 min, Home/End.
-   Its own key handling stops the app-wide ←/→ (30 s) shortcut from also firing. ── */
-export function Scrubber({currentTime, duration, onSeek, onPreview, className = '', label = 'Position'}) {
+   Its own key handling stops the app-wide ←/→ shortcut from also firing.
+   A lighter bar shows how much of the talk has downloaded (like YouTube); while a talk is
+   starting and its length isn't known yet, a moving shimmer shows that it's loading. ── */
+export function Scrubber({currentTime, duration, bufferedEnd = 0, loading = false, onSeek, onPreview, className = '', label = 'Position'}) {
   const [drag, setDrag] = useState(null); // seconds under the pointer while dragging
   const dragRef = useRef(null);           // same value, readable synchronously by event handlers
   const ref = useRef(null);
@@ -61,17 +63,19 @@ export function Scrubber({currentTime, duration, onSeek, onPreview, className = 
 
   const shown = drag ?? currentTime;
   const pct = ready ? Math.min(100, (shown / duration) * 100) : 0;
+  const bufPct = ready ? Math.min(100, (bufferedEnd / duration) * 100) : 0;
 
   return (
-    <div className={`scrub${drag != null ? ' dragging' : ''}${ready ? '' : ' idle'} ${className}`}
+    <div className={`scrub${drag != null ? ' dragging' : ''}${ready ? '' : ' idle'}${loading ? ' loading' : ''} ${className}`}
       ref={ref}
       role="slider" tabIndex={ready ? 0 : -1} aria-label={label}
       aria-valuemin={0} aria-valuemax={Math.floor(duration || 0)} aria-valuenow={Math.floor(shown || 0)}
-      aria-valuetext={ready ? `${spoken(shown)} of ${spoken(duration)}` : 'Loading'}
+      aria-valuetext={ready ? `${spoken(shown)} of ${spoken(duration)}` : 'Loading'} aria-busy={loading}
       onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
       onPointerCancel={() => end(false)} onLostPointerCapture={() => end(true)}
       onClick={e => e.stopPropagation()} onKeyDown={onKeyDown}>
       <div className="scrub-track">
+        <div className="scrub-buf" style={{width: `${bufPct}%`}}/>
         <div className="scrub-fill" style={{width: `${pct}%`}}/>
         <div className="scrub-thumb" style={{left: `${pct}%`}}/>
       </div>

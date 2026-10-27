@@ -44,3 +44,19 @@ export const Wave = () => <div className="wave"><b/><b/><b/></div>;
 export const IcoMoreVert = ({s=16}) => <Svg s={s}><circle cx="7" cy="2" r="1.25" fill="currentColor"/><circle cx="7" cy="7" r="1.25" fill="currentColor"/><circle cx="7" cy="12" r="1.25" fill="currentColor"/></Svg>;
 export const IcoPlusSquare = ({s=16}) => <Svg s={s}><rect x="1" y="1" width="12" height="12" rx="2" fill="none" stroke="currentColor"/><path fill="none" stroke="currentColor" strokeLinecap="round" d="M7 4v6M4 7h6"/></Svg>;
 export const IcoPhone = ({s=22}) => <Svg s={s}><rect x="3" y="0.5" width="8" height="13" rx="1.6" fill="none" stroke="currentColor"/><path fill="none" stroke="currentColor" strokeLinecap="round" d="M6 11.25h2"/></Svg>;
+
+/* Skip back / forward N seconds: circular arrow with the number inside (standard podcast-app
+   glyph). Drawn on a 24-unit grid; the forward one mirrors the arrow but not the number. */
+const SkipGlyph = ({s, n, fwd}) => (
+  <svg width={s} height={s} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"
+      transform={fwd ? 'translate(24 0) scale(-1 1)' : undefined}>
+      <path d="M4.2 12a7.8 7.8 0 1 0 2.3-5.5"/>
+      <path d="M6.5 2.6v3.9h3.9"/>
+    </g>
+    <text x="12" y="15.6" textAnchor="middle" fontSize="7.6" fontWeight="700" fill="currentColor"
+      fontFamily="'Instrument Sans', system-ui, sans-serif">{n}</text>
+  </svg>
+);
+export const IcoSkipBack = ({s=34, n=10}) => <SkipGlyph s={s} n={n}/>;
+export const IcoSkipFwd = ({s=34, n=10}) => <SkipGlyph s={s} n={n} fwd/>;

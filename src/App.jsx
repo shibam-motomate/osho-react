@@ -581,8 +581,8 @@ function App() {
       pause: () => { const el = media(); if (el) el.pause(); },
       previoustrack: () => onPrev(),
       nexttrack: () => onNext(),
-      seekbackward: d => onSeekSeconds(-(d?.seekOffset || 30)),
-      seekforward: d => onSeekSeconds(d?.seekOffset || 30),
+      seekbackward: d => onSeekSeconds(-(d?.seekOffset || 10)),
+      seekforward: d => onSeekSeconds(d?.seekOffset || 10),
       seekto: d => {
         const el = media();
         if (!el || !(d?.seekTime >= 0)) return;
@@ -599,7 +599,7 @@ function App() {
     setSleepEndAt(opt === 'off' || opt === 'end' ? null : Date.now() + opt * 60000);
   }, []);
 
-  // Keyboard shortcuts: Space play/pause, Left/Right seek 30s. On TV browsers these
+  // Keyboard shortcuts: Space play/pause, Left/Right seek 10s. On TV browsers these
   // keys double as the D-pad's spatial-navigation input, so there they're only treated
   // as playback shortcuts while the full player is open and focus isn't on a control
   // that should handle Space/Enter/Left/Right itself (buttons, cards, etc.) — otherwise
@@ -614,8 +614,8 @@ function App() {
         if (!playerOpen || isControl) return;
       }
       if (e.code === 'Space') { e.preventDefault(); onTogglePlay(); }
-      else if (e.code === 'ArrowRight') { e.preventDefault(); onSeekSeconds(30); }
-      else if (e.code === 'ArrowLeft') { e.preventDefault(); onSeekSeconds(-30); }
+      else if (e.code === 'ArrowRight') { e.preventDefault(); onSeekSeconds(10); }
+      else if (e.code === 'ArrowLeft') { e.preventDefault(); onSeekSeconds(-10); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -885,7 +885,7 @@ function App() {
           )}
         </div>
       </div>
-      <MiniPlayer nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} onPrev={onPrev} onNext={onNext} onOpen={() => setPO(true)}
+      <MiniPlayer nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} onPrev={onPrev} onNext={onNext} onSeekSeconds={onSeekSeconds} onOpen={() => setPO(true)}
         onClose={closeMini} onOpenSeries={() => { if (nowPlaying) navigate('series', nowPlaying.series); }}
         liked={nowPlaying ? savedEpisodeUrls.has(nowPlaying.episode.u) : false}
         onToggleLike={() => { if (nowPlaying) toggleSaveEpisode(nowPlaying.series, nowPlaying.episode); }}
