@@ -96,7 +96,7 @@ export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, 
       <div className="player-top">
         <button className="icon-btn on-photo" onClick={onClose} aria-label="Close player"><IcoDown/></button>
         <div className="player-lbl">{t.nowPlaying}</div>
-        <button className="icon-btn on-photo" onClick={onToggleLike} aria-label={liked ? 'Remove from saved' : 'Save talk'}><IcoHeart s={22} filled={liked}/></button>
+        <button className="icon-btn on-photo" onClick={onShare} aria-label="Share"><IcoShare s={20}/></button>
       </div>
 
       <div className="player-body">
@@ -141,8 +141,8 @@ export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, 
           <button className="pl-tool" onClick={() => setSheet('upnext')} aria-haspopup="dialog">
             <IcoList s={22}/><span>{t.upNext}</span>
           </button>
-          <button className="pl-tool" onClick={onShare}>
-            <IcoShare s={22}/><span>Share</span>
+          <button className={`pl-tool${liked ? ' on' : ''}`} onClick={onToggleLike} aria-pressed={liked} aria-label={liked ? 'Remove talk from saved' : 'Save talk'}>
+            <IcoHeart s={22} filled={liked}/><span>{liked ? 'Saved' : 'Save'}</span>
           </button>
         </div>
       </div>

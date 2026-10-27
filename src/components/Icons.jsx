@@ -6,9 +6,10 @@
    box. To keep every button and row looking the same size as before, the view is cropped to
    the inner 20 units (VIEW) and the stroke set so lines weigh what they did (STROKE). ── */
 import {
-  BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, EllipsisVertical, Gauge, Heart,
-  History, List, ListMusic, LogOut, Maximize, Mic, Moon, Pause, Play, Search, Share2, SkipBack,
-  SkipForward, Smartphone, SquarePlus, Sun, UserRound, Video, X,
+  ALargeSmall, BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, EllipsisVertical, Gauge,
+  Heart, History, Languages, List, ListMusic, LogOut, Maximize, MessageSquareText, Mic, Moon, Pause,
+  PenLine, Play, Search, Share2, SkipBack, SkipForward, Smartphone, SquarePlus, Sun, SunMoon, Trash2,
+  UserRound, Video, X,
 } from 'lucide-react';
 
 const VIEW = '2 2 20 20';
@@ -47,6 +48,12 @@ export const IcoPlaylist = icon(ListMusic, 22);
 export const IcoMoreVert = icon(EllipsisVertical, 16);
 export const IcoPlusSquare = icon(SquarePlus, 16);
 export const IcoPhone = icon(Smartphone, 22);
+export const IcoTheme = icon(SunMoon, 20);
+export const IcoTextSize = icon(ALargeSmall, 20);
+export const IcoLanguages = icon(Languages, 20);
+export const IcoMessage = icon(MessageSquareText, 20);
+export const IcoPencil = icon(PenLine, 20);
+export const IcoTrash = icon(Trash2, 20);
 
 // Transport: solid shapes. Lucide's play triangle already sits slightly right of centre
 // (about 6 % of its width), which is what makes it look centred inside a round button.
