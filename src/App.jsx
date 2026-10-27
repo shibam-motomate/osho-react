@@ -911,7 +911,7 @@ function App() {
             savedEpisodeUrls={savedEpisodeUrls} onToggleSaveEpisode={toggleSaveEpisode} progress={progress} t={t}/>}
         </div>
         <div className={savedClass}>
-          <SavedScreen onBack={() => navigate('home')} discourseSeries={allDiscourseSeries} videoSeries={allVideoSeries} books={OSHO_BOOKS} savedSeries={savedSeries} onToggleSave={toggleSaveSeries}
+          <SavedScreen discourseSeries={allDiscourseSeries} videoSeries={allVideoSeries} books={OSHO_BOOKS} savedSeries={savedSeries} onToggleSave={toggleSaveSeries}
             savedEpisodes={savedEpisodes} onToggleSaveEpisode={toggleSaveEpisode} onPlayEpisode={playEntry}
             history={history} onRemoveHistory={removeHistoryEntry} onClearHistory={clearHistory}
             savedBooks={savedBooks} onToggleSaveBook={toggleSaveBook} onReadBook={onReadBook}

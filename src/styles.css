@@ -598,8 +598,15 @@ img{display:block;}
 
 /* Account */
 /* ── Account: profile card + grouped settings rows (iOS-style inset groups) ── */
-.set-wrap{max-width:640px;padding-top:calc(28px + env(safe-area-inset-top));}
-@media(min-width:900px){.set-wrap{padding-top:32px;}}
+.set-wrap{max-width:640px;}
+/* Account and Library are tabs with no back bar, so they carry their own top spacing. */
+.set-wrap,.lib-wrap{padding-top:calc(28px + env(safe-area-inset-top));}
+@media(min-width:900px){.set-wrap,.lib-wrap{padding-top:32px;}}
+/* Library: sliding Recent · Series · Talks switch, then a one-line hint (with Clear for recent). */
+.lib-wrap .segs{background:var(--surface);max-width:480px;}
+.segs-count{margin-left:6px;font-weight:500;opacity:0.75;}
+.lib-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;padding:14px 4px 4px;font-size:calc(14px*var(--ts));color:var(--muted);}
+.lib-clear{min-height:44px;padding:0 4px 0 14px;border:none;background:none;color:var(--accent-text);font-size:calc(14px*var(--ts));font-weight:600;cursor:pointer;flex-shrink:0;}
 .set-title{font-family:var(--font-serif);font-style:italic;font-weight:500;font-size:calc(30px*var(--ts));line-height:1.1;color:var(--ink);margin:4px 4px 18px;}
 .set-profile{width:100%;display:flex;align-items:center;gap:14px;padding:16px;border-radius:20px;background:var(--surface);border:1px solid var(--border);color:var(--ink);text-align:left;font:inherit;}
 button.set-profile{cursor:pointer;}
@@ -640,21 +647,8 @@ button.set-profile{cursor:pointer;}
 /* Option rows (Account: appearance, menu language) — one choice per big row, check on the active one */
 
 /* Library three-way switch */
-.lib-seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px;}
-@media(max-width:359px){.lib-seg-ic{display:none;}}
-.lib-seg-btn{min-height:48px;display:flex;align-items:center;justify-content:center;gap:6px;border-radius:999px;border:1px solid var(--border-strong);background:var(--surface);color:var(--text2);cursor:pointer;padding:0 8px;white-space:nowrap;transition:background 0.15s,color 0.15s,border-color 0.15s;}
-.lib-seg-btn.active{background:var(--accent);border-color:var(--accent);color:var(--on-accent);}
-.lib-seg-ic{display:flex;}
-.lib-seg-lbl{font-size:calc(14px*var(--ts));font-weight:600;}
-.lib-seg-count{font-size:calc(14px*var(--ts));font-weight:500;opacity:0.8;font-variant-numeric:tabular-nums;}
-.saved-sec-title svg{display:none;}
 
 /* Saved page sections */
-.saved-sec{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:26px 0 6px;}
-.saved-sec-title{font-family:var(--font-serif);font-size:22px;font-weight:500;color:var(--ink);display:flex;align-items:center;gap:10px;}
-.saved-sec-title svg{color:var(--accent-text);flex-shrink:0;}
-.saved-sec-hint{font-size:13px;color:var(--muted);margin-top:4px;}
-.saved-sec-count{font-size:14px;color:var(--muted);}
 .srow-badge,.ep-badge{font-size:12px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;color:var(--accent-text);background:var(--accent-dim);border-radius:999px;padding:3px 8px;flex-shrink:0;}
 
 /* ── Toast ── */
@@ -711,7 +705,6 @@ button.set-profile{cursor:pointer;}
 :root[data-textsize="large"]{--ts:1.12;}
 :root[data-textsize="xlarge"]{--ts:1.25;}
 /* Library switch: at the biggest size the three pills only fit their words on a phone */
-@media(max-width:479px){:root[data-textsize="xlarge"] .lib-seg-ic{display:none;}}
 
 /* ══════════════════════════════════════════════════════════════
    "ADD TO YOUR HOME SCREEN"  (Account card + one-time Home banner; src/lib/install.js)
@@ -749,7 +742,7 @@ button.set-profile{cursor:pointer;}
   .sb-genre-item,.sb-nav-item{min-height:40px;padding-top:8px;padding-bottom:8px;}.btn-primary,.btn-secondary,.btn-danger,.auth-submit{height:44px;}
   .series-actions .btn-pill{height:44px;min-width:44px;}
   .auth-form input,.ac-input,.sbar{height:44px;}.btn-pill,.back-btn,.clear-all-pill,.ct-tab-btn,.saved-tab-btn{height:36px;}
-  .lib-seg-btn{min-height:40px;}
+
 
   .srow{min-height:64px;}
   .srow-art{width:48px;height:48px;border-radius:10px;}
