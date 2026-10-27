@@ -4,8 +4,22 @@ const Svg = ({s, children, fillRule}) => <svg width={s} height={s} viewBox="0 0 
 
 export const IcoSearch = ({s=17}) => <Svg s={s}><path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" d="M6 11.5a5.5 5.5 0 1 0 0-11a5.5 5.5 0 0 0 0 11m7.5 2L10 10"/></Svg>;
 export const IcoBack = ({s=22}) => <Svg s={s}><path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" d="M10.15.5L4 6.65a.48.48 0 0 0 0 .7l6.15 6.15"/></Svg>;
-export const IcoPlay = ({s=24}) => <Svg s={s}><path fill="currentColor" fillRule="evenodd" d="M2.676.02a1.74 1.74 0 0 0-.845.218a1.64 1.64 0 0 0-.895 1.433v10.677a1.64 1.64 0 0 0 .895 1.433a1.74 1.74 0 0 0 1.718-.016l8.63-5.338a1.61 1.61 0 0 0-.001-2.876L3.548.253L3.532.244A1.74 1.74 0 0 0 2.676.02" clipRule="evenodd"/></Svg>;
-export const IcoPause = ({s=24}) => <Svg s={s}><path fill="currentColor" fillRule="evenodd" d="M0 1.5A1.5 1.5 0 0 1 1.5 0H4a1.5 1.5 0 0 1 1.5 1.5v11A1.5 1.5 0 0 1 4 14H1.5A1.5 1.5 0 0 1 0 12.5zM10 0a1.5 1.5 0 0 0-1.5 1.5v11A1.5 1.5 0 0 0 10 14h2.5a1.5 1.5 0 0 0 1.5-1.5v-11A1.5 1.5 0 0 0 12.5 0z" clipRule="evenodd"/></Svg>;
+/* Play / pause, drawn for round buttons. The triangle is optically centred (its centroid,
+   not its bounding box, sits in the middle, so it's nudged right) with softened corners;
+   the pause bars are slimmer than before so the two icons carry the same visual weight.
+   The viewBox crops to the glyph area, so `s` stays roughly the glyph's size. */
+export const IcoPlay = ({s=24}) => (
+  <svg width={s} height={s} viewBox="3 3 18 18" aria-hidden="true" focusable="false">
+    <path fill="currentColor" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"
+      d="M8.6 5.6v12.8a.9.9 0 0 0 1.37.77l10.1-6.4a.9.9 0 0 0 0-1.54L9.97 4.83a.9.9 0 0 0-1.37.77z"/>
+  </svg>
+);
+export const IcoPause = ({s=24}) => (
+  <svg width={s} height={s} viewBox="3 3 18 18" aria-hidden="true" focusable="false">
+    <rect x="6.5" y="5" width="4" height="14" rx="1.4" fill="currentColor"/>
+    <rect x="13.5" y="5" width="4" height="14" rx="1.4" fill="currentColor"/>
+  </svg>
+);
 export const IcoPrev = ({s=28}) => <Svg s={s}><path fill="currentColor" fillRule="evenodd" d="m4.238 6.056l7.819-5.4c.396-.25.878-.183 1.226.08c.269.201.458.519.467.897v10.705c0 .884-.979 1.456-1.693 1.004l-7.82-5.367c-.65-.439-.65-1.48 0-1.919M0 1.742a1 1 0 1 1 2 0v10.516a1 1 0 1 1-2 0z" clipRule="evenodd"/></Svg>;
 export const IcoNext = ({s=28}) => <Svg s={s}><path fill="currentColor" fillRule="evenodd" d="M9.512 6.056L1.693.656C1.297.407.815.474.467.737A1.14 1.14 0 0 0 0 1.632v10.705c0 .884.979 1.456 1.693 1.004l7.82-5.367c.65-.439.65-1.48 0-1.919m4.238-4.314a1 1 0 1 0-2 0v10.516a1 1 0 0 0 2 0z" clipRule="evenodd"/></Svg>;
 export const IcoX = ({s=16}) => <Svg s={s}><path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" d="m13.5.5l-13 13m0-13l13 13"/></Svg>;

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { isVideoId } from '../config.js';
 import { useMediaState } from '../lib/useMediaState.js';
 import { IcoDown, IcoHeart, IcoNext, IcoPause, IcoPlay, IcoPrev, IcoSkipBack, IcoSkipFwd, IcoX } from './Icons.jsx';
+import { LoadRing } from './LoadRing.jsx';
 import { Scrubber } from './Scrubber.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
 
@@ -13,7 +14,7 @@ const fmt = s => { s = Math.floor(s || 0); const h = Math.floor(s/3600), m = Mat
    full player. If the talk failed to load, the subtitle says so and play becomes "retry". ── */
 export function MiniPlayer({nowPlaying, isPlaying, onTogglePlay, onPrev, onNext, onSeekSeconds, onOpen, onClose, onOpenSeries, liked, onToggleLike, audioRef, videoRef, isDesktop,
   mediaError, onRetry}) {
-  const {currentTime, duration, loading, bufferedEnd} = useMediaState(audioRef, videoRef);
+  const {currentTime, duration, loading, bufferedEnd, loadPct} = useMediaState(audioRef, videoRef);
   const [previewTime, setPreviewTime] = useState(null); // while dragging the desktop seek bar
 
   const isVideo = !!nowPlaying && isVideoId(nowPlaying.series.i);
@@ -26,7 +27,7 @@ export function MiniPlayer({nowPlaying, isPlaying, onTogglePlay, onPrev, onNext,
   const playBtn = cls => (
     <button className={cls} onClick={e => { e.stopPropagation(); mediaError ? onRetry?.() : onTogglePlay(); }}
       aria-label={mediaError ? 'Try again' : isPlaying ? 'Pause' : 'Play'}>
-      {showLoading && isPlaying ? <div className="np-buf"/> : isPlaying ? <IcoPause s={22}/> : <IcoPlay s={24}/>}
+      {showLoading ? <LoadRing pct={loadPct} size={30}/> : isPlaying ? <IcoPause s={20}/> : <IcoPlay s={22}/>}
     </button>
   );
 
@@ -49,7 +50,7 @@ export function MiniPlayer({nowPlaying, isPlaying, onTogglePlay, onPrev, onNext,
       </div>
 
       {!isDesktop && nowPlaying && (
-        <div className={`np-line${showLoading && !duration ? ' loading' : ''}`} aria-hidden="true"><div className="np-line-fill" style={{width:`${pct}%`}}/></div>
+        <div className={`np-line${showLoading ? ' loading' : ''}`} aria-hidden="true"><div className="np-line-fill" style={{width:`${showLoading ? loadPct : pct}%`}}/></div>
       )}
 
       {isDesktop && (
@@ -63,7 +64,7 @@ export function MiniPlayer({nowPlaying, isPlaying, onTogglePlay, onPrev, onNext,
               <button className="np-btn" onClick={e => { e.stopPropagation(); onNext(); }} aria-label="Next talk"><IcoNext s={24}/></button>
             </div>
             <div className="np-center-seek">
-              <span className="np-time-sm">{showLoading && previewTime == null ? 'Loading…' : fmt(previewTime ?? currentTime)}</span>
+              <span className="np-time-sm">{showLoading && previewTime == null ? `Loading ${loadPct}%` : fmt(previewTime ?? currentTime)}</span>
               <Scrubber className="np-scrub" currentTime={currentTime} duration={duration} bufferedEnd={bufferedEnd} loading={showLoading}
                 onSeek={seekTo} onPreview={setPreviewTime} label="Position in talk"/>
               <span className="np-time-sm">{fmt(duration)}</span>

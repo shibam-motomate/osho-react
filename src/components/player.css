@@ -73,14 +73,22 @@ div.player{overflow:clip;}
 .np-scrub .scrub-buf{background:var(--muted);opacity:0.45;}
 /* Starting a talk (length not known yet): a light sweep runs along the empty track. */
 .scrub.loading.idle .scrub-track{overflow:hidden;}
-.scrub.loading.idle .scrub-track::after,.np-line.loading::after{content:'';position:absolute;top:0;bottom:0;left:0;width:35%;border-radius:3px;animation:pl-sweep 1.15s ease-in-out infinite;}
+.scrub.loading.idle .scrub-track::after{content:'';position:absolute;top:0;bottom:0;left:0;width:35%;border-radius:3px;animation:pl-sweep 1.15s ease-in-out infinite;}
 .scrub.loading.idle .scrub-track::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,0.75),transparent);}
 .np-scrub.loading.idle .scrub-track::after{background:linear-gradient(90deg,transparent,var(--accent),transparent);}
-.np-line.loading::after{background:linear-gradient(90deg,transparent,var(--mini-line),transparent);}
 @keyframes pl-sweep{from{transform:translateX(-100%);}to{transform:translateX(290%);}}
 .pl-loading{animation:pl-pulse 1.2s ease-in-out infinite;}
 @keyframes pl-pulse{50%{opacity:0.45;}}
 @media(prefers-reduced-motion:reduce){
-  .scrub.loading.idle .scrub-track::after,.np-line.loading::after{animation:none;width:100%;opacity:0.5;}
+  .scrub.loading.idle .scrub-track::after{animation:none;width:100%;opacity:0.5;}
   .pl-loading{animation:none;}
 }
+
+/* ── Loading ring (LoadRing.jsx) on play buttons, and the phone mini-player line while loading ── */
+.load-ring{position:relative;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
+.load-ring-arc{position:absolute;inset:0;border-radius:50%;
+  background:conic-gradient(currentColor calc(var(--p) * 1%),rgba(255,255,255,0.3) 0);
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3.5px),#000 calc(100% - 3px));
+          mask:radial-gradient(farthest-side,transparent calc(100% - 3.5px),#000 calc(100% - 3px));}
+.load-ring-num{font-size:14px;font-weight:700;letter-spacing:-0.2px;font-variant-numeric:tabular-nums;line-height:1;}
+.np-line.loading .np-line-fill{opacity:0.6;transition:width 0.15s linear;}

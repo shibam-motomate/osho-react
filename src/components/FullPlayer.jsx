@@ -4,6 +4,7 @@ import { onActivateKey } from '../lib/a11y.js';
 import { SLEEP_OPTIONS, SPEEDS, speedLabel } from '../lib/playback.js';
 import { useMediaState } from '../lib/useMediaState.js';
 import { IcoCheck, IcoDown, IcoFullscreen, IcoHeart, IcoList, IcoMoon, IcoNext, IcoPause, IcoPlay, IcoPrev, IcoShare, IcoSkipBack, IcoSkipFwd, IcoSpeed, IcoX, Wave } from './Icons.jsx';
+import { LoadRing } from './LoadRing.jsx';
 import { Scrubber } from './Scrubber.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
 import { fmtDur } from './SeriesScreen.jsx';
@@ -40,7 +41,7 @@ const SKIP = 10; // seconds for the skip buttons, keyboard arrows and lock-scree
 export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, audioRef, videoRef, onPrev, onNext, onSeekSeconds, t, isDesktop,
   playbackSpeed, setPlaybackSpeed, sleepOption, setSleepOption, sleepRemaining, episodeIndex, totalEpisodes, onOpenSeries, onPlayEpisode, onShare, liked, onToggleLike,
   mediaError, onRetry}) {
-  const {currentTime, duration, loading, bufferedEnd} = useMediaState(audioRef, videoRef);
+  const {currentTime, duration, loading, bufferedEnd, loadPct} = useMediaState(audioRef, videoRef);
   const [sheet, setSheet] = useState(null); // null | 'upnext' | 'speed' | 'sleep'
   const [previewTime, setPreviewTime] = useState(null); // while dragging the seek bar
 
@@ -114,7 +115,7 @@ export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, 
           <Scrubber currentTime={currentTime} duration={duration} bufferedEnd={bufferedEnd} loading={showLoading}
             onSeek={seekTo} onPreview={setPreviewTime} label="Position in talk"/>
           <div className={`prog-times${previewTime != null ? ' previewing' : ''}`}>
-            <span>{showLoading && previewTime == null ? <span className="pl-loading" role="status">Loading…</span> : fmt(shownTime)}</span>
+            <span>{showLoading && previewTime == null ? <span className="pl-loading" role="status">Loading {loadPct}%</span> : fmt(shownTime)}</span>
             <span>{duration > 0 ? `${fmt(remaining)} ${t.left}` : (episode?.d ? fmtDur(episode.d) : '')}</span>
           </div>
         </div>
@@ -123,7 +124,7 @@ export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, 
           <button className="pl-tbtn" onClick={onPrev} aria-label="Previous talk"><IcoPrev s={28}/></button>
           <button className="pl-tbtn" onClick={() => onSeekSeconds(-SKIP)} aria-label={`Back ${SKIP} seconds`}><IcoSkipBack s={40} n={SKIP}/></button>
           <button className="pl-play" onClick={onTogglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}>
-            {showLoading && isPlaying ? <div className="buf-ring"/> : isPlaying ? <IcoPause s={34}/> : <IcoPlay s={36}/>}
+            {showLoading ? <LoadRing pct={loadPct} size={56} showNumber/> : isPlaying ? <IcoPause s={32}/> : <IcoPlay s={34}/>}
           </button>
           <button className="pl-tbtn" onClick={() => onSeekSeconds(SKIP)} aria-label={`Forward ${SKIP} seconds`}><IcoSkipFwd s={40} n={SKIP}/></button>
           <button className="pl-tbtn" onClick={onNext} aria-label="Next talk"><IcoNext s={28}/></button>
