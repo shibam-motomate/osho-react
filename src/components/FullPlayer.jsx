@@ -3,13 +3,17 @@ import { isVideoId } from '../config.js';
 import { onActivateKey } from '../lib/a11y.js';
 import { SLEEP_OPTIONS, SPEEDS, speedLabel } from '../lib/playback.js';
 import { useMediaState } from '../lib/useMediaState.js';
-import { IcoCheck, IcoDown, IcoFullscreen, IcoHeart, IcoList, IcoMoon, IcoNext, IcoPause, IcoPlay, IcoPrev, IcoShare, IcoSkipBack, IcoSkipFwd, IcoSpeed, IcoX, Wave } from './Icons.jsx';
+import { IcoDown, IcoFullscreen, IcoHeart, IcoList, IcoMoon, IcoNext, IcoPause, IcoPlay, IcoPrev, IcoShare, IcoSkipBack, IcoSkipFwd, IcoSpeed, IcoX, Wave } from './Icons.jsx';
 import { LoadRing } from './LoadRing.jsx';
 import { Scrubber } from './Scrubber.jsx';
+import { SegSlider } from './SegSlider.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
 import { fmtDur } from './SeriesScreen.jsx';
 
-const sleepName = o => o === 'off' ? 'Off' : o === 'end' ? 'End of this talk' : `${o} minutes`;
+const SPEED_OPTIONS = SPEEDS.map(v => ({value: v, label: `${v}×`, aria: `${v} times`}));
+const SLEEP_SEG = SLEEP_OPTIONS.map(o => ({value: o,
+  label: o === 'off' ? 'Off' : o === 'end' ? 'End' : o >= 60 ? `${o / 60}h` : `${o}m`,
+  aria: o === 'off' ? 'Off' : o === 'end' ? 'At the end of this talk' : `${o} minutes`}));
 
 /* Bottom sheet inside the player (Up next, Speed, Sleep timer), with a scrim behind it. */
 function Sheet({open, title, onClose, children}) {
@@ -71,9 +75,7 @@ export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, 
   // while it's meant to be playing: a paused talk restored on launch isn't downloading.
   const showLoading = !mediaError && !!nowPlaying && loading && isPlaying;
 
-  const pickSpeed = v => { setPlaybackSpeed(v); setSheet(null); };
-  const pickSleep = o => { setSleepOption(o); setSheet(null); };
-  const sleepShort = sleepOption === 'off' ? 'Sleep' : sleepOption === 'end' ? 'End of talk' : fmtRemaining(sleepRemaining) || `${sleepOption}:00`;
+  const sleepShort = sleepOption === 'off' ? 'Sleep' : sleepOption === 'end' ? 'End of talk' : (sleepRemaining > 0 ? fmtRemaining(sleepRemaining) : `${sleepOption}:00`);
   const goFullscreen = () => { const el = videoRef.current; if (el?.requestFullscreen) el.requestFullscreen().catch(() => {}); };
 
   const eps = series?.e || [];
@@ -94,7 +96,7 @@ export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, 
       <div className="player-top">
         <button className="icon-btn on-photo" onClick={onClose} aria-label="Close player"><IcoDown/></button>
         <div className="player-lbl">{t.nowPlaying}</div>
-        <button className="icon-btn on-photo" onClick={onToggleLike} aria-label={liked ? 'Remove from saved' : 'Save talk'}><IcoHeart s={22} filled={liked}/></button>
+        <button className="icon-btn on-photo" onClick={onShare} aria-label="Share"><IcoShare s={20}/></button>
       </div>
 
       <div className="player-body">
@@ -139,36 +141,32 @@ export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, 
           <button className="pl-tool" onClick={() => setSheet('upnext')} aria-haspopup="dialog">
             <IcoList s={22}/><span>{t.upNext}</span>
           </button>
-          <button className="pl-tool" onClick={onShare}>
-            <IcoShare s={22}/><span>Share</span>
+          <button className={`pl-tool${liked ? ' on' : ''}`} onClick={onToggleLike} aria-pressed={liked} aria-label={liked ? 'Remove talk from saved' : 'Save talk'}>
+            <IcoHeart s={22} filled={liked}/><span>{liked ? 'Saved' : 'Save'}</span>
           </button>
         </div>
       </div>
 
       <Sheet open={sheet === 'speed'} title={t.speed} onClose={() => setSheet(null)}>
-        <div className="psheet-list" role="radiogroup" aria-label={t.speed}>
-          {SPEEDS.map(v => (
-            <button key={v} className={`opt-row${playbackSpeed === v ? ' active' : ''}`} role="radio" aria-checked={playbackSpeed === v}
-              tabIndex={sheet === 'speed' ? 0 : -1} onClick={() => pickSpeed(v)}>
-              <span className="opt-row-txt">{speedLabel(v)}{v === 1 && <span className="opt-row-sub">Normal</span>}</span>
-              <span className="opt-row-check">{playbackSpeed === v && <IcoCheck s={20}/>}</span>
-            </button>
-          ))}
+        <div className="psheet-body">
+          <div className="psheet-value" aria-live="polite">
+            {speedLabel(playbackSpeed)}
+            <small>{playbackSpeed === 1 ? 'Normal speed' : playbackSpeed < 1 ? 'Slower than normal' : 'Faster than normal'}</small>
+          </div>
+          <SegSlider label={t.speed} options={SPEED_OPTIONS} value={playbackSpeed} onChange={setPlaybackSpeed} focusable={sheet === 'speed'}/>
+          <div className="segs-ends" aria-hidden="true"><span>Slower</span><span>Faster</span></div>
+          <button className="psheet-done" onClick={() => setSheet(null)} tabIndex={sheet === 'speed' ? 0 : -1}>Done</button>
         </div>
       </Sheet>
 
       <Sheet open={sheet === 'sleep'} title={t.sleep} onClose={() => setSheet(null)}>
-        {sleepOption !== 'off' && (
-          <div className="psheet-note">{sleepOption === 'end' ? 'Stops when this talk ends.' : `Stops in ${fmtRemaining(sleepRemaining)}.`}</div>
-        )}
-        <div className="psheet-list" role="radiogroup" aria-label={t.sleep}>
-          {SLEEP_OPTIONS.map(o => (
-            <button key={o} className={`opt-row${sleepOption === o ? ' active' : ''}`} role="radio" aria-checked={sleepOption === o}
-              tabIndex={sheet === 'sleep' ? 0 : -1} onClick={() => pickSleep(o)}>
-              <span className="opt-row-txt">{sleepName(o)}</span>
-              <span className="opt-row-check">{sleepOption === o && <IcoCheck s={20}/>}</span>
-            </button>
-          ))}
+        <div className="psheet-body">
+          <div className="psheet-value" aria-live="polite">
+            {sleepOption === 'off' ? 'Off' : sleepOption === 'end' ? 'End of talk' : (sleepRemaining > 0 ? fmtRemaining(sleepRemaining) : `${sleepOption}:00`)}
+            <small>{sleepOption === 'off' ? 'Playback keeps going' : sleepOption === 'end' ? 'Stops when this talk ends' : 'Until playback stops'}</small>
+          </div>
+          <SegSlider label={t.sleep} options={SLEEP_SEG} value={sleepOption} onChange={setSleepOption} focusable={sheet === 'sleep'}/>
+          <button className="psheet-done" onClick={() => setSheet(null)} tabIndex={sheet === 'sleep' ? 0 : -1}>Done</button>
         </div>
       </Sheet>
 
