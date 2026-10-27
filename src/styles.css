@@ -218,9 +218,14 @@ img{display:block;}
 /* The mask would cut a shadow on .sig itself, so the shadow sits on a wrapper. */
 .sig-shadow{display:block;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.55));}
 .hero-top-right{display:flex;align-items:center;gap:8px;}
-.hero-top .seg{padding:3px;}
-.hero-top .seg-btn{height:44px;padding:0 10px;font-size:13px;display:flex;align-items:center;gap:5px;}
-.hero-top .seg-btn small{font-size:12px;font-weight:500;opacity:0.85;}
+/* Language switch on the photo: slim dark glass (about 38 px tall). Each option still has a 44 px
+   tap area through an invisible ::after that reaches past the pill. */
+.hero-top .seg{padding:3px;gap:0;}
+.hero-top .seg.on-photo{background:rgba(20,16,16,0.32)!important;border-color:rgba(255,255,255,0.18)!important;}
+.hero-top .seg-btn{position:relative;height:30px;padding:0 11px;font-size:12.5px;font-weight:600;letter-spacing:0.3px;display:flex;align-items:center;gap:5px;}
+.hero-top .seg-btn::after{content:'';position:absolute;left:0;right:0;top:-7px;bottom:-7px;}
+.hero-top .seg-btn small{font-size:11px;font-weight:500;letter-spacing:0;opacity:0.7;font-variant-numeric:tabular-nums;}
+.hero-top .seg-btn.active small{opacity:0.85;}
 .hero{transition:height 0.38s cubic-bezier(.22,.61,.36,1);}
 .hero-img,.hero-shade,.hero-bottom{transition:opacity 0.3s;}
 .hero-icon{width:44px;height:44px;border-radius:999px;background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.28);display:flex;align-items:center;justify-content:center;color:#FFFFFF;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
