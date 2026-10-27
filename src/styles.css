@@ -102,6 +102,8 @@ img{display:block;}
 @media(min-width:900px){
   body{overflow:hidden;}
   #app{display:grid;grid-template-columns:var(--sb) 1fr;grid-template-rows:auto 1fr var(--ph);grid-template-areas:"header header" "sb main" "sb player";}
+  /* No talk loaded: the player row collapses instead of leaving an empty band at the bottom. */
+  #app:not(.has-np){grid-template-rows:auto 1fr 0;}
 }
 
 /* ── Desktop top bar (hidden on phones; the hero carries the wordmark there) ── */
@@ -423,7 +425,10 @@ img{display:block;}
 .np.gone{opacity:0;transform:translateY(120%);pointer-events:none;}
 @media(min-width:900px){
   .np{position:static;grid-area:player;left:auto;right:auto;bottom:auto;height:var(--ph);border-radius:0;background:var(--surface);color:var(--ink);border-top:1px solid var(--border);box-shadow:none;padding:0 32px;gap:20px;transform:none!important;opacity:1!important;pointer-events:auto!important;}
-  .np.gone{visibility:hidden;}
+  .np.gone{display:none;}
+  /* Desktop player bar: a warm rose tint of the page with a faint rose rule, so it reads as its own
+     strip rather than another card. (surface2 first for browsers without color-mix.) */
+  .np{background:var(--surface2);background:color-mix(in srgb,var(--accent) 13%,var(--surface));border-top-color:var(--border-strong);border-top-color:color-mix(in srgb,var(--accent) 38%,transparent);}
 }
 .np-art{width:48px;height:48px;border-radius:12px;overflow:hidden;flex-shrink:0;}
 .np-left{display:flex;align-items:center;gap:12px;flex:1;min-width:0;}
