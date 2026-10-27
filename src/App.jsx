@@ -936,7 +936,7 @@ function App() {
           )}
         </div>
         <div className={aiClass}>
-          <AiScreen onBrowse={() => navigate('home')} t={t}/>
+          <AiScreen t={t}/>
         </div>
       </div>
       <MiniPlayer nowPlaying={nowPlaying} isPlaying={isPlaying} onTogglePlay={onTogglePlay} onPrev={onPrev} onNext={onNext} onSeekSeconds={onSeekSeconds} onOpen={() => setPO(true)}
