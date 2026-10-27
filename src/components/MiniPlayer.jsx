@@ -13,7 +13,9 @@ const fmt = s => { s = Math.floor(s || 0); const h = Math.floor(s/3600), m = Mat
    thin progress line (it shimmers while a talk is loading). Desktop: a floating pill over the
    page — transport on the left (previous · back 10 s · play · forward 10 s · next), a "now
    playing" panel in the middle (art, title, series, time, and a thin seek bar along its bottom
-   edge), and heart · volume · open · close on the right. Clicking it opens the full player.
+   edge), and heart · volume · open · close on the right. The phone pill is the same design cut
+   down: the panel (with a progress line along its bottom edge), then play and close.
+   Clicking it opens the full player.
    If the talk failed to load, the subtitle says so and play becomes "retry". ── */
 export function MiniPlayer({nowPlaying, isPlaying, onTogglePlay, onPrev, onNext, onSeekSeconds, onOpen, onClose, onOpenSeries, liked, onToggleLike, audioRef, videoRef, isDesktop,
   mediaError, onRetry}) {
@@ -66,7 +68,7 @@ export function MiniPlayer({nowPlaying, isPlaying, onTogglePlay, onPrev, onNext,
 
   return (
     <div className={`np${!nowPlaying?' gone':''}`} onClick={onOpen} role="button" tabIndex={nowPlaying ? 0 : -1} aria-label="Open player">
-      <div className="np-left">
+      <div className="npd-now npm-now">
         {nowPlaying && <SeriesImg series={nowPlaying.series} img={isVideo ? nowPlaying.episode.img : undefined} className="np-art"/>}
         <div className="np-info">
           <div className="np-ttl">{nowPlaying?.episode?.t}</div>
@@ -74,12 +76,12 @@ export function MiniPlayer({nowPlaying, isPlaying, onTogglePlay, onPrev, onNext,
             ? <div className="np-ser np-err" role="alert">Couldn't load · tap play to retry</div>
             : <div className="np-ser" onClick={e => { e.stopPropagation(); onOpenSeries?.(); }}>{nowPlaying?.series?.n}</div>}
         </div>
-        {playBtn('np-mob-play')}
-        <button className="np-btn" onClick={e => { e.stopPropagation(); onClose?.(); }} aria-label="Close player"><IcoX s={20}/></button>
+        {nowPlaying && (
+          <div className={`np-line${showLoading ? ' loading' : ''}`} aria-hidden="true"><div className="np-line-fill" style={{width:`${showLoading ? loadPct : pct}%`}}/></div>
+        )}
       </div>
-      {nowPlaying && (
-        <div className={`np-line${showLoading ? ' loading' : ''}`} aria-hidden="true"><div className="np-line-fill" style={{width:`${showLoading ? loadPct : pct}%`}}/></div>
-      )}
+      {playBtn('npd-play')}
+      <button className="np-btn" onClick={e => { e.stopPropagation(); onClose?.(); }} aria-label="Close player"><IcoX s={20}/></button>
     </div>
   );
 }

@@ -424,16 +424,18 @@ img{display:block;}
 @keyframes wv{from{height:4px;}to{height:16px;}}
 
 /* ── Mini player ── phone: floating pill above the tab bar; desktop: docked bar ── */
-.np{position:fixed;left:12px;right:12px;bottom:calc(var(--mnav-h) + 10px + var(--sab) - var(--vgap));height:var(--mini-h);background:var(--mini-bg);color:var(--mini-ink);border-radius:22px;z-index:50;cursor:pointer;display:flex;align-items:center;gap:14px;padding:0 12px;box-shadow:0 12px 32px rgba(0,0,0,0.45);transition:opacity 0.3s,transform 0.3s;}
+.np{position:fixed;left:12px;right:12px;bottom:calc(var(--mnav-h) + 10px + var(--sab) - var(--vgap));height:var(--mini-h);color:var(--mini-ink);border-radius:22px;z-index:50;cursor:pointer;display:flex;align-items:center;gap:6px;padding:0 6px 0 7px;transition:opacity 0.3s,transform 0.3s;
+  /* Frosted pill in the inverted colours (cream on dark, near-black on light) — same on phone and desktop. */
+  background:var(--mini-bg);background:color-mix(in srgb,var(--mini-bg) 90%,transparent);backdrop-filter:blur(22px) saturate(1.3);-webkit-backdrop-filter:blur(22px) saturate(1.3);
+  border:1px solid color-mix(in srgb,var(--mini-ink) 10%,transparent);box-shadow:0 14px 40px rgba(0,0,0,0.45);}
+:root[data-theme="light"] .np{box-shadow:0 14px 40px rgba(30,20,24,0.22);}
+.np .np-ser{color:var(--mini-sub);}
 .np.gone{opacity:0;transform:translateY(120%);pointer-events:none;}
 @media(min-width:900px){
   /* Desktop: a floating pill over the page, centred in the content column, in the phone mini
      player's inverted colours (cream on dark, near-black on light) as frosted glass. */
-  .np{left:calc(var(--sb) + 24px);right:24px;bottom:18px;margin:0 auto;max-width:1120px;height:var(--ph);border-radius:22px;padding:0 10px 0 8px;gap:12px;
-    background:var(--mini-bg);background:color-mix(in srgb,var(--mini-bg) 90%,transparent);backdrop-filter:blur(22px) saturate(1.3);-webkit-backdrop-filter:blur(22px) saturate(1.3);
-    border:1px solid color-mix(in srgb,var(--mini-ink) 10%,transparent);box-shadow:0 14px 40px rgba(0,0,0,0.45);}
-  :root[data-theme="light"] .np{box-shadow:0 14px 40px rgba(30,20,24,0.22);}
-  .np .np-ser,.npd-time{color:var(--mini-sub);}
+  .np{left:calc(var(--sb) + 24px);right:24px;bottom:18px;margin:0 auto;max-width:1120px;height:var(--ph);padding:0 10px 0 8px;gap:12px;}
+  .npd-time{color:var(--mini-sub);}
   .np .np-btn.on{color:var(--mini-line);}
   .np .np-scrub{--scrub-bg:color-mix(in srgb,var(--mini-ink) 20%,transparent);--scrub-thumb:var(--mini-ink);}
   .np .np-scrub .scrub-buf{background:var(--mini-sub);}
@@ -443,6 +445,7 @@ img{display:block;}
 /* The middle "now playing" panel: slightly recessed, with the seek bar along its bottom edge. */
 .npd-now{position:relative;flex:1;min-width:0;align-self:stretch;margin:7px 0;display:flex;align-items:center;gap:12px;padding:0 14px 0 6px;border-radius:15px;background:color-mix(in srgb,var(--mini-ink) 7%,transparent);overflow:hidden;}
 .npd-now .np-art{width:40px;height:40px;border-radius:10px;}
+.npm-now{padding-right:10px;}
 .npd-time{font-size:12.5px;font-variant-numeric:tabular-nums;white-space:nowrap;flex-shrink:0;}
 .npd-now .npd-scrub{position:absolute;left:0;right:0;bottom:-9px;height:20px;flex:none;margin:0;}
 .npd-now .npd-scrub .scrub-track{height:3px;border-radius:0;}
@@ -460,13 +463,11 @@ img{display:block;}
 .pl-vol .vol-range{width:220px;}
 
 .np-art{width:48px;height:48px;border-radius:12px;overflow:hidden;flex-shrink:0;}
-.np-left{display:flex;align-items:center;gap:12px;flex:1;min-width:0;}
 .np-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
 .np-ttl{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:inherit;}
 .np-ser{font-size:13px;color:var(--mini-sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
 .np-btn{background:none;border:none;cursor:pointer;color:inherit;width:44px;height:44px;border-radius:999px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .np-btn.on{color:var(--accent-text);}
-.np-mob-play{background:var(--accent);border:none;cursor:pointer;color:var(--on-accent);width:48px;height:48px;border-radius:999px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 
 /* ── Mobile bottom tab bar ── */
 .mnav{display:flex;position:fixed;left:0;right:0;bottom:calc(0px - var(--vgap));z-index:55;background:var(--tab-bg);border-top:1px solid var(--border);height:calc(var(--mnav-h) + var(--sab));padding:10px 6px var(--sab);align-items:flex-start;}
@@ -538,7 +539,7 @@ img{display:block;}
 .np-scrub:hover .scrub-thumb,.np-scrub.dragging .scrub-thumb,.np-scrub:focus-visible .scrub-thumb{opacity:1;}
 
 /* Phone mini player: thin progress line along the bottom of the pill. */
-.np-line{position:absolute;left:22px;right:22px;bottom:5px;height:3px;border-radius:2px;background:rgba(127,127,127,0.28);overflow:hidden;pointer-events:none;}
+.np-line{position:absolute;left:0;right:0;bottom:0;height:3px;background:color-mix(in srgb,var(--mini-ink) 16%,transparent);overflow:hidden;pointer-events:none;}
 .np-line-fill{height:100%;background:var(--mini-line);border-radius:2px;}
 @media(min-width:900px){.np-line{display:none;}}
 .np-err{color:var(--danger);}
