@@ -47,8 +47,11 @@ export const isVideoId = id => id.startsWith('Video');
 
 /* ── Duration helpers ── */
 const parseDur = d => { const p = d.split(':').map(Number); return p.length === 3 ? p[0]*3600 + p[1]*60 + p[2] : p[0]*60 + p[1]; };
+/* A series is either a full catalogue entry (with its talks in `e`) or a light index entry
+   from virtual:osho-index (talk count `c`, total seconds `td`) — see vite.config.js. */
+export const talkCount = series => (series.e ? series.e.length : series.c || 0);
 export const seriesTotalDuration = series => {
-  const secs = series.e.reduce((a, e) => a + parseDur(e.d), 0);
+  const secs = series.e ? series.e.reduce((a, e) => a + parseDur(e.d), 0) : series.td || 0;
   const h = Math.floor(secs / 3600), m = Math.round((secs % 3600) / 60);
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 };

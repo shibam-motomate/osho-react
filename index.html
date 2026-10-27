@@ -40,8 +40,11 @@
     </script>
     <link rel="preload" href="/fonts/InstrumentSans-Variable.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/Fraunces-Variable-latin.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="icon" type="image/webp" href="https://syxvczeaohszykjbqwts.supabase.co/storage/v1/object/public/Assets/osho-dp.webp" />
-    <link rel="apple-touch-icon" href="https://syxvczeaohszykjbqwts.supabase.co/storage/v1/object/public/Assets/osho-dp.webp" />
+    <!-- The Home hero title is italic: preload it too so it doesn't swap in late and shift the page. -->
+    <link rel="preload" href="/fonts/Fraunces-Italic-Variable-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- Small self-hosted icons (the old one was a 75 KB, 2,200 px photo re-fetched on every visit). -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <!-- Talks stream from archive.org: open the connection early so the first talk starts sooner. -->
     <link rel="preconnect" href="https://archive.org" />

@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { EPISODE_COUNTS, GENRE_LIST } from '../config.js';
+import { EPISODE_COUNTS, GENRE_LIST, talkCount } from '../config.js';
 import { OSHO_QUOTES } from '../data/quotes.js';
 import { OSHO_VIDEOS_EN, OSHO_VIDEOS_HI } from '../data/oshoVideos.js';
 import { onActivateKey } from '../lib/a11y.js';
 import { IcoCheck, IcoDown, IcoList, IcoPlay, IcoSearch, IcoX } from './Icons.jsx';
 import { InstallBanner } from './HomeScreenGuide.jsx';
+import { warmTalk } from '../lib/warmTalk.js';
 import { SeriesCard } from './SeriesCard.jsx';
 import { SeriesImg } from './SeriesImg.jsx';
 
@@ -49,7 +50,8 @@ export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, acti
     if (search.trim()) {
       const q = search.toLowerCase();
       // Match the series name or any talk title inside it, so a remembered talk can be found too.
-      list = list.filter(s => s.n.toLowerCase().includes(q) || s.e.some(e => e.t.toLowerCase().includes(q)));
+      // (Talk titles are searchable once the full catalogue has arrived, a moment after first paint.)
+      list = list.filter(s => s.n.toLowerCase().includes(q) || (s.e && s.e.some(e => e.t.toLowerCase().includes(q))));
     }
     return list;
   }, [seriesList, activePill, search]);
@@ -71,7 +73,10 @@ export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, acti
   const heroTitle = heroIsContinue ? nowPlaying.episode.t : heroSeries?.n;
   const heroSub = heroIsContinue
     ? `${nowPlaying.series.n}${audioPct > 0 && audioPct < 100 ? ` · ${t.minLeft(Math.round((100 - audioPct) / 100 * durSecs(nowPlaying.episode.d) / 60))}` : ''}`
-    : heroSeries ? `${t.genres[heroSeries.g] || heroSeries.g} · ${t.talks(heroSeries.e.length)}` : '';
+    : heroSeries ? `${t.genres[heroSeries.g] || heroSeries.g} · ${t.talks(talkCount(heroSeries))}` : '';
+  // Warm up the hero's talk: the one to continue, or the series' first talk once the catalogue is in.
+  const heroTalk = heroIsContinue ? nowPlaying.episode.u : heroSeries?.e?.[0]?.u;
+  useEffect(() => { if (heroTalk && !isVideos) warmTalk(heroTalk); }, [heroTalk, isVideos]);
   const heroAction = () => {
     if (heroIsContinue) onResume();
     else if (heroSeries) onPlayFirst(heroSeries);
@@ -85,7 +90,7 @@ export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, acti
       <div className="screen-body">
         {heroSeries && (
           <div className={`hero${searchOpen ? ' searching' : ''}`} role="button" tabIndex={0} onClick={() => !searchOpen && onSeries(heroSeries)} onKeyDown={onActivateKey(() => !searchOpen && onSeries(heroSeries))} aria-label={heroTitle}>
-            <SeriesImg series={heroSeries} img={heroIsContinue ? nowPlaying.episode.img : undefined} className="hero-img" plain/>
+            <SeriesImg series={heroSeries} img={heroIsContinue ? nowPlaying.episode.img : undefined} className="hero-img" plain priority/>
             <div className="hero-shade"/>
             {/* Phone-only top row: wordmark + a search button that slides open to the left */}
             <div className="hero-top" onClick={e => e.stopPropagation()}>
@@ -147,7 +152,7 @@ export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, acti
         <div className="sec-head">
           <h1 className="sec-title">
             {search.trim() ? `“${search.trim()}”` : activePill === 'all' ? pageTitle : (t.genres[activePill] || activePill)}
-            <span className="sec-count">{filtered.length} series · {t.talks(filtered.reduce((a, s) => a + s.e.length, 0))}</span>
+            <span className="sec-count">{filtered.length} series · {t.talks(filtered.reduce((a, s) => a + talkCount(s), 0))}</span>
           </h1>
         </div>
 
