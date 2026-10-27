@@ -143,7 +143,7 @@ export function AccountScreen({onBack, onOpenSaved, onOpenHistory, lang, setLang
             </div>
             <div className="opt-list" role="radiogroup" aria-label={t.textSize}>
               {[
-                {k:'normal', label:t.textNormal, sub:'As designed', a:18},
+                {k:'normal', label:t.textNormal, sub:'Standard size', a:18},
                 {k:'large',  label:t.textLarge,  sub:'About 12% bigger', a:22},
                 {k:'xlarge', label:t.textXLarge, sub:'About 25% bigger', a:26},
               ].map(o => (
