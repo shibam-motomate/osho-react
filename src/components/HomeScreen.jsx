@@ -182,7 +182,7 @@ export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, acti
 
       <div className="footer-band">
         <div className="footer-quote">&ldquo;{quote}&rdquo; &mdash; Osho</div>
-        <div className="footer-text">{t.footerAttribution} {t.footerNote} Icons by <a href="https://lucide.dev" target="_blank" rel="noopener">Lucide</a>.</div>
+        <div className="footer-text">{t.footerAttribution} {t.footerNote} Icons by <a href="https://www.streamlinehq.com" target="_blank" rel="noopener">Streamline</a>.</div>
       </div>
     </>
   );
