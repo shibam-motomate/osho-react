@@ -276,6 +276,12 @@ img{display:block;}
 @media(min-width:900px){.sec-head{padding:26px 32px 10px;}}
 .sec-title{font-family:var(--font-serif);font-size:calc(22px*var(--ts));font-weight:500;letter-spacing:-0.3px;color:var(--ink);}
 .sec-count{font-family:var(--font);font-size:14px;color:var(--muted);margin-left:8px;}
+.sec-head:has(.sort-btn){align-items:center;}
+.sec-head:has(.sort-btn) .sec-count{display:block;margin:4px 0 0;}
+.sort-btn{flex-shrink:0;display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:0 16px 0 13px;border-radius:999px;background:var(--surface);border:1px solid var(--border-strong);color:var(--ink);font-size:calc(14px*var(--ts));font-weight:600;cursor:pointer;white-space:nowrap;}
+.sort-btn svg{color:var(--accent-text);}
+.sheet-row-ic{width:26px;display:flex;justify-content:center;color:var(--muted);}
+.sheet-row.active .sheet-row-ic{color:var(--accent-text);}
 .sec-lbl{font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:26px 20px 8px;}
 @media(min-width:900px){.sec-lbl{padding:26px 32px 8px;}}
 
@@ -566,7 +572,8 @@ img{display:block;}
 
 /* Account */
 /* ── Account: profile card + grouped settings rows (iOS-style inset groups) ── */
-.set-wrap{max-width:640px;}
+.set-wrap{max-width:640px;padding-top:calc(28px + env(safe-area-inset-top));}
+@media(min-width:900px){.set-wrap{padding-top:32px;}}
 .set-title{font-family:var(--font-serif);font-style:italic;font-weight:500;font-size:calc(30px*var(--ts));line-height:1.1;color:var(--ink);margin:4px 4px 18px;}
 .set-profile{width:100%;display:flex;align-items:center;gap:14px;padding:16px;border-radius:20px;background:var(--surface);border:1px solid var(--border);color:var(--ink);text-align:left;font:inherit;}
 button.set-profile{cursor:pointer;}

@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { EPISODE_COUNTS, GENRE_LIST, talkCount } from '../config.js';
+import { EPISODE_COUNTS, GENRE_LIST, seriesTotalSeconds, talkCount } from '../config.js';
 import { OSHO_QUOTES } from '../data/quotes.js';
 import { OSHO_VIDEOS_EN, OSHO_VIDEOS_HI } from '../data/oshoVideos.js';
 import { onActivateKey } from '../lib/a11y.js';
-import { IcoCheck, IcoDown, IcoList, IcoPlay, IcoSearch, IcoX } from './Icons.jsx';
+import { IcoCheck, IcoClock, IcoDown, IcoFilter, IcoList, IcoPlay, IcoSearch, IcoShuffle, IcoSortAZ, IcoSortCount, IcoSortZA, IcoX } from './Icons.jsx';
 import { InstallBanner } from './HomeScreenGuide.jsx';
 import { warmTalk } from '../lib/warmTalk.js';
 import { SeriesCard } from './SeriesCard.jsx';
@@ -15,6 +15,31 @@ const VIDEO_COUNTS = {
 };
 const fmtN = n => n.toLocaleString('en-IN');
 
+/* Ways to order the series list. Shuffle is the default, so every visit opens on a different mix. */
+const SORTS = [
+  {key: 'shuffle', label: 'Shuffle', icon: IcoShuffle},
+  {key: 'az', label: 'A to Z', icon: IcoSortAZ},
+  {key: 'za', label: 'Z to A', icon: IcoSortZA},
+  {key: 'time', label: 'Longest first', icon: IcoClock},
+  {key: 'count', label: 'Most talks', icon: IcoSortCount},
+];
+const SORT_KEY = 'osho_sort';
+const readSort = () => {
+  try { const v = localStorage.getItem(SORT_KEY); return SORTS.some(o => o.key === v) ? v : 'shuffle'; } catch { return 'shuffle'; }
+};
+const saveSort = v => { try { localStorage.setItem(SORT_KEY, v); } catch { /* private mode */ } };
+const newSeed = () => Math.floor(Math.random() * 0x100000000);
+// A fixed random rank per series id for one shuffle, so the order holds while the full
+// catalogue replaces the light index a moment after first paint (FNV-1a plus a final mix).
+const shuffleRank = (id, seed) => {
+  let h = (2166136261 ^ seed) >>> 0;
+  for (let i = 0; i < id.length; i++) { h ^= id.charCodeAt(i); h = Math.imul(h, 16777619); }
+  h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13;
+  return h >>> 0;
+};
+const collators = {};
+const collatorFor = lang => (collators[lang] ||= new Intl.Collator(lang === 'hi' ? 'hi' : 'en', {sensitivity: 'base', numeric: true}));
+
 /* ── Home: photo hero (continue listening, or a series to start with) with a search field
    that slides open to the left; language toggle with totals; topic chips; every series
    as a one-per-row list. ── */
@@ -24,13 +49,24 @@ export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, acti
   const [quote] = useState(() => OSHO_QUOTES[Math.floor(Math.random() * OSHO_QUOTES.length)]);
   const inputRef = useRef(null);
   const [topicOpen, setTopicOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
+  const [sort, setSort] = useState(readSort);
+  const [seed, setSeed] = useState(newSeed);
+  const sortInfo = SORTS.find(o => o.key === sort) || SORTS[0];
+  const chooseSort = key => {
+    // Picking Shuffle again deals a fresh order.
+    if (key === 'shuffle') setSeed(newSeed());
+    setSort(key);
+    saveSort(key);
+    setSortOpen(false);
+  };
 
   useEffect(() => {
-    if (!topicOpen) return;
-    const onKey = e => { if (e.key === 'Escape') setTopicOpen(false); };
+    if (!topicOpen && !sortOpen) return;
+    const onKey = e => { if (e.key === 'Escape') { setTopicOpen(false); setSortOpen(false); } };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [topicOpen]);
+  }, [topicOpen, sortOpen]);
 
   // Focus the field only once the slide-open has finished, and without letting the browser
   // scroll the screen sideways to "reveal" a field that is still mid-animation.
@@ -53,8 +89,17 @@ export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, acti
       // (Talk titles are searchable once the full catalogue has arrived, a moment after first paint.)
       list = list.filter(s => s.n.toLowerCase().includes(q) || (s.e && s.e.some(e => e.t.toLowerCase().includes(q))));
     }
-    return list;
-  }, [seriesList, activePill, search]);
+    const byName = collatorFor(discLang).compare;
+    const keyed = list.map(s => ({s, k:
+      sort === 'shuffle' ? shuffleRank(s.i, seed)
+      : sort === 'time' ? -seriesTotalSeconds(s)
+      : sort === 'count' ? -talkCount(s)
+      : 0}));
+    keyed.sort(sort === 'az' ? (a, b) => byName(a.s.n, b.s.n)
+      : sort === 'za' ? (a, b) => byName(b.s.n, a.s.n)
+      : (a, b) => (a.k - b.k) || byName(a.s.n, b.s.n));
+    return keyed.map(x => x.s);
+  }, [seriesList, activePill, search, sort, seed, discLang]);
 
   const genres = useMemo(() => {
     const n = {};
@@ -169,6 +214,9 @@ export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, acti
             {search.trim() ? `“${search.trim()}”` : activePill === 'all' ? pageTitle : (t.genres[activePill] || activePill)}
             <span className="sec-count">{filtered.length} series · {t.talks(filtered.reduce((a, s) => a + talkCount(s), 0))}</span>
           </h1>
+          <button className="sort-btn" onClick={() => setSortOpen(true)} aria-haspopup="dialog" aria-expanded={sortOpen} aria-label={`Sort: ${sortInfo.label}`}>
+            <IcoFilter s={18}/><span>{sortInfo.label}</span>
+          </button>
         </div>
 
         <div className="slist">
@@ -195,6 +243,24 @@ export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, acti
               <span className="sheet-row-check">{activePill === g && <IcoCheck s={20}/>}</span>
               <span className="sheet-row-name">{topicName(g)}</span>
               <span className="sheet-row-count">{n}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className={`sheet-scrim${sortOpen ? ' open' : ''}`} onClick={() => setSortOpen(false)}/>
+      <div className={`sheet set-sheet${sortOpen ? ' open' : ''}`} role="dialog" aria-modal="true" aria-label="Sort series" aria-hidden={!sortOpen}>
+        <div className="sheet-handle"/>
+        <div className="sheet-head">
+          <div className="sheet-title">Sort series</div>
+          <button className="icon-btn" onClick={() => setSortOpen(false)} aria-label="Close" tabIndex={sortOpen ? 0 : -1}><IcoX s={18}/></button>
+        </div>
+        <div className="sheet-list">
+          {SORTS.map(({key, label, icon: Icon}) => (
+            <button key={key} className={`sheet-row${sort === key ? ' active' : ''}`} onClick={() => chooseSort(key)} aria-pressed={sort === key} tabIndex={sortOpen ? 0 : -1}>
+              <span className="sheet-row-ic"><Icon s={20}/></span>
+              <span className="sheet-row-name">{label}</span>
+              <span className="sheet-row-check">{sort === key && <IcoCheck s={20}/>}</span>
             </button>
           ))}
         </div>

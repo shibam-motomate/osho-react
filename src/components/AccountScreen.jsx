@@ -3,7 +3,7 @@ import { LANGS } from '../config.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { supabase, supabaseEnabled } from '../lib/supabaseClient.js';
 import {
-  IcoBack, IcoChevronRight, IcoHeart, IcoHistory, IcoLanguages, IcoLogOut, IcoMessage, IcoPencil, IcoPhone,
+  IcoChevronRight, IcoHeart, IcoHistory, IcoLanguages, IcoLogOut, IcoMessage, IcoPencil, IcoPhone,
   IcoPlaylist, IcoTextSize, IcoTheme, IcoTrash, IcoUser, IcoX,
 } from './Icons.jsx';
 import { HomeScreenGuide } from './HomeScreenGuide.jsx';
@@ -50,10 +50,11 @@ function SettingsSheet({open, title, onClose, children}) {
   );
 }
 
-/* ── Account: a profile card, then grouped settings rows (Library, Preferences, App, Account),
+/* ── Account: a top-level tab (bottom bar on phones, sidebar on desktop), so no back button.
+   A profile card, then grouped settings rows (Library, Preferences, App, Account),
    each showing its current value. Choices open a sheet with the same sliding pill as the
    player. Works for guests; name, feedback, log out and delete appear once signed in. ── */
-export function AccountScreen({onBack, onOpenSaved, onOpenHistory, lang, setLang, theme, setTheme, textSize, setTextSize, onSignIn, onAccountDeleted, t, savedSeriesCount = 0, savedEpisodesCount = 0, historyCount = 0}) {
+export function AccountScreen({onOpenSaved, onOpenHistory, lang, setLang, theme, setTheme, textSize, setTextSize, onSignIn, onAccountDeleted, t, savedSeriesCount = 0, savedEpisodesCount = 0, historyCount = 0}) {
   const {user, updateName, deleteAccount, signOut} = useAuth();
   const currentName = user?.user_metadata?.full_name || '';
   const [name, setName] = useState(currentName);
@@ -188,9 +189,6 @@ export function AccountScreen({onBack, onOpenSaved, onOpenHistory, lang, setLang
 
   return (
     <div>
-      <div className="back-bar">
-        <button className="back-btn" onClick={onBack}><IcoBack/>{t.home}</button>
-      </div>
       <div className="page-card-wrap set-wrap">
         <h1 className="set-title">{t.accountTab}</h1>
 

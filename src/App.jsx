@@ -923,7 +923,7 @@ function App() {
         <div className={acctClass}>
           {(screen === 'account' || visitedAccount.current) && (visitedAccount.current = true) && (
             <Suspense fallback={null}>
-              <AccountScreen onBack={() => navigate('home')} onOpenSaved={() => navigate('saved')} onOpenHistory={() => navigate('history')} lang={lang} setLang={setLang}
+              <AccountScreen onOpenSaved={() => navigate('saved')} onOpenHistory={() => navigate('history')} lang={lang} setLang={setLang}
                 theme={theme} setTheme={setTheme} textSize={textSize} setTextSize={setTextSize} onSignIn={() => setShowAuth(true)} t={t}
                 savedSeriesCount={savedSeries.size} savedEpisodesCount={savedEpisodes.length} historyCount={history.length}
                 onAccountDeleted={() => { navigate('home'); showToast('Account deleted'); }}/>
