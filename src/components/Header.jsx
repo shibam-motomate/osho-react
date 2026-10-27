@@ -16,8 +16,8 @@ export function Header({t, contentType, onSelectContentType, search, setSearch, 
   return (
     <>
       <header className="global-header">
-        <a className="gh-logo" href="/" onClick={e => { e.preventDefault(); onLogoClick(); }} aria-label="Osho — Home">
-          <span className="wordmark caps">OSHO</span>
+        <a className="gh-logo" href="/" onClick={e => { e.preventDefault(); onLogoClick(); }} aria-label="Osho, go to Home">
+          <span className="wordmark" role="img" aria-label="Osho"/>
         </a>
         <nav className="gh-nav" aria-label="Content">
           {CT_DEFS.map(c => (

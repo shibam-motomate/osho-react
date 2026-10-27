@@ -81,7 +81,7 @@ export function InstallBanner({t}) {
         <span className="install-banner-ic"><IcoPhone s={26}/></span>
         <div className="install-banner-info">
           <div className="install-banner-title">{t.homeScreen}</div>
-          <div className="install-banner-sub">Open Osho with one tap, like an app, without the browser bar.</div>
+          <div className="install-banner-sub">Opens full screen from your Home Screen, without the browser bar.</div>
         </div>
       </div>
       {open && <HomeScreenSteps platform={platform}/>}

@@ -151,7 +151,7 @@ export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, 
         <div className="psheet-body">
           <div className="psheet-value" aria-live="polite">
             {speedLabel(playbackSpeed)}
-            <small>{playbackSpeed === 1 ? 'Normal speed' : playbackSpeed < 1 ? 'Slower than normal' : 'Faster than normal'}</small>
+            <small>{playbackSpeed === 1 ? 'Normal speed' : `${playbackSpeed < 1 ? 'Slower' : 'Faster'} than normal`}</small>
           </div>
           <SegSlider label={t.speed} options={SPEED_OPTIONS} value={playbackSpeed} onChange={setPlaybackSpeed} focusable={sheet === 'speed'}/>
           <div className="segs-ends" aria-hidden="true"><span>Slower</span><span>Faster</span></div>
@@ -163,7 +163,7 @@ export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, 
         <div className="psheet-body">
           <div className="psheet-value" aria-live="polite">
             {sleepOption === 'off' ? 'Off' : sleepOption === 'end' ? 'End of talk' : (sleepRemaining > 0 ? fmtRemaining(sleepRemaining) : `${sleepOption}:00`)}
-            <small>{sleepOption === 'off' ? 'Playback keeps going' : sleepOption === 'end' ? 'Stops when this talk ends' : 'Until playback stops'}</small>
+            <small>{sleepOption === 'off' ? 'No timer set' : sleepOption === 'end' ? 'Stops when this talk ends' : 'Left on the timer'}</small>
           </div>
           <SegSlider label={t.sleep} options={SLEEP_SEG} value={sleepOption} onChange={setSleepOption} focusable={sheet === 'sleep'}/>
           <button className="psheet-done" onClick={() => setSheet(null)} tabIndex={sheet === 'sleep' ? 0 : -1}>Done</button>

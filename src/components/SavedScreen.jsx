@@ -35,7 +35,6 @@ export function SavedScreen({onBack, discourseSeries, videoSeries, savedSeries, 
       <div className="page-card-wrap">
         <div className="page-card-title-row">
           <div>
-            <div className="page-eyebrow">{t.accountTab}</div>
             <div className="page-card-heading"><h1>{t.savedTab}</h1></div>
           </div>
         </div>

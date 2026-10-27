@@ -33,7 +33,7 @@ export function BookCard({b, saved, onToggleSave, onRead}) {
             <button className="book-read-btn" onClick={e => { e.stopPropagation(); onRead(b); }}>
               {b.archiveId ? 'Read on Internet Archive ↗' : 'Read'}
             </button>
-            {b.archiveId && <div className="book-read-note">Free library loan via archive.org — sign in there to borrow it.</div>}
+            {b.archiveId && <div className="book-read-note">Free to borrow from archive.org. Needs an archive.org account.</div>}
           </>
         )}
       </div>

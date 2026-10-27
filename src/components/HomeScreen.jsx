@@ -89,7 +89,7 @@ export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, acti
             <div className="hero-shade"/>
             {/* Phone-only top row: wordmark + a search button that slides open to the left */}
             <div className="hero-top" onClick={e => e.stopPropagation()}>
-              <span className="wordmark caps">OSHO</span>
+              <span className="wordmark" role="img" aria-label="Osho"/>
               <div className="hero-top-right">
                 <div className="seg on-photo" role="group" aria-label={isVideos ? t.videosIn : t.discourseLang}>
                   <button className={`seg-btn${discLang==='en'?' active':''}`} onClick={() => setDiscLang('en')} aria-pressed={discLang==='en'} tabIndex={searchOpen ? -1 : 0}>

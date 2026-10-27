@@ -31,7 +31,6 @@ export function HistoryScreen({onBack, history, onPlayEntry, onRemove, onClearAl
       <div className="page-card-wrap">
         <div className="page-card-title-row">
           <div>
-            <div className="page-eyebrow">{t.library}</div>
             <div className="page-card-heading">
               <h1>{t.historyTab}</h1>
               <span className="page-card-count">{t.talks(filtered.length)}</span>

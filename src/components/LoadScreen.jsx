@@ -44,7 +44,7 @@ export function LoadScreen({progress, onDone}) {
   return (
     <div className={`load${fading ? ' fading' : ''}`} role="status" aria-live="polite" aria-label="Loading">
       <div className="load-top">
-        <div className="wordmark caps">OSHO</div>
+        <div className="wordmark" role="img" aria-label="Osho"/>
         <div className="load-sub">Discourses</div>
       </div>
       <blockquote className="load-quote">

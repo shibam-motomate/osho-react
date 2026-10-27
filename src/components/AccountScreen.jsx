@@ -98,7 +98,7 @@ export function AccountScreen({onBack, onOpenSaved, onOpenHistory, lang, setLang
     const {error} = await supabase.from('feature_suggestions').insert({user_id: user.id, email: user.email, message});
     setSuggestBusy(false);
     if (error) {
-      setSuggestError('Something went wrong — please try again.');
+      setSuggestError("Couldn't send. Check your connection and try again.");
       return;
     }
     setSuggestion('');
@@ -128,7 +128,7 @@ export function AccountScreen({onBack, onOpenSaved, onOpenHistory, lang, setLang
       body: <>
         <SegSlider label={t.appearance} value={theme} onChange={setTheme} focusable={sheet === 'theme'}
           options={[{value: 'dark', label: t.dark}, {value: 'light', label: t.light}]}/>
-        <p className="set-sheet-text">{theme === 'light' ? 'Ivory and maroon — easier in bright rooms.' : 'Deep and quiet — easier at night.'}</p>
+        <p className="set-sheet-text">{theme === 'light' ? 'Light background. Easier to read in daylight.' : 'Dark background. Easier on the eyes at night.'}</p>
       </>,
     },
     text: {
@@ -136,7 +136,7 @@ export function AccountScreen({onBack, onOpenSaved, onOpenHistory, lang, setLang
       body: <>
         <SegSlider label={t.textSize} value={textSize} onChange={setTextSize} focusable={sheet === 'text'}
           options={[{value: 'normal', label: 'Normal'}, {value: 'large', label: 'Large'}, {value: 'xlarge', label: 'X-Large', aria: 'Extra large'}]}/>
-        <div className="set-preview">Titles, lists and buttons across the app will read at this size.</div>
+        <div className="set-preview">This is how text will look across the app.</div>
       </>,
     },
     lang: {
@@ -144,20 +144,20 @@ export function AccountScreen({onBack, onOpenSaved, onOpenHistory, lang, setLang
       body: <>
         <SegSlider label="Menu language" value={lang} onChange={setLang} focusable={sheet === 'lang'}
           options={Object.entries(LANGS).map(([k, v]) => ({value: k, label: v}))}/>
-        <p className="set-sheet-text">Used for menus and labels. Talks keep their own language.</p>
+        <p className="set-sheet-text">Changes menus and buttons. Talks stay in their own language.</p>
       </>,
     },
     install: {
       title: t.homeScreen,
       body: <>
-        <p className="set-sheet-text">Open Osho with one tap, like an app, without the browser bar.</p>
+        <p className="set-sheet-text">Opens full screen from your Home Screen, without the browser bar.</p>
         <HomeScreenGuide/>
       </>,
     },
     feedback: {
       title: 'Suggest a feature',
       body: <>
-        <p className="set-sheet-text">Have an idea to make this better? We would love to hear it.</p>
+        <p className="set-sheet-text">Tell us what's missing or what isn't working. We read every message.</p>
         <textarea className="ac-textarea" rows={4} value={suggestion} placeholder="What would you like to see?" onChange={e => setSuggestion(e.target.value)} aria-label="Suggestion"/>
         {suggestError && <div className="auth-error">{suggestError}</div>}
         <button className="btn-primary" onClick={submitSuggestion} disabled={suggestBusy || !suggestion.trim()}>
@@ -208,7 +208,7 @@ export function AccountScreen({onBack, onOpenSaved, onOpenHistory, lang, setLang
             <span className="set-avatar guest"><IcoUser s={26}/></span>
             <span className="set-profile-info">
               <span className="set-profile-name">Not signed in</span>
-              <span className="set-profile-sub">Sign in to keep your saves on every device</span>
+              <span className="set-profile-sub">Sign in to sync your saves across devices</span>
             </span>
             <button className="set-signin" onClick={onSignIn}>{t.signIn}</button>
           </div>
