@@ -26,7 +26,8 @@ const shuffled = () => {
 };
 
 /* ── Ask Osho (coming soon), styled like a chat assistant's home: a rose glow, a centred
-   "Coming soon" badge over a centred greeting whose question rotates between English and Hindi,
+   "Coming soon" badge at the top, a large left-aligned greeting whose question rotates between
+   English and Hindi,
    four feeling cards, and a bar to type or speak (mic and send). Nothing works yet: a card, the
    mic or send pulses the badge and shows a short "coming soon" note. Nothing is sent anywhere. ── */
 export function AiScreen({t}) {
@@ -55,14 +56,15 @@ export function AiScreen({t}) {
     <div className="ai-page">
       <div className="ai-glow" aria-hidden="true"/>
       <div className="ai-wrap">
-        <div className="ai-head">
+        <div className="ai-top">
           <span key={nudge} className={`ai-badge${nudge ? ' pulse' : ''}`}><IcoSparkles s={15}/>{t.comingSoon}</span>
-          {/* Screen readers get one steady sentence; the rotating line is visual only. */}
-          <h1 className="ai-hello" aria-label={`${first ? t.aiHelloName(first) : t.aiHello} ${t.aiAsk}`}>
-            <span className="ai-hello-name" aria-hidden="true">{first ? t.aiHelloName(first) : t.aiHello}</span>
-            <span key={step} className="ai-q" lang={q.lang} aria-hidden="true">{q.text}</span>
-          </h1>
         </div>
+
+        {/* Screen readers get one steady sentence; the rotating line is visual only. */}
+        <h1 className="ai-hello" aria-label={`${first ? t.aiHelloName(first) : t.aiHello} ${t.aiAsk}`}>
+          <span className="ai-hello-name" aria-hidden="true">{first ? t.aiHelloName(first) : t.aiHello}</span>
+          <span key={step} className="ai-q" lang={q.lang} aria-hidden="true">{q.text}</span>
+        </h1>
 
         <div className="ai-bottom">
           <div className="ai-cards">
