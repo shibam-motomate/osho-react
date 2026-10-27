@@ -21,7 +21,7 @@ export function MiniPlayer({nowPlaying, isPlaying, onTogglePlay, onPrev, onNext,
 
   const seekTo = time => { if (activeRef.current) activeRef.current.currentTime = time; };
   const pct = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
-  const showLoading = !mediaError && !!nowPlaying && loading && (isPlaying || !duration);
+  const showLoading = !mediaError && !!nowPlaying && loading && isPlaying;
 
   const playBtn = cls => (
     <button className={cls} onClick={e => { e.stopPropagation(); mediaError ? onRetry?.() : onTogglePlay(); }}

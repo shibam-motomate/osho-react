@@ -67,8 +67,9 @@ export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, 
   const remaining = duration > 0 ? duration - shownTime : 0;
 
   const seekTo = time => { if (activeRef.current) activeRef.current.currentTime = time; };
-  // "Loading" covers a talk that's starting and a jump into a part not downloaded yet.
-  const showLoading = !mediaError && !!nowPlaying && loading && (isPlaying || !duration);
+  // "Loading" covers a talk that's starting and a jump into a part not downloaded yet — only
+  // while it's meant to be playing: a paused talk restored on launch isn't downloading.
+  const showLoading = !mediaError && !!nowPlaying && loading && isPlaying;
 
   const pickSpeed = v => { setPlaybackSpeed(v); setSheet(null); };
   const pickSleep = o => { setSleepOption(o); setSheet(null); };
