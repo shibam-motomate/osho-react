@@ -76,6 +76,8 @@ export function AiScreen({t}) {
             ))}
           </div>
 
+          {/* ai-beam draws a light that travels around the box's border, with a soft glow. */}
+          <div className="ai-beam">
           <form className="ai-bar" onSubmit={e => { e.preventDefault(); poke(); }}>
             <span className="ai-orb" aria-hidden="true"/>
             <input className="ai-input" value={text} onChange={e => setText(e.target.value)} placeholder={t.aiPlaceholder}
@@ -84,6 +86,7 @@ export function AiScreen({t}) {
             <button type="button" className="ai-mic" onClick={poke} aria-label={t.aiVoice}><IcoMic s={18}/></button>
             <button type="submit" className={`ai-send${text.trim() ? ' ready' : ''}`} aria-label={t.aiSend}><IcoArrowUp s={18}/></button>
           </form>
+          </div>
           <p id="ai-soon" className={`ai-note${nudge ? ' show' : ''}`} role="status">{nudge ? t.aiSoonNote : t.aiFootnote}</p>
         </div>
       </div>
