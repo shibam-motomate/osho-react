@@ -459,8 +459,9 @@ img{display:block;}
 .vol-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;margin-top:-5px;border-radius:50%;background:currentColor;border:none;}
 .vol-range::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:currentColor;border:none;}
 .vol-range:focus-visible{outline:2px solid var(--accent-text);outline-offset:4px;border-radius:6px;}
-.pl-vol{justify-content:center;margin:6px auto 0;color:var(--text2);}
-.pl-vol .vol-range{width:220px;}
+/* The full player always sits on a dark photo, so its volume control is light in both themes. */
+.pl-vol{justify-content:center;margin:6px auto 0;color:rgba(255,255,255,0.88);}
+.pl-vol .vol-range{width:min(220px,55vw);}
 
 .np-art{width:48px;height:48px;border-radius:12px;overflow:hidden;flex-shrink:0;}
 .np-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}

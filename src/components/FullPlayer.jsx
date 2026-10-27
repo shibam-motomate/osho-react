@@ -123,17 +123,18 @@ export function FullPlayer({open, onClose, nowPlaying, isPlaying, onTogglePlay, 
         </div>
 
         <div className="pl-transport">
-          <button className="pl-tbtn" onClick={onPrev} aria-label="Previous talk"><IcoPrev s={28}/></button>
-          <button className="pl-tbtn" onClick={() => onSeekSeconds(-SKIP)} aria-label={`Back ${SKIP} seconds`}><IcoSkipBack s={40} n={SKIP}/></button>
+          <button className="pl-tbtn" onClick={onPrev} aria-label="Previous talk"><IcoPrev s={22}/></button>
+          <button className="pl-tbtn" onClick={() => onSeekSeconds(-SKIP)} aria-label={`Back ${SKIP} seconds`}><IcoSkipBack s={32} n={SKIP}/></button>
           <button className="pl-play" onClick={onTogglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}>
             {showLoading ? <LoadRing pct={loadPct} size={56} showNumber/> : isPlaying ? <IcoPause s={32}/> : <IcoPlay s={34}/>}
           </button>
-          <button className="pl-tbtn" onClick={() => onSeekSeconds(SKIP)} aria-label={`Forward ${SKIP} seconds`}><IcoSkipFwd s={40} n={SKIP}/></button>
-          <button className="pl-tbtn" onClick={onNext} aria-label="Next talk"><IcoNext s={28}/></button>
+          <button className="pl-tbtn" onClick={() => onSeekSeconds(SKIP)} aria-label={`Forward ${SKIP} seconds`}><IcoSkipFwd s={32} n={SKIP}/></button>
+          <button className="pl-tbtn" onClick={onNext} aria-label="Next talk"><IcoNext s={22}/></button>
         </div>
 
-        {/* Volume: desktop only (phones use their own volume buttons). */}
-        {isDesktop && <VolumeControl className="pl-vol"/>}
+        {/* Volume. Hidden by VolumeControl itself on iPhone/iPad, where Safari won't let a page
+            change volume (only the side buttons can); shown on desktop and Android. */}
+        <VolumeControl className="pl-vol"/>
 
         <div className="pl-tools">
           <button className={`pl-tool${playbackSpeed !== 1 ? ' on' : ''}`} onClick={() => setSheet('speed')} aria-haspopup="dialog" aria-label={`${t.speed}: ${speedLabel(playbackSpeed)}`}>
