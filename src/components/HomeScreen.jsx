@@ -67,7 +67,22 @@ export function HomeScreen({seriesList, dataLoading, onSeries, onPlayFirst, acti
 
   // Hero: what the listener was last playing. With nothing in progress, a random series —
   // a different one on every visit (and whenever the catalogue or language changes).
-  const randomPick = useMemo(() => seriesList.length ? seriesList[Math.floor(Math.random() * seriesList.length)] : null, [seriesList]);
+  // The pick is remembered by id per list, so it survives the swap from the light index to the
+  // full catalogue a moment after first paint (otherwise the hero would change and load a
+  // second photo).
+  const pickRef = useRef({});
+  const pickKey = `${contentType}:${discLang}`;
+  const randomPick = useMemo(() => {
+    if (!seriesList.length) return null;
+    const id = pickRef.current[pickKey];
+    const kept = id && seriesList.find(s => s.i === id);
+    if (kept) return kept;
+    // First English pick uses the seed index.html used to preload this hero's photo (vite.config.js).
+    const seed = pickKey === 'discourses:en' && typeof window.__heroSeed === 'number' ? window.__heroSeed : Math.random();
+    const pick = seriesList[Math.floor(seed * seriesList.length)];
+    pickRef.current[pickKey] = pick.i;
+    return pick;
+  }, [seriesList, pickKey]);
   const heroSeries = nowPlaying ? nowPlaying.series : randomPick;
   const heroIsContinue = !!nowPlaying;
   const heroTitle = heroIsContinue ? nowPlaying.episode.t : heroSeries?.n;

@@ -29,6 +29,23 @@ function seriesIndex() {
       const index = list.map(s => ({i: s.i, n: s.n, g: s.g, c: s.e.length, td: s.e.reduce((a, e) => a + secs(e.d), 0)}));
       return `export default ${JSON.stringify(index)};`;
     },
+    // Start the Home hero photo download from the HTML, before any app code runs. The page picks
+    // the hero here — the Continue-listening series, or a random English series — and leaves the
+    // random seed in window.__heroSeed so HomeScreen picks the same one. The photo numbers mirror
+    // photoFor() in src/config.js (sum of the id's char codes % PHOTO_COUNT + 1).
+    async transformIndexHtml() {
+      const file = fileURLToPath(new URL(files.en, import.meta.url));
+      const list = (await import(pathToFileURL(file).href + '?v=' + statSync(file).mtimeMs)).OSHO_DATA_EN;
+      const PHOTO_COUNT = 34;
+      const photoNo = id => [...id].reduce((a, c) => a + c.charCodeAt(0), 0) % PHOTO_COUNT + 1;
+      const photos = list.map(s => photoNo(s.i));
+      const js = `(function(){try{if(location.pathname!=='/')return;var P=${JSON.stringify(photos)},N=${PHOTO_COUNT},r=Math.random(),n;window.__heroSeed=r;`
+        + `var np=JSON.parse(localStorage.getItem('osho_np')||'null');`
+        + `if(np&&np.series&&np.series.i){if(np.episode&&np.episode.img)return;var s=0,id=np.series.i;for(var i=0;i<id.length;i++)s+=id.charCodeAt(i);n=s%N+1;}`
+        + `else n=P[Math.floor(r*P.length)];`
+        + `var l=document.createElement('link');l.rel='preload';l.as='image';l.href='/art/'+(n<10?'0':'')+n+'-lg.webp';l.setAttribute('fetchpriority','high');document.head.appendChild(l);}catch(e){}})();`;
+      return [{tag: 'script', children: js, injectTo: 'head-prepend'}];
+    },
   };
 }
 

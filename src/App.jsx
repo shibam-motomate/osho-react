@@ -55,7 +55,9 @@ function App() {
   const [lang,        setLang]      = useState('en');
   const [discLang,    setDiscLang]  = useState('en');
   const [activePill,  setPill]      = useState('all');
-  const [nowPlaying,  setNP]        = useState(null);
+  // Read the saved talk before the first draw, so the Home hero starts on "Continue listening"
+  // (and its photo, preloaded by index.html) instead of flashing a random series first.
+  const [nowPlaying,  setNP]        = useState(() => { try { return JSON.parse(localStorage.getItem('osho_np') || 'null'); } catch (e) { return null; } });
   const [isPlaying,   setPlay]      = useState(false);
   const [playerOpen,  setPO]        = useState(false);
   const [clDismissed, setCLD]       = useState(false);
